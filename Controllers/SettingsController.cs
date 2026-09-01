@@ -224,19 +224,20 @@ namespace UPMS.Web.Controllers
                 return RedirectToAction("Index");
             }
 
+            // AUTH-007: Hash delete protection password before storing (never store plain text)
             var setting = await _db.AppSettings.FirstOrDefaultAsync(s => s.SettingKey == "delete_protection_password");
             if (setting == null)
             {
                 setting = new AppSetting
                 {
                     SettingKey = "delete_protection_password",
-                    SettingValue = deletePassword.Trim()
+                    SettingValue = BCrypt.Net.BCrypt.HashPassword(deletePassword.Trim(), workFactor: 12)
                 };
                 _db.AppSettings.Add(setting);
             }
             else
             {
-                setting.SettingValue = deletePassword.Trim();
+                setting.SettingValue = BCrypt.Net.BCrypt.HashPassword(deletePassword.Trim(), workFactor: 12);
             }
 
             await _db.SaveChangesAsync();
@@ -245,6 +246,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize] // AUTH-005: Only authenticated users can verify delete password
         public async Task<IActionResult> VerifyDeletePassword([FromBody] DeleteVerifyRequest req)
         {
             var deleteSetting = await _db.AppSettings
@@ -254,7 +256,19 @@ namespace UPMS.Web.Controllers
 
             string inputPassword = req?.Password?.Trim() ?? "";
 
-            if (string.Equals(inputPassword, configuredPassword, StringComparison.Ordinal))
+            // AUTH-007: Compare against BCrypt hash stored in DB
+            // Support both BCrypt hashes (new) and legacy plain-text (old) for migration period
+            bool isDeletePasswordValid = false;
+            if (!string.IsNullOrEmpty(configuredPassword))
+            {
+                // Try BCrypt first (new format)
+                try { isDeletePasswordValid = BCrypt.Net.BCrypt.Verify(inputPassword, configuredPassword); } catch { }
+                // Fallback: plain text comparison for not-yet-migrated passwords
+                if (!isDeletePasswordValid)
+                    isDeletePasswordValid = string.Equals(inputPassword, configuredPassword, StringComparison.Ordinal);
+            }
+
+            if (isDeletePasswordValid)
             {
                 return Json(new { success = true });
             }

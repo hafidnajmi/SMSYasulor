@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UPMS.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+444463b72a527155ab20f2dd69f07dcd062239ca")]
 [assembly: System.Reflection.AssemblyProductAttribute("UPMS.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UPMS.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

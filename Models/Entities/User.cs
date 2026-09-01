@@ -18,7 +18,7 @@ namespace UPMS.Web.Models.Entities
         public string Username { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(64)]
+        [StringLength(256)]
         [Column("password_hash")]
         public string PasswordHash { get; set; } = string.Empty;
 

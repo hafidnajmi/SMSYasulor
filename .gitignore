@@ -1,0 +1,25 @@
+## .NET build outputs
+obj/
+bin/
+*.user
+
+## Sensitive configuration files (never commit these)
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+*.env
+.env
+secrets.json
+
+## Logs
+*.log
+logs/
+
+## VS / Rider
+.vs/
+.idea/
+*.suo
+
+## OS
+Thumbs.db
+.DS_Store

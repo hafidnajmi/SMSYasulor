@@ -9,5 +9,6 @@ namespace UPMS.Web.Services
         Task<User?> ValidateUserAsync(string username, string password);
         ClaimsPrincipal CreateClaimsPrincipal(User user);
         Task UpdateLastLoginAsync(int userId);
+        Task LogFailedLoginAsync(string username, string? ipAddress); // AUTH-011
     }
 }

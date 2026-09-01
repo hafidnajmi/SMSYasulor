@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Local User\\Downloads\\UP-Management Sparepart-python\\src\\UPMS.Web\\UPMS.Web.csproj": {}
+    "C:\\Users\\Local User\\Downloads\\SMS-Website\\UPMS.Web.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Local User\\Downloads\\UP-Management Sparepart-python\\src\\UPMS.Web\\UPMS.Web.csproj": {
+    "C:\\Users\\Local User\\Downloads\\SMS-Website\\UPMS.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Local User\\Downloads\\UP-Management Sparepart-python\\src\\UPMS.Web\\UPMS.Web.csproj",
+        "projectUniqueName": "C:\\Users\\Local User\\Downloads\\SMS-Website\\UPMS.Web.csproj",
         "projectName": "UPMS.Web",
-        "projectPath": "C:\\Users\\Local User\\Downloads\\UP-Management Sparepart-python\\src\\UPMS.Web\\UPMS.Web.csproj",
+        "projectPath": "C:\\Users\\Local User\\Downloads\\SMS-Website\\UPMS.Web.csproj",
         "packagesPath": "C:\\Users\\Local User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Local User\\Downloads\\UP-Management Sparepart-python\\src\\UPMS.Web\\obj\\",
+        "outputPath": "C:\\Users\\Local User\\Downloads\\SMS-Website\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Local User\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -46,6 +46,10 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "AspNetCoreRateLimit": {
+              "target": "Package",
+              "version": "[4.0.2, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.2.0, )"

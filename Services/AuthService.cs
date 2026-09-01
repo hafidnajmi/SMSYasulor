@@ -28,24 +28,15 @@ namespace UPMS.Web.Services
             if (user == null || !user.IsActive)
                 return null;
 
+            // BCrypt-only verification — plain text passwords are NOT accepted (AUTH-002)
             bool isPasswordValid = false;
-
-            // 1. Direct plain text match (for legacy migrated users or plain text passwords)
-            if (user.PasswordHash == password)
+            try
             {
-                isPasswordValid = true;
+                isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
             }
-            else
+            catch
             {
-                // 2. BCrypt hash verification
-                try
-                {
-                    isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-                }
-                catch
-                {
-                    isPasswordValid = false;
-                }
+                isPasswordValid = false;
             }
 
             if (!isPasswordValid)
@@ -90,6 +81,30 @@ namespace UPMS.Web.Services
             {
                 user.LastLogin = DateTime.Now;
                 await _db.SaveChangesAsync();
+            }
+        }
+
+        // AUTH-011: Log failed login attempts to Audit_Log table
+        public async Task LogFailedLoginAsync(string username, string? ipAddress)
+        {
+            try
+            {
+                var log = new AuditLog
+                {
+                    TableName = "Users",
+                    RecordId = username,
+                    Action = "LOGIN_FAILED",
+                    OldData = null,
+                    NewData = $"IP: {ipAddress ?? "unknown"}",
+                    ChangedBy = "system",
+                    ChangedAt = DateTime.Now
+                };
+                _db.AuditLogs.Add(log);
+                await _db.SaveChangesAsync();
+            }
+            catch
+            {
+                // Do not throw — logging failure must not disrupt auth flow
             }
         }
     }

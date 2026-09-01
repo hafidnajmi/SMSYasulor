@@ -539,6 +539,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize] // AUTH-009: Require authentication; admin portal permission enforced in Index
         public async Task<IActionResult> SaveSupplierOfferAjax(string masterDataId, string supplierName, decimal price, bool setAsPrimary = true)
         {
             if (string.IsNullOrWhiteSpace(masterDataId) || string.IsNullOrWhiteSpace(supplierName) || price <= 0)
@@ -616,6 +617,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize] // AUTH-009: Require authentication
         public async Task<IActionResult> SetPrimarySupplierOfferAjax(int offerId)
         {
             var offer = await _db.SupplierOffers.FindAsync(offerId);
@@ -657,6 +659,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize] // AUTH-009: Require authentication
         public async Task<IActionResult> DeleteSupplierOfferAjax(int offerId)
         {
             var offer = await _db.SupplierOffers.FindAsync(offerId);

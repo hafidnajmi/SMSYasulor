@@ -1,4 +1,6 @@
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Data;
 using UPMS.Web.Services;
@@ -11,22 +13,56 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Database Context (PostgreSQL)
-string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Host=localhost;Port=5432;Database=upms_db;Username=postgres;Password=postgres;";
+// AUTH-003: Connection string reads from environment or appsettings — never hardcode passwords in source
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "No database connection string found. Set ConnectionStrings__DefaultConnection environment variable.");
 
 builder.Services.AddDbContext<UpmsDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Cookie Authentication
+// AUTH-008 & AUTH-010: Cookie Authentication with secure settings
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+        // AUTH-008: Sliding expiration of 4h, absolute max of 8h
+        options.ExpireTimeSpan = TimeSpan.FromHours(4);
         options.SlidingExpiration = true;
+        options.Cookie.MaxAge = TimeSpan.FromHours(8); // hard absolute limit
+
+        // AUTH-010: Secure cookie flags
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // use Always in production with HTTPS
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.Name = "UPMS.Auth";
     });
+
+// AUTH-006: Rate limiting (IP-based, using AspNetCoreRateLimit)
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(options =>
+{
+    options.EnableEndpointRateLimiting = true;
+    options.StackBlockedRequests = false;
+    options.HttpStatusCode = 429;
+    options.RealIpHeader = "X-Real-IP";
+    options.GeneralRules = new List<RateLimitRule>
+    {
+        new RateLimitRule
+        {
+            Endpoint = "POST:/Account/Login",
+            Period = "15m",
+            Limit = 20  // max 20 login attempts per 15 minutes per IP
+        }
+    };
+});
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
+builder.Services.AddInMemoryRateLimiting();
 
 // Custom Application Services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -49,6 +85,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// AUTH-006: IP Rate Limiting middleware (must be before auth)
+app.UseIpRateLimiting();
+
 app.UseAuthentication();
 
 // Real-Time Claims & RBAC Sync Middleware:
@@ -70,7 +109,7 @@ app.Use(async (context, next) =>
             else if (user != null && !user.IsActive)
             {
                 await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignOutAsync(
-                    context, 
+                    context,
                     Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
                 context.Response.Redirect("/Account/Login");
                 return;

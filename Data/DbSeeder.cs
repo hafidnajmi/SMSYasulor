@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Models.Entities;
@@ -158,7 +159,18 @@ CREATE TABLE IF NOT EXISTS ""sparepart_line_mapping"" (
                 var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
                 if (adminUser == null)
                 {
-                    string hash = BCrypt.Net.BCrypt.HashPassword("admin");
+                    // AUTH-001: Never use a known default password.
+                // Read from environment variable, or generate a secure random password.
+                string initialPassword = Environment.GetEnvironmentVariable("ADMIN_INITIAL_PASSWORD")
+                    ?? GenerateSecurePassword();
+
+                Console.WriteLine("[DbSeeder] ============================================");
+                Console.WriteLine("[DbSeeder] Admin account created for the first time.");
+                Console.WriteLine($"[DbSeeder] Initial password: {initialPassword}");
+                Console.WriteLine("[DbSeeder] CHANGE THIS PASSWORD IMMEDIATELY after first login!");
+                Console.WriteLine("[DbSeeder] ============================================");
+
+                string hash = BCrypt.Net.BCrypt.HashPassword(initialPassword, workFactor: 12);
                     adminUser = new User
                     {
                         Username = "admin",
@@ -309,6 +321,13 @@ CREATE TABLE IF NOT EXISTS ""sparepart_line_mapping"" (
             {
                 Console.WriteLine($"[DbSeeder] SeedSuppliers warning: {ex.Message}");
             }
+        }
+        private static string GenerateSecurePassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+            var bytes = new byte[16];
+            RandomNumberGenerator.Fill(bytes);
+            return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
         }
     }
 }
