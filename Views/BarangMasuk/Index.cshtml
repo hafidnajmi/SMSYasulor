@@ -1,0 +1,302 @@
+@model UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangMasuk>
+
+@{
+    ViewData["Title"] = "Barang Masuk";
+    var pics = ViewBag.Pics as List<string> ?? new List<string> { "Raisa", "Priyanto", "Rohmadi", "Yully", "Hussein", "Slamet", "Andra" };
+    var suppliers = ViewBag.Suppliers as List<string> ?? new List<string>();
+}
+
+<!-- EMS Title Header -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Barang Masuk</h3>
+        <p class="text-muted small mb-0">Input &amp; Riwayat Penerimaan Sparepart</p>
+    </div>
+</div>
+
+<form asp-action="SubmitDirect" method="post" id="masukForm">
+    @Html.AntiForgeryToken()
+    <div class="row g-3 mb-4">
+        <!-- Left Card: Informasi -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card border shadow-sm h-100 p-3 bg-white">
+                <h5 class="fw-bold mb-3" style="color: #0F172A;">Informasi</h5>
+                
+                <!-- Tanggal & Jam -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Tanggal & Jam</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-primary"></i></span>
+                        <input type="datetime-local" name="Tanggal" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+                    <div class="form-text small text-muted" style="font-size: 11px;">Pilih tanggal & jam barang masuk (otomatis terisi waktu saat ini).</div>
+                </div>
+
+                <!-- PIC -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">PIC</label>
+                    <select name="Pic" class="form-select form-select-sm">
+                        <option value="">-- Pilih PIC --</option>
+                        @foreach (var pic in pics)
+                        {
+                            <option value="@pic" selected="@(User.Identity?.Name?.Equals(pic, StringComparison.OrdinalIgnoreCase) == true ? "selected" : null)">@pic</option>
+                        }
+                    </select>
+                    <div class="form-text small text-muted" style="font-size: 11px;">Pilih nama personel yang menerima barang.</div>
+                </div>
+
+                <!-- Supplier -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Supplier</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-building text-primary"></i></span>
+                        <select name="Supplier" id="supplierSelect" class="form-select form-select-sm">
+                            <option value="">Pilih Supplier...</option>
+                            @foreach (var sup in suppliers)
+                            {
+                                <option value="@sup">@sup</option>
+                            }
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" title="Refresh daftar supplier"><i class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+                    <div class="form-text small text-muted" style="font-size: 11px;">Pilih nama supplier penyedia sparepart.</div>
+                </div>
+
+                <!-- Referensi Master Data -->
+                <div class="mb-2 position-relative">
+                    <label class="form-label small fw-bold text-secondary mb-0">Referensi Master Data</label>
+                    <div class="form-text small text-muted fst-italic mb-1" style="font-size: 11px;">Cari Part Number / BIN / Item lalu klik untuk auto-fill</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="refSearch" class="form-control form-control-sm" placeholder="" oninput="onRefSearch(this.value)" autocomplete="off" />
+                    </div>
+                    <div id="refSearchResults" class="list-group position-absolute w-100 shadow" style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Card: Detail Barang Masuk -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card border shadow-sm h-100 p-3 bg-white">
+                <h5 class="fw-bold mb-3" style="color: #0F172A;">Detail Barang Masuk</h5>
+
+                <!-- Part Number & BIN -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">Part Number</label>
+                        <input type="text" id="partNumber" name="PartNumber" class="form-control form-control-sm font-monospace bg-light" placeholder="Kode Part Number..." readonly />
+                        <div class="form-text small text-muted" style="font-size: 11px;">Kode Part Number sparepart (auto-fill).</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-secondary mb-0">BIN</label>
+                            <span id="binStatus" class="small fw-normal" style="font-size: 11px;"></span>
+                        </div>
+                        <input type="text" id="binLocation" name="Bin" class="form-control form-control-sm font-monospace text-uppercase" placeholder="Ketik BIN (e.g. A1-1-001) / Scan..." oninput="onBinInput(this.value)" required />
+                        <div class="form-text small text-muted" style="font-size: 11px;">Kode BIN lokasi penyimpanan barang.</div>
+                    </div>
+                </div>
+
+                <!-- Items Name -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Items Name</label>
+                    <input type="text" id="itemName" name="ItemName" class="form-control form-control-sm" placeholder="Otomatis dari BIN / ketik manual..." required />
+                    <div class="form-text small text-muted" style="font-size: 11px;">Nama sparepart (terisi otomatis jika BIN/Part Number terdaftar).</div>
+                </div>
+
+                <!-- QTY & PO Number -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">QTY</label>
+                        <input type="number" name="Qty" class="form-control form-control-sm" placeholder="Jumlah masuk..." required min="1" value="1" />
+                        <div class="form-text small text-muted" style="font-size: 11px;">Masukkan jumlah fisik sparepart yang masuk.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-secondary mb-1">PO Number</label>
+                        <input type="text" name="PoNumber" class="form-control form-control-sm" placeholder="Nomor PO (optional)..." />
+                        <div class="form-text small text-muted" style="font-size: 11px;">Masukkan nomor PO pembelian (opsional).</div>
+                    </div>
+                </div>
+
+                <!-- Harga Beli / Purchase Price -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Harga Beli / Purchase Price (Opsional)</label>
+                    <input type="number" name="UnitPrice" class="form-control form-control-sm" placeholder="Contoh: 150000 (kosongkan jika tidak ada)..." step="0.01" />
+                    <div class="form-text small text-muted" style="font-size: 11px;">Masukkan harga beli satuan (jika diisi, harga di Master Data otomatis terupdate).</div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Remarks (Optional)</label>
+                    <textarea name="Remarks" class="form-control form-control-sm" rows="2" placeholder="Tambahkan catatan tambahan mengenai barang masuk jika diperlukan."></textarea>
+                    <div class="form-text small text-muted" style="font-size: 11px;">Tambahkan catatan tambahan mengenai barang masuk jika diperlukan.</div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-ems-primary"><i class="bi bi-check-circle me-1"></i>Submit &amp; Update Stock</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetMasukForm()"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset Form</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Riwayat Transaksi Barang Masuk Table Card -->
+<div class="card border shadow-sm mb-4 bg-white">
+    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-primary"><i class="bi bi-clock-history me-2"></i>Riwayat Transaksi Barang Masuk</span>
+        <span class="text-muted small">@Model?.TotalCount.ToString("N0") record(s)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                <thead class="table-light text-secondary">
+                    <tr>
+                        <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
+                        <th>TANGGAL</th>
+                        <th>BIN</th>
+                        <th>PART NUMBER</th>
+                        <th>ITEM NAME</th>
+                        <th class="text-end">QTY</th>
+                        <th>PIC</th>
+                        <th>SUPPLIER</th>
+                        <th>PO NUMBER</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Items.Any())
+                    {
+                        int rowNo = ((Model.PageNumber - 1) * Model.PageSize) + 1;
+                        foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNo++)</td>
+                                <td class="small text-muted font-monospace">@item.Tanggal.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td><span class="badge bg-light text-dark border">@(item.Bin ?? "-")</span></td>
+                                <td><span class="small text-secondary">@(item.PartNumber ?? "-")</span></td>
+                                <td class="fw-normal">@item.ItemName</td>
+                                <td class="text-end text-success fw-normal">@item.Qty</td>
+                                <td class="small">@(item.Pic ?? "-")</td>
+                                <td class="small text-secondary">@(item.Supplier ?? "-")</td>
+                                <td class="small">@(item.PoNumber ?? "-")</td>
+                                <td>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'transaksi masuk #@item.Id');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">Belum ada riwayat transaksi barang masuk.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var refTimeout = null;
+
+        function onRefSearch(val) {
+            clearTimeout(refTimeout);
+            var resultsBox = document.getElementById("refSearchResults");
+            if (!val || val.trim().length < 2) {
+                resultsBox.style.display = "none";
+                return;
+            }
+
+            refTimeout = setTimeout(function() {
+                fetch('/BarangMasuk/SearchMasterData?query=' + encodeURIComponent(val.trim()))
+                    .then(res => res.json())
+                    .then(data => {
+                        resultsBox.innerHTML = "";
+                        if (data && data.length > 0) {
+                            data.forEach(item => {
+                                var btn = document.createElement("button");
+                                btn.type = "button";
+                                btn.className = "list-group-item list-group-item-action py-2 px-3 small border-0 border-bottom";
+                                btn.innerHTML = '<div class="d-flex justify-content-between align-items-center"><div><strong class="text-primary">' + item.id + '</strong> <span class="ms-2 fw-semibold">' + item.item + '</span></div><span class="badge bg-secondary font-monospace">BIN: ' + item.bin + '</span></div>';
+                                btn.onclick = function() {
+                                    selectMasterItem(item);
+                                    resultsBox.style.display = "none";
+                                };
+                                resultsBox.appendChild(btn);
+                            });
+                            resultsBox.style.display = "block";
+                        } else {
+                            resultsBox.innerHTML = '<div class="p-2 small text-muted text-center italic">Tidak ada hasil ditemukan</div>';
+                            resultsBox.style.display = "block";
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }, 250);
+        }
+
+        function selectMasterItem(item) {
+            document.getElementById("binLocation").value = item.bin !== '-' ? item.bin : '';
+            document.getElementById("partNumber").value = item.id || '';
+            document.getElementById("itemName").value = item.item || '';
+            document.getElementById("itemName").readOnly = true;
+
+            var statusEl = document.getElementById("binStatus");
+            statusEl.innerText = "Ditemukan di Master Data";
+            statusEl.className = "small fw-semibold text-success";
+            document.getElementById("refSearch").value = "";
+        }
+
+        function onBinInput(val) {
+            var statusEl = document.getElementById("binStatus");
+            var itemEl = document.getElementById("itemName");
+            var partEl = document.getElementById("partNumber");
+
+            if (!val || val.trim().length < 2) {
+                statusEl.innerText = "";
+                itemEl.readOnly = false;
+                return;
+            }
+
+            fetch('/BarangMasuk/LookupBin?query=' + encodeURIComponent(val.trim()))
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        itemEl.value = data.itemName || '';
+                        partEl.value = data.partNumber || '';
+                        itemEl.readOnly = true;
+                        statusEl.innerText = "Ditemukan di Master Data";
+                        statusEl.className = "small fw-semibold text-success";
+                    } else {
+                        itemEl.readOnly = false;
+                        statusEl.innerText = "BIN baru - isi nama item manual";
+                        statusEl.className = "small fw-semibold text-warning";
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function resetMasukForm() {
+            document.getElementById("masukForm").reset();
+            document.getElementById("refSearch").value = "";
+            document.getElementById("refSearchResults").style.display = "none";
+            document.getElementById("partNumber").value = "";
+            document.getElementById("itemName").readOnly = false;
+            document.getElementById("binStatus").innerText = "";
+        }
+
+        document.addEventListener("click", function(e) {
+            var box = document.getElementById("refSearchResults");
+            var search = document.getElementById("refSearch");
+            if (box && search && !box.contains(e.target) && !search.contains(e.target)) {
+                box.style.display = "none";
+            }
+        });
+    </script>
+}

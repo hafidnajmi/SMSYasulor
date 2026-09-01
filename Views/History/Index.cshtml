@@ -1,0 +1,166 @@
+@model dynamic
+
+@{
+    ViewData["Title"] = "Transaction Logs";
+    string tab = ViewBag.Tab as string ?? "masuk";
+    var masukModel = Model as UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangMasuk>;
+    var keluarModel = Model as UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangKeluar>;
+}
+
+<!-- EMS Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0B4A8F;">Transaction Logs & History</h3>
+        <p class="text-muted small mb-0">Audit history of all incoming shipments and outgoing sparepart usage logs.</p>
+    </div>
+    <div>
+        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-ems-outline btn-sm">
+            <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
+        </a>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "")" asp-action="Index" asp-route-tab="masuk">
+            <i class="bi bi-box-arrow-in-down text-success me-1"></i>Barang Masuk History
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "")" asp-action="Index" asp-route-tab="keluar">
+            <i class="bi bi-box-arrow-up-right text-danger me-1"></i>Barang Keluar History
+        </a>
+    </li>
+</ul>
+
+<!-- EMS Filter Card -->
+<div class="ems-filter-card">
+    <div class="ems-filter-header">
+        <span><i class="bi bi-funnel me-2 text-primary"></i>Search & Filter Logs</span>
+    </div>
+    <div class="p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-end">
+            <input type="hidden" name="tab" value="@tab" />
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-secondary">Search Query</label>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Item name, BIN, PIC..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary">Filter Year</label>
+                <select name="year" class="form-select form-select-sm">
+                    <option value="">[All Years]</option>
+                    @for (int y = DateTime.Now.Year; y >= 2020; y--)
+                    {
+                        <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-ems-primary btn-sm flex-fill"><i class="bi bi-search me-1"></i>Filter</button>
+                <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- History Table Card -->
+<div class="ems-filter-card">
+    <div class="p-0">
+        <div class="table-responsive">
+            @if (tab == "masuk" && masukModel != null)
+            {
+                <table class="table-ems">
+                    <thead>
+                        <tr>
+                            <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
+                            <th>DATE</th>
+                            <th>BIN</th>
+                            <th>ITEM NAME</th>
+                            <th class="text-end">QTY RECEIVED (+)</th>
+                            <th>PIC</th>
+                            <th>SUPPLIER</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (masukModel.Items.Any())
+                        {
+                            int rowNoMasuk = ((masukModel.PageNumber - 1) * masukModel.PageSize) + 1;
+                            foreach (var item in masukModel.Items)
+                            {
+                                <tr>
+                                    <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoMasuk++)</td>
+                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
+                                    <td class="fw-semibold">@item.ItemName</td>
+                                    <td class="text-end text-success fw-bold">+@item.Qty</td>
+                                    <td class="small">@(item.Pic ?? "-")</td>
+                                    <td class="small text-secondary">@(item.Supplier ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No incoming transaction records found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else if (tab == "keluar" && keluarModel != null)
+            {
+                <table class="table-ems">
+                    <thead>
+                        <tr>
+                            <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
+                            <th>DATE</th>
+                            <th>BIN</th>
+                            <th>ITEM NAME</th>
+                            <th class="text-end">QTY ISSUED (-)</th>
+                            <th>LINE</th>
+                            <th>PIC</th>
+                            <th class="text-end">TOTAL COST</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (keluarModel.Items.Any())
+                        {
+                            int rowNoKeluar = ((keluarModel.PageNumber - 1) * keluarModel.PageSize) + 1;
+                            foreach (var item in keluarModel.Items)
+                            {
+                                <tr>
+                                    <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoKeluar++)</td>
+                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
+                                    <td class="fw-semibold">@item.ItemName</td>
+                                    <td class="text-end text-danger fw-bold">-@item.Qty</td>
+                                    <td><span class="badge bg-light text-dark border">@(item.Line ?? "-")</span></td>
+                                    <td class="small">@(item.Pic ?? "-")</td>
+                                    <td class="text-end font-monospace">Rp @((item.TotalCost ?? 0m).ToString("N0"))</td>
+                                    <td>
+                                        @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
+                                        {
+                                            <span class="badge badge-ems-info">Approved</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-ems-warning">@item.ApprovalStatus</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">No outgoing transaction records found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

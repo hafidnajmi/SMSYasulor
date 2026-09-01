@@ -1,0 +1,88 @@
+@model List<UPMS.Web.Models.Entities.BarangKeluar>
+
+@{
+    ViewData["Title"] = "Outgoing Stock Approvals";
+}
+
+<!-- EMS Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0B4A8F;">Admin Management Portal</h3>
+        <p class="text-muted small mb-0">Review pending stock deductions, manage procurement valuations, and verify line mappings.</p>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" asp-action="Index" asp-route-tab="procurement"><i class="bi bi-currency-dollar me-1"></i>Procurement Valuation</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active fw-bold text-primary" asp-action="Index" asp-route-tab="approvals"><i class="bi bi-hourglass-split me-1 text-warning"></i>Stock Approvals (@(Model?.Count ?? 0))</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-action="Index" asp-route-tab="bidding"><i class="bi bi-journal-text me-1"></i>Bidding Records</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-action="Index" asp-route-tab="mapping"><i class="bi bi-diagram-3 me-1"></i>Line Mapping</a>
+    </li>
+</ul>
+
+<div class="ems-filter-card">
+    <div class="ems-filter-header">
+        <span><i class="bi bi-exclamation-circle text-warning me-2"></i>Pending Outgoing Stock Deductions</span>
+        <span class="badge badge-ems-warning">@(Model?.Count ?? 0) Awaiting</span>
+    </div>
+    <div class="p-0">
+        <div class="table-responsive">
+            <table class="table-ems">
+                <thead>
+                    <tr>
+                        <th>TRANSACTION ID</th>
+                        <th>DATE</th>
+                        <th>ITEM NAME</th>
+                        <th>BIN</th>
+                        <th>LINE</th>
+                        <th class="text-end">QTY REQUESTED</th>
+                        <th>PIC / TECHNICIAN</th>
+                        <th class="text-center">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><span class="font-monospace fw-bold text-primary">#@item.Id</span></td>
+                                <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="fw-semibold">@item.ItemName</td>
+                                <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
+                                <td><span class="badge bg-light text-dark border">@(item.Line ?? "-")</span></td>
+                                <td class="text-end text-danger fw-bold fs-6">-@item.Qty</td>
+                                <td class="small">@(item.Pic ?? "-")</td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <form asp-action="ApproveKeluar" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success me-1"><i class="bi bi-check-lg me-1"></i>Approve</button>
+                                        </form>
+                                        <form asp-action="RejectKeluar" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No pending stock approval requests in queue.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
