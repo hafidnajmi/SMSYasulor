@@ -34,7 +34,6 @@
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form asp-controller="Account" asp-action="Logout" method="post">
-                                @Html.AntiForgeryToken()
                                 <button type="submit" class="dropdown-item text-danger small"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
                             </form>
                         </li>
@@ -174,7 +173,6 @@
 
             <div class="ems-sidebar-footer">
                 <form asp-controller="Account" asp-action="Logout" method="post">
-                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-link nav-link p-0 text-secondary small d-flex align-items-center gap-2">
                         <i class="bi bi-box-arrow-right fs-6"></i>
                         <span>Logout</span>
