@@ -29,6 +29,7 @@ builder.Services.AddDbContext<UpmsDbContext>(options =>
 // Configure Anti-Forgery Cookie for Reverse Proxy / NGINX compatibility
 builder.Services.AddAntiforgery(options =>
 {
+    options.Cookie.Name = "UPMS.Antiforgery";
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
@@ -59,7 +60,6 @@ builder.Services.Configure<IpRateLimitOptions>(options =>
     options.EnableEndpointRateLimiting = true;
     options.StackBlockedRequests = false;
     options.HttpStatusCode = 429;
-    options.RealIpHeader = "X-Real-IP";
     options.GeneralRules = new List<RateLimitRule>
     {
         new RateLimitRule
