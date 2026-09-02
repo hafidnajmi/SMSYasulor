@@ -95,15 +95,15 @@ namespace UPMS.Web.Controllers
 
             if (user.Role == "operator")
             {
-                return RedirectToAction("Index", "Operator");
+                return Redirect("/Operator");
             }
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
-                return Redirect(returnUrl);
+                return LocalRedirect(returnUrl);
             }
 
-            return RedirectToAction("Index", "Dashboard");
+            return Redirect("/Dashboard");
         }
 
         [HttpPost]

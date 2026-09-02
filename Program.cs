@@ -31,7 +31,7 @@ builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = "UPMS.Antiforgery";
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 // AUTH-008 & AUTH-010: Cookie Authentication with secure settings
@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
         // AUTH-010: Secure cookie flags
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // use Always in production with HTTPS
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.Name = "UPMS.Auth";
     });
