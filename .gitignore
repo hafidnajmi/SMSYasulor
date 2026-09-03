@@ -20,6 +20,23 @@ wheels/
 .installed.cfg
 *.egg
 
+# Large Files & Archives
+*.zip
+*.tar
+*.gz
+*.xlsm
+SMS v8.*/
+Master_Data_20260818.xlsx
+
+# .NET Core build output
+[bB]in/
+[oO]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
 # Virtual environments
 venv/
 env/
@@ -36,7 +53,7 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Database (keep original, ignore local copy)
+# Database
 up_sparepart.db
 up_sparepart.db-shm
 up_sparepart.db-wal

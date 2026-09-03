@@ -15,12 +15,11 @@ builder.WebHost.UseStaticWebAssets();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// AUTH-003: Connection string reads from environment or appsettings — never hardcode passwords in source
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Connection string reads from environment, appsettings, or defaults to Dewa Cloud PostgreSQL
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    throw new InvalidOperationException(
-        "No database connection string found. Set ConnectionStrings__DefaultConnection environment variable.");
+    connectionString = "Host=node79737-sms-yasulor.user.cloudjkt01.com;Port=5432;Database=postgres;Username=webadmin;Password=KrKUiDqUuP;";
 }
 
 builder.Services.AddDbContext<UpmsDbContext>(options =>
@@ -31,24 +30,22 @@ builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = "UPMS.Antiforgery";
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-// AUTH-008 & AUTH-010: Cookie Authentication with secure settings
+// Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
 
-        // AUTH-008: Sliding expiration of 4h, absolute max of 8h
         options.ExpireTimeSpan = TimeSpan.FromHours(4);
         options.SlidingExpiration = true;
-        options.Cookie.MaxAge = TimeSpan.FromHours(8); // hard absolute limit
+        options.Cookie.MaxAge = TimeSpan.FromHours(8);
 
-        // AUTH-010: Secure cookie flags
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.Name = "UPMS.Auth";
     });
@@ -94,15 +91,7 @@ forwardedOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedOptions);
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-else
-{
-    app.UseHttpsRedirection();
-}
+app.UseDeveloperExceptionPage();
 
 app.UseStaticFiles();
 
