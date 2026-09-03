@@ -1,0 +1,25 @@
+2026-08-27 09:15:23 | INFO     | UPMS | Purged 2 log files older than 7 days.
+2026-08-27 09:15:23 | INFO     | UPMS | Logger initialized. Log file: C:\Users\Local User\Downloads\UP-Management Sparepart-python\logs\upms.log
+2026-08-27 09:15:34 | INFO     | UPMS.DB | Connecting to SQL Server (localhost -> UPMS_Database, driver='ODBC Driver 18 for SQL Server', user=(Windows Auth))
+2026-08-27 09:15:34 | INFO     | UPMS.Pool | Connection pool configured.
+2026-08-27 09:15:35 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_0, attempt=1)
+2026-08-27 09:15:35 | INFO     | UPMS.DB | SQL Server connected (localhost -> UPMS_Database)
+2026-08-27 09:15:35 | INFO     | UPMS.DB | Database schema version 25 is up to date, skipping migration routines.
+2026-08-27 09:15:35 | INFO     | UPMS.Scheduler | Scheduler started (hourly check).
+2026-08-27 09:15:35 | INFO     | UPMS.Main | Application started successfully.
+2026-08-27 09:15:35 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=email_scheduler, attempt=1)
+2026-08-27 09:18:13 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-2 (_async_build_view), attempt=1)
+2026-08-27 09:18:13 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-3 (_async_init), attempt=1)
+2026-08-27 09:24:45 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-5 (_async_build_view), attempt=1)
+2026-08-27 09:29:31 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-6 (_async_build_view), attempt=1)
+2026-08-27 09:38:52 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-7 (_async_build_view), attempt=1)
+2026-08-27 10:09:48 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_5, attempt=1)
+2026-08-27 10:09:48 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_2, attempt=1)
+2026-08-27 10:09:49 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-8 (_async_build_view), attempt=1)
+2026-08-27 10:09:53 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-9 (_async_build_view), attempt=1)
+2026-08-27 10:09:55 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_6, attempt=1)
+2026-08-27 10:09:55 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_4, attempt=1)
+2026-08-27 10:09:56 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_1, attempt=1)
+2026-08-27 10:09:56 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=ThreadPoolExecutor-0_3, attempt=1)
+2026-08-27 17:39:24 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-10 (_async_build_view), attempt=1)
+2026-08-27 17:39:25 | DEBUG    | UPMS.Pool | New SQL Server connection opened (thread=Thread-11 (_async_build_view), attempt=1)
