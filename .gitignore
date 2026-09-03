@@ -1,67 +1,28 @@
-# Python standalone application
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Large Files & Archives
-*.zip
-*.tar
-*.gz
-*.xlsm
-SMS v8.*/
-Master_Data_20260818.xlsx
-
-# .NET Core build output
-[bB]in/
-[oO]bj/
+# .NET Core Build Cache
+bin/
+obj/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
-*.userprefs
 
-# Virtual environments
-venv/
-env/
-ENV/
+# System & Archives
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+*.xlsm
+*.xlsx
+*.csv
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Security & Agent Folders
+.agents/
+scratch/
+scripts/
+assets/
+migrations/
+logs/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Database
-up_sparepart.db
-up_sparepart.db-shm
-up_sparepart.db-wal
-
-config.yaml
-
-# Build artifacts
-version_info.txt
-deploy/
-
-testsprite_tests\tmp\config.json
+# Local Environment Settings
+appsettings.Local.json
