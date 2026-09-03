@@ -24,4 +24,14 @@
     <Copy SourceFiles="$(OutputPath)ROOT.runtimeconfig.json" DestinationFiles="$(OutputPath)UPMS.Web.runtimeconfig.json" Condition="Exists('$(OutputPath)ROOT.runtimeconfig.json')" />
   </Target>
 
+  <!-- Copy wwwroot to output directory so static files work when Dewacloud runs from bin/Debug/net10.0/ -->
+  <Target Name="CopyWwwrootToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WwwrootFiles)"
+          DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
