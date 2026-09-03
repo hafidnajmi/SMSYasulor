@@ -137,11 +137,20 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
-// Seed default admin user if database is missing admin account
-using (var scope = app.Services.CreateScope())
+// Seed default admin user asynchronously in background so app.Run() binds to port instantly without systemd startup timeout
+_ = Task.Run(async () =>
 {
-    var db = scope.ServiceProvider.GetRequiredService<UpmsDbContext>();
-    await DbSeeder.SeedDefaultAdminAsync(db);
-}
+    try
+    {
+        await Task.Delay(2000); // 2 second grace delay for DB container networking
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<UpmsDbContext>();
+        await DbSeeder.SeedDefaultAdminAsync(db);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup Warning] Background DbSeeder: {ex.Message}");
+    }
+});
 
 app.Run();

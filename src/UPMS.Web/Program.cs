@@ -100,18 +100,20 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
-// Seed default admin user if database is reachable
-try
+// Seed default admin user asynchronously in background so app.Run() binds to port instantly without systemd startup timeout
+_ = Task.Run(async () =>
 {
-    using (var scope = app.Services.CreateScope())
+    try
     {
+        await Task.Delay(2000);
+        using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<UpmsDbContext>();
         await DbSeeder.SeedDefaultAdminAsync(db);
     }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[Startup Warning] Database Seeding Skipped or Failed: {ex.Message}");
-}
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup Warning] Background DbSeeder: {ex.Message}");
+    }
+});
 
 app.Run();
