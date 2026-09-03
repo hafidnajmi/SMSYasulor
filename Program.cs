@@ -10,6 +10,21 @@ using UPMS.Web.Services;
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Fix: Dewacloud runs app from bin/Debug/net10.0/ so wwwroot is NOT found by default.
+// Detect this and explicitly set ContentRoot to the project root folder.
+if (!Directory.Exists(builder.Environment.WebRootPath))
+{
+    // Go up 3 levels from bin/Debug/net10.0/ → project root
+    var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../.."));
+    var wwwrootPath = Path.Combine(projectRoot, "wwwroot");
+    if (Directory.Exists(wwwrootPath))
+    {
+        builder.WebHost.UseContentRoot(projectRoot);
+        builder.WebHost.UseWebRoot(wwwrootPath);
+    }
+}
+
 if (builder.Environment.IsDevelopment())
 {
     builder.WebHost.UseStaticWebAssets();
