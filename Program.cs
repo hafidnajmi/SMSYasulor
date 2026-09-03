@@ -19,15 +19,16 @@ if (builder.Environment.IsDevelopment())
 var envPort = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(envPort))
 {
-    builder.WebHost.UseUrls($"http://*:{envPort}", "http://*:8080", "http://*:5000");
+    builder.WebHost.UseUrls($"http://*:{envPort}");
 }
 else if (builder.Environment.IsDevelopment())
 {
-    builder.WebHost.UseUrls("http://localhost:5000", "http://localhost:5080");
+    builder.WebHost.UseUrls("http://localhost:5000");
 }
 else
 {
-    builder.WebHost.UseUrls("http://*:8080", "http://*:5000", "http://*:80");
+    // Dewacloud: NGINX handles port 80/443 externally, Kestrel listens on 8080
+    builder.WebHost.UseUrls("http://*:8080");
 }
 
 // Add services to the container.
