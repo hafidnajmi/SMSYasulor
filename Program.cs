@@ -12,6 +12,17 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
 
+// Listen on all network interfaces for Dewa Cloud reverse proxy ports (80, 8080, 5000)
+var envPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(envPort))
+{
+    builder.WebHost.UseUrls($"http://*:{envPort}", "http://*:80", "http://*:8080", "http://*:5000");
+}
+else
+{
+    builder.WebHost.UseUrls("http://*:80", "http://*:8080", "http://*:5000");
+}
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
