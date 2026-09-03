@@ -1,0 +1,653 @@
+@model UPMS.Web.Controllers.CostIntelligenceViewModel
+
+@{
+    ViewData["Title"] = "Cost Intelligence";
+}
+
+<style>
+    .kpi-title-sm {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .kpi-value-lg {
+        font-size: 24px;
+        font-weight: 800;
+        font-family: 'Consolas', 'Courier New', monospace;
+    }
+    .chart-box {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 0;
+        padding: 16px;
+        position: relative;
+    }
+    .table-ems tbody tr {
+        transition: background-color 0.12s ease-in-out;
+    }
+    .table-ems tbody tr:hover {
+        background-color: #EFF6FF !important;
+    }
+</style>
+
+<!-- Title Header -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Cost Intelligence &amp; Analytics</h3>
+        <p class="text-muted small mb-0">Analysis of sparepart expenditure across production lines, machinery, and maintenance activities.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportToExcel", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = Model.ActiveTab })', 'Cost Intelligence');" class="btn btn-ems-outline btn-sm">
+            <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="ems-filter-card mb-4">
+    <div class="ems-filter-header">
+        <span><i class="bi bi-funnel me-1 text-primary"></i>Period &amp; Line Filter</span>
+        <span class="text-muted fw-normal small">Active Filter: @Model.StartDate to @Model.EndDate (@Model.SelectedLine)</span>
+    </div>
+    <div class="p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
+            <input type="hidden" name="tab" value="@Model.ActiveTab" />
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">Start Date</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
+                    <input type="date" name="startDate" value="@Model.StartDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">End Date</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
+                    <input type="date" name="endDate" value="@Model.EndDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary mb-1">Production Line</label>
+                <select name="line" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit();">
+                    <option value="All" selected="@(Model.SelectedLine == "All" ? "selected" : null)">All Production Lines</option>
+                    @foreach (var l in Model.AvailableLines)
+                    {
+                        <option value="@l" selected="@(Model.SelectedLine == l ? "selected" : null)">@l</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-1">
+                <button type="submit" class="btn btn-ems-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Apply Filter</button>
+                <a href="/CostIntelligence" class="btn btn-ems-outline btn-sm" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3 Global Summary KPI Cards (Matching Python App) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="ems-kpi-card ems-kpi-blue p-3">
+            <div class="kpi-title-sm text-primary d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-currency-dollar me-1"></i> TOTAL COST EXPENDITURE</span>
+                <i class="bi bi-wallet2 fs-5 opacity-50"></i>
+            </div>
+            <div class="kpi-value-lg text-primary mt-2">
+                Rp @Model.TotalCost.ToString("N0")
+            </div>
+            <div class="text-muted small mt-1">Total approved expenditure in selected period</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ems-kpi-card ems-kpi-green p-3">
+            <div class="kpi-title-sm text-success d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-box-seam me-1"></i> TOTAL QTY SPAREPARTS ISSUED</span>
+                <i class="bi bi-bar-chart-steps fs-5 opacity-50"></i>
+            </div>
+            <div class="kpi-value-lg text-success mt-2">
+                @Model.TotalQtyIssued.ToString("N0")
+            </div>
+            <div class="text-muted small mt-1">Total sparepart units consumed by machines</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ems-kpi-card ems-kpi-amber p-3">
+            <div class="kpi-title-sm text-warning d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-cpu me-1"></i> UNIQUE SPAREPARTS ISSUED</span>
+                <i class="bi bi-gear-wide-connected fs-5 opacity-50"></i>
+            </div>
+            <div class="kpi-value-lg text-warning mt-2">
+                @Model.UniqueSparepartsCount.ToString("N0")
+            </div>
+            <div class="text-muted small mt-1">Distinct sparepart part IDs issued</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.HasRecentSpike)
+{
+    <div class="alert alert-warning border-warning d-flex align-items-center mb-4 shadow-sm" style="border-radius:0;">
+        <i class="bi bi-exclamation-triangle-fill text-warning fs-4 me-3"></i>
+        <div>
+            <strong class="d-block text-dark">Spike Alert Detected!</strong>
+            <span class="small text-secondary">@Model.SpikeAlertMessage</span>
+        </div>
+    </div>
+}
+
+<!-- 12-Month Historical Monthly Expenditure Trend & Spike Detection -->
+<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
+    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between" style="color: #0F4C81;">
+        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>12-Month Expenditure Trend &amp; Cost Spike Detection</span>
+        <span class="badge bg-light text-secondary border small">Line: @Model.SelectedLine</span>
+    </div>
+    <div class="card-body p-3">
+        <div style="height: 220px; position: relative;">
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Main Analysis Navigation Tabs -->
+<ul class="nav nav-tabs mb-3 border-bottom-0">
+    <li class="nav-item">
+        <a class="nav-link px-4 fw-bold @(Model.ActiveTab == "line" ? "active" : "")" href="@Url.Action("Index", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = "line" })" style="border-radius:0;">
+            <i class="bi bi-diagram-3 me-2"></i>Cost per Line Analysis
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link px-4 fw-bold @(Model.ActiveTab == "machine" ? "active" : "")" href="@Url.Action("Index", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = "machine" })" style="border-radius:0;">
+            <i class="bi bi-cpu me-2"></i>Cost per Machine Analysis
+        </a>
+    </li>
+</ul>
+
+@if (Model.ActiveTab == "line")
+{
+    <!-- TAB 1: Cost per Line -->
+    <div class="row g-4 mb-4">
+        <!-- Top 5 Highest Cost Lines Chart -->
+        <div class="col-md-5">
+            <div class="chart-box h-100">
+                <h6 class="fw-bold mb-3 text-dark" style="font-size: 13px;"><i class="bi bi-bar-chart-line me-1 text-primary"></i>Top 5 Highest Cost Lines</h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="lineCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Cost Table -->
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100" style="border-radius:0;">
+                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
+                    <i class="bi bi-table me-1"></i>Cost Breakdown by Production Line
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table-ems mb-0">
+                            <thead>
+                                <tr>
+                                    <th>LINE</th>
+                                    <th class="text-center">TOTAL MACHINE</th>
+                                    <th class="text-center">RECORD COUNT</th>
+                                    <th class="text-center">UNIQUE PARTS</th>
+                                    <th class="text-end">TOTAL COST</th>
+                                    <th class="text-center" style="width: 80px;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.LineCosts.Any())
+                                {
+                                    foreach (var item in Model.LineCosts)
+                                    {
+                                        <tr>
+                                            <td class="align-middle fw-bold text-primary">@item.Line</td>
+                                            <td class="text-center align-middle text-dark">@item.TotalMachine</td>
+                                            <td class="text-center align-middle text-muted">@item.TransactionCount</td>
+                                            <td class="text-center align-middle text-muted">@item.UniqueSparepartCount</td>
+                                            <td class="text-end align-middle font-monospace fw-bold text-primary">Rp @item.TotalCost.ToString("N0")</td>
+                                            <td class="text-center align-middle">
+                                                <button type="button" class="btn-ems-icon-action text-primary" onclick="openLineDrilldownModal('@item.Line')" title="View Line Consumption Detail">
+                                                    <i class="bi bi-zoom-in"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-5">
+                                            No transaction cost records found for the selected period.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- TAB 2: Cost per Machine -->
+    <div class="row g-4 mb-4">
+        <!-- Top 5 Highest Cost Machines Chart -->
+        <div class="col-md-5">
+            <div class="chart-box h-100">
+                <h6 class="fw-bold mb-3 text-dark" style="font-size: 13px;"><i class="bi bi-bar-chart-line me-1 text-primary"></i>Top 5 Highest Cost Machines</h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="machineCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Machine Cost Table -->
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100" style="border-radius:0;">
+                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
+                    <i class="bi bi-table me-1"></i>Cost Breakdown by Machinery
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table-ems mb-0">
+                            <thead>
+                                <tr>
+                                    <th>MACHINE CODE</th>
+                                    <th>MACHINE NAME</th>
+                                    <th>STATUS</th>
+                                    <th>LINE</th>
+                                    <th class="text-end">QTY ISSUED</th>
+                                    <th class="text-end">TOTAL COST</th>
+                                    <th class="text-center" style="width: 80px;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.MachineCosts.Any())
+                                {
+                                    foreach (var item in Model.MachineCosts)
+                                    {
+                                        bool isActive = string.Equals(item.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+                                        <tr>
+                                            <td class="align-middle fw-bold text-primary font-monospace">@item.MachineCode</td>
+                                            <td class="align-middle fw-semibold text-dark">@item.MachineName</td>
+                                            <td class="align-middle">
+                                                <span class="badge @(isActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") border px-2 py-1" style="font-size: 10px;">
+                                                    @item.Status
+                                                </span>
+                                            </td>
+                                            <td class="align-middle text-muted small">@item.Line</td>
+                                            <td class="text-end align-middle font-monospace text-dark">@item.TotalQty.ToString("N0")</td>
+                                            <td class="text-end align-middle font-monospace fw-bold text-primary">Rp @item.TotalCost.ToString("N0")</td>
+                                            <td class="text-center align-middle">
+                                                <button type="button" class="btn-ems-icon-action text-primary" onclick="openMachineDrilldownModal(@item.MachineId)" title="Sparepart Consumption Detail">
+                                                    <i class="bi bi-zoom-in"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            No machine consumption records found for the selected filter.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- 1. Line Drilldown Modal -->
+<div class="modal fade" id="lineDrilldownModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-diagram-3 me-2"></i>Line Consumption Breakdown — <span id="lineDrilldownTitle"></span></h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 bg-light">
+                <div id="lineDrilldownSpinner" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="ms-2 small text-muted">Loading line consumption detail...</span>
+                </div>
+                <div id="lineDrilldownTableWrapper" style="display:none;" class="table-responsive bg-white border">
+                    <table class="table table-sm table-bordered align-middle mb-0" style="font-size:12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width:40px;">NO</th>
+                                <th>PART ID</th>
+                                <th>ITEM NAME</th>
+                                <th>BIN</th>
+                                <th class="text-end">QTY</th>
+                                <th class="text-center">FREQ</th>
+                                <th class="text-end">AVG PRICE</th>
+                                <th class="text-end">TOTAL COST</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineDrilldownTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Machine Drilldown Modal -->
+<div class="modal fade" id="machineDrilldownModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-cpu me-2"></i>Machine Consumption Detail — <span id="machineDrilldownTitle"></span></h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 bg-light">
+                <div id="machineDrilldownSpinner" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="ms-2 small text-muted">Loading machine sparepart consumption...</span>
+                </div>
+                <div id="machineDrilldownTableWrapper" style="display:none;" class="table-responsive bg-white border">
+                    <table class="table table-sm table-bordered align-middle mb-0" style="font-size:12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width:40px;">NO</th>
+                                <th>PART ID</th>
+                                <th>ITEM NAME</th>
+                                <th>BIN</th>
+                                <th>MAINTENANCE TYPE</th>
+                                <th class="text-end">QTY</th>
+                                <th class="text-center">FREQ</th>
+                                <th class="text-end">TOTAL COST</th>
+                            </tr>
+                        </thead>
+                        <tbody id="machineDrilldownTbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Formatter helper
+        function formatRupiah(amount) {
+            return 'Rp ' + Number(amount).toLocaleString('id-ID');
+        }
+
+        // Render Bar Charts matching Matplotlib design from Python App
+        document.addEventListener("DOMContentLoaded", function () {
+            // 12-Month Trend Line Chart
+            @if (Model.MonthlyTrends.Any())
+            {
+                var trendLabelsJson = Json.Serialize(Model.MonthlyTrends.Select(x => x.MonthLabel));
+                var trendCostsJson = Json.Serialize(Model.MonthlyTrends.Select(x => x.TotalCost));
+                var trendSpikesJson = Json.Serialize(Model.MonthlyTrends.Select(x => x.IsSpike));
+                var trendGrowthJson = Json.Serialize(Model.MonthlyTrends.Select(x => x.GrowthPct));
+                <text>
+                const trendLabels = @Html.Raw(trendLabelsJson);
+                const trendCosts = @Html.Raw(trendCostsJson);
+                const trendSpikes = @Html.Raw(trendSpikesJson);
+                const trendGrowth = @Html.Raw(trendGrowthJson);
+
+                const pointColors = trendSpikes.map(s => s ? '#DC2626' : '#2563EB');
+                const pointRadius = trendSpikes.map(s => s ? 6 : 3);
+
+                const ctxTrend = document.getElementById('monthlyTrendChart').getContext('2d');
+                new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: trendLabels,
+                        datasets: [{
+                            label: 'Monthly Expenditure (Rp)',
+                            data: trendCosts,
+                            borderColor: '#2563EB',
+                            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: pointColors,
+                            pointBorderColor: pointColors,
+                            pointRadius: pointRadius,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const idx = context.dataIndex;
+                                        const costStr = formatRupiah(context.raw);
+                                        const growth = trendGrowth[idx];
+                                        const isSpike = trendSpikes[idx];
+                                        let extra = ` (${growth >= 0 ? '+' : ''}${growth}% MoM)`;
+                                        if (isSpike) extra += ' ⚠️ SPIKE ALERT';
+                                        return costStr + extra;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                                }
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+            @if (Model.ActiveTab == "line" && Model.LineCosts.Any())
+            {
+                var top5Lines = Model.LineCosts.Take(5).ToList();
+                var lineLabelsJson = Json.Serialize(top5Lines.Select(x => x.Line));
+                var lineCostsJson = Json.Serialize(top5Lines.Select(x => x.TotalCost));
+                <text>
+                const lineLabels = @Html.Raw(lineLabelsJson);
+                const lineCosts = @Html.Raw(lineCostsJson);
+
+                const ctxLine = document.getElementById('lineCostChart').getContext('2d');
+                new Chart(ctxLine, {
+                    type: 'bar',
+                    data: {
+                        labels: lineLabels,
+                        datasets: [{
+                            label: 'Total Cost (Rp)',
+                            data: lineCosts,
+                            backgroundColor: '#2563EB',
+                            borderColor: '#1D4ED8',
+                            borderWidth: 1,
+                            barPercentage: 0.55
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) { return formatRupiah(context.raw); }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                                }
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+
+            @if (Model.ActiveTab == "machine" && Model.MachineCosts.Any())
+            {
+                var top5Machines = Model.MachineCosts.Take(5).ToList();
+                var machineLabelsJson = Json.Serialize(top5Machines.Select(x => x.MachineCode));
+                var machineCostsJson = Json.Serialize(top5Machines.Select(x => x.TotalCost));
+                <text>
+                const machineLabels = @Html.Raw(machineLabelsJson);
+                const machineCosts = @Html.Raw(machineCostsJson);
+
+                const ctxMachine = document.getElementById('machineCostChart').getContext('2d');
+                new Chart(ctxMachine, {
+                    type: 'bar',
+                    data: {
+                        labels: machineLabels,
+                        datasets: [{
+                            label: 'Total Cost (Rp)',
+                            data: machineCosts,
+                            backgroundColor: '#2563EB',
+                            borderColor: '#1D4ED8',
+                            borderWidth: 1,
+                            barPercentage: 0.55
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) { return formatRupiah(context.raw); }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                                }
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+        });
+
+        // 1. Line Drilldown AJAX Modal
+        async function openLineDrilldownModal(lineName) {
+            document.getElementById('lineDrilldownTitle').innerText = lineName;
+            const modal = new bootstrap.Modal(document.getElementById('lineDrilldownModal'));
+            
+            document.getElementById('lineDrilldownSpinner').style.display = 'block';
+            document.getElementById('lineDrilldownTableWrapper').style.display = 'none';
+            modal.show();
+
+            const startDate = '@Model.StartDate';
+            const endDate = '@Model.EndDate';
+
+            try {
+                const res = await fetch(`/CostIntelligence/GetLineDrilldownJson?lineName=${encodeURIComponent(lineName)}&startDate=${startDate}&endDate=${endDate}`);
+                const data = await res.json();
+
+                document.getElementById('lineDrilldownSpinner').style.display = 'none';
+                document.getElementById('lineDrilldownTableWrapper').style.display = 'block';
+                
+                const tbody = document.getElementById('lineDrilldownTbody');
+                tbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No sparepart consumption recorded for this line.</td></tr>';
+                    return;
+                }
+
+                data.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-center text-muted small">${idx + 1}</td>
+                        <td class="fw-bold text-primary font-monospace">${r.masterDataId}</td>
+                        <td class="fw-semibold text-dark">${r.itemName}</td>
+                        <td class="font-monospace text-muted">${r.bin}</td>
+                        <td class="text-end font-monospace">${Number(r.qtyTotal).toLocaleString('id-ID')}</td>
+                        <td class="text-center text-muted">${r.frequencyCount}</td>
+                        <td class="text-end font-monospace">${formatRupiah(r.unitPriceAvg)}</td>
+                        <td class="text-end font-monospace fw-bold text-primary">${formatRupiah(r.totalCost)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                document.getElementById('lineDrilldownSpinner').innerHTML = `<div class="text-danger small py-2"><i class="bi bi-exclamation-circle me-1"></i>Error: ${err.message}</div>`;
+            }
+        }
+
+        // 2. Machine Drilldown AJAX Modal
+        async function openMachineDrilldownModal(machineId) {
+            const modal = new bootstrap.Modal(document.getElementById('machineDrilldownModal'));
+            
+            document.getElementById('machineDrilldownSpinner').style.display = 'block';
+            document.getElementById('machineDrilldownTableWrapper').style.display = 'none';
+            modal.show();
+
+            const startDate = '@Model.StartDate';
+            const endDate = '@Model.EndDate';
+
+            try {
+                const res = await fetch(`/CostIntelligence/GetMachineDrilldownJson?machineId=${machineId}&startDate=${startDate}&endDate=${endDate}`);
+                const data = await res.json();
+
+                document.getElementById('machineDrilldownTitle').innerText = `${data.machineCode} — ${data.machineName} (${data.line})`;
+                document.getElementById('machineDrilldownSpinner').style.display = 'none';
+                document.getElementById('machineDrilldownTableWrapper').style.display = 'block';
+                
+                const tbody = document.getElementById('machineDrilldownTbody');
+                tbody.innerHTML = '';
+
+                if (!data.items || data.items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No sparepart consumption recorded for this machine.</td></tr>';
+                    return;
+                }
+
+                data.items.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-center text-muted small">${idx + 1}</td>
+                        <td class="fw-bold text-primary font-monospace">${r.masterDataId}</td>
+                        <td class="fw-semibold text-dark">${r.itemName}</td>
+                        <td class="font-monospace text-muted">${r.bin}</td>
+                        <td><span class="badge bg-light text-dark border">${r.maintenanceType}</span></td>
+                        <td class="text-end font-monospace">${Number(r.qtyTotal).toLocaleString('id-ID')}</td>
+                        <td class="text-center text-muted">${r.frequencyCount}</td>
+                        <td class="text-end font-monospace fw-bold text-primary">${formatRupiah(r.totalCost)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                document.getElementById('machineDrilldownSpinner').innerHTML = `<div class="text-danger small py-2"><i class="bi bi-exclamation-circle me-1"></i>Error: ${err.message}</div>`;
+            }
+        }
+    </script>
+}

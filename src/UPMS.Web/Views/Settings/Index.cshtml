@@ -1,0 +1,554 @@
+@model IEnumerable<UPMS.Web.Models.Entities.User>
+
+@{
+    ViewData["Title"] = "Settings & User Management";
+}
+
+<!-- Title Header & Actions -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Settings &amp; User Management</h3>
+        <p class="text-muted small mb-0">Pengelolaan pengguna sistem, peranan (role), hak akses menu, dan syarat approval transaksi.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-ems-primary btn-sm" onclick="openAddUserModal()">
+            <i class="bi bi-person-plus me-1"></i>Tambah User Baru
+        </button>
+    </div>
+</div>
+
+<!-- 1. User List Card -->
+<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
+    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
+        <i class="bi bi-people-fill me-2"></i>Daftar Pengguna Sistem (@Model.Count() User)
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table-ems mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>USERNAME</th>
+                        <th>NAMA LENGKAP</th>
+                        <th>ROLE</th>
+                        <th class="text-center">STATUS</th>
+                        <th>LAST LOGIN</th>
+                        <th class="text-center" style="width: 140px;">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var u in Model)
+                        {
+                            bool isRootAdmin = string.Equals(u.Username, "admin", StringComparison.OrdinalIgnoreCase);
+                            string roleBadgeClass = u.Role?.ToLower() switch
+                            {
+                                "admin" => "bg-primary text-white",
+                                "supervisor" => "bg-purple text-white",
+                                "manager" => "bg-info text-dark",
+                                "technician" => "bg-teal text-white",
+                                _ => "bg-secondary text-white"
+                            };
+
+                            <tr class="table-row-hover">
+                                <td class="text-secondary small font-monospace">@u.Id</td>
+                                <td class="fw-bold text-primary font-monospace">
+                                    @u.Username
+                                    @if (isRootAdmin)
+                                    {
+                                        <span class="badge bg-warning text-dark border ms-1" style="font-size: 9px;">ROOT</span>
+                                    }
+                                </td>
+                                <td class="fw-semibold text-dark">@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
+                                <td>
+                                    <span class="badge @roleBadgeClass px-2 py-1" style="font-size: 10px; text-transform: uppercase;">
+                                        @u.Role
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 10px;">
+                                            <i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 10px;">
+                                            <i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td class="small text-muted font-monospace">
+                                    @(u.LastLogin.HasValue ? u.LastLogin.Value.ToString("dd MMM yyyy HH:mm") : "Never")
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-edit-user"
+                                                style="font-size:11px; height:24px; line-height:22px;"
+                                                data-user='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(u))'
+                                                onclick="handleEditUserClick(this)"
+                                                title="Edit User & Permissions">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </button>
+
+                                        @if (!isRootAdmin)
+                                        {
+                                            <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.Id" />
+                                                <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-outline-warning" : "btn-outline-success") py-0 px-2" style="font-size:11px; height:24px; line-height:22px;"
+                                                        title="@(u.IsActive ? "Deactivate User" : "Activate User")">
+                                                    <i class="bi @(u.IsActive ? "bi-person-x" : "bi-person-check")"></i>
+                                                </button>
+                                            </form>
+
+                                            <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'user @u.Username');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:11px; height:24px; line-height:22px;" title="Delete User">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                Belum ada data pengguna tersimpan.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Matriks Standar Hak Akses Peranan (Role) Card (Placed Directly Below User List) -->
+<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
+    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
+        <i class="bi bi-grid-3x3-gap me-2"></i>Matriks Standar Hak Akses Peranan (Role)
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table-ems mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>ROLE</th>
+                        <th class="text-center">MASTER DATA</th>
+                        <th class="text-center">BARANG MASUK/KELUAR</th>
+                        <th class="text-center">COST INTEL</th>
+                        <th class="text-center">SUPPLIER</th>
+                        <th class="text-center">SETTINGS</th>
+                        <th class="text-center">APPROVAL KELUAR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-dark font-monospace">ADMIN</td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
+                    </tr>
+                    <tr>
+                        <td class="text-dark font-monospace">SUPERVISOR</td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
+                    </tr>
+                    <tr>
+                        <td class="text-dark font-monospace">MANAGER</td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
+                    </tr>
+                    <tr>
+                        <td class="text-dark font-monospace">TECHNICIAN</td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-lock text-secondary me-2"></i><span class="text-dark">Wajib Approval</span></div></td>
+                    </tr>
+                    <tr>
+                        <td class="text-dark font-monospace">USER</td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
+                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-lock text-secondary me-2"></i><span class="text-dark">Wajib Approval</span></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Password Proteksi Hapus Data Card -->
+<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
+    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
+        <i class="bi bi-shield-lock-fill me-2 text-danger"></i>Pengaturan Password Proteksi Hapus Data
+    </div>
+    <div class="card-body p-3">
+        <form asp-action="SaveDeletePassword" method="post" style="max-width: 720px;">
+            @Html.AntiForgeryToken()
+            <div class="mb-2">
+                <label class="form-label small fw-bold text-secondary mb-1">Password Otorisasi Hapus (Delete Action Security Password)</label>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm" style="max-width: 480px;">
+                        <span class="input-group-text bg-light"><i class="bi bi-key-fill text-danger"></i></span>
+                        <input type="password" name="deletePassword" id="deleteProtectionPasswordInput" class="form-control"
+                               value="@ViewBag.DeleteProtectionPassword" placeholder="Masukkan password proteksi hapus..." required />
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleDeletePasswordVisibility()" title="Tampilkan/Sembunyikan Password">
+                            <i class="bi bi-eye" id="deletePasswordEyeIcon"></i>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap" style="height: 31px; line-height: 1.5;">
+                        <i class="bi bi-shield-check me-1"></i>Simpan Password
+                    </button>
+                </div>
+                <div class="form-text text-muted mt-1" style="font-size:11px;">
+                    Password ini wajib dimasukkan oleh pengguna non-admin ketika melakukan tindakan <b>Hapus (Delete)</b> data.
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add / Edit User Form -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;" id="userModalTitle"><i class="bi bi-person-gear me-2"></i>Tambah User Baru</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="userForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="userIdInput" value="0" />
+
+                <div class="modal-body p-3 bg-light" style="max-height: 75vh; overflow-y: auto;">
+                    <!-- User Info Section -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="fw-bold small text-primary mb-2 border-bottom pb-1">
+                            <i class="bi bi-person-badge me-1"></i>Informasi Pengguna
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Username (Login)</label>
+                                <input type="text" name="Username" id="usernameInput" class="form-control form-control-sm" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Nama Lengkap</label>
+                                <input type="text" name="FullName" id="fullNameInput" class="form-control form-control-sm" />
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Password</label>
+                                <input type="password" name="rawPassword" id="passwordInput" class="form-control form-control-sm" placeholder="Password" />
+                                <span class="form-text text-muted" id="passwordHelp" style="font-size:11px; display:none;">Biarkan kosong jika tidak merubah password.</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Peranan (Role)</label>
+                                <select name="Role" id="roleSelect" class="form-select form-select-sm" onchange="onRoleSelectChange(this.value, true)">
+                                    <option value="admin">Admin</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="technician">Technician</option>
+                                    <option value="user" selected>User</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Mutlak Banner -->
+                    <div id="adminLockBanner" class="alert alert-primary py-2 px-3 mb-3 border-primary shadow-sm" style="border-radius:0; display:none;">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-check fs-5"></i>
+                            <div>
+                                <strong class="small d-block">Hak Akses Admin Mutlak (Full Access)</strong>
+                                <span class="small opacity-75" style="font-size:11px;">Pengguna dengan role <b>Admin</b> otomatis memiliki seluruh hak akses modul sistem.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Permissions Grid -->
+                    <div class="bg-white p-3 border">
+                        <div class="fw-bold small text-primary mb-2 border-bottom pb-1 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-key me-1"></i>Hak Akses Menu &amp; Approval</span>
+                            <span class="text-muted fw-normal" style="font-size:11px;">Checklist menu yang dapat diakses</span>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Group 1: Master Data -->
+                            <div class="col-md-6">
+                                <div class="p-2 border bg-light h-100">
+                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-boxes me-1"></i>Master Data</div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanMasterData" value="1" id="cbMaster">
+                                        <label class="form-check-label small" for="cbMaster">Spareparts Catalog</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Group 2: Transactions -->
+                            <div class="col-md-6">
+                                <div class="p-2 border bg-light h-100">
+                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-arrow-left-right me-1"></i>Transactions</div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanBarangMasuk" value="1" id="cbMasuk">
+                                        <label class="form-check-label small" for="cbMasuk">Barang Masuk</label>
+                                    </div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanBarangKeluar" value="1" id="cbKeluar">
+                                        <label class="form-check-label small" for="cbKeluar">Barang Keluar</label>
+                                    </div>
+                                    <div class="form-check form-check-sm mb-2">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanRiwayat" value="1" id="cbRiwayat">
+                                        <label class="form-check-label small" for="cbRiwayat">Transaction Logs</label>
+                                    </div>
+                                    <div class="border-top pt-2">
+                                        <div class="form-check form-check-sm">
+                                            <input class="form-check-input perm-cb text-warning" type="checkbox" name="RequireApprovalKeluar" value="true" id="cbReqApproval">
+                                            <label class="form-check-label small fw-bold text-warning-emphasis" for="cbReqApproval">Barang Keluar Wajib Approval Admin</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Group 3: Analytics & Mapping -->
+                            <div class="col-md-6">
+                                <div class="p-2 border bg-light h-100">
+                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-graph-up-arrow me-1"></i>Analytics &amp; Mapping</div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanCostIntelligence" value="1" id="cbCostIntel">
+                                        <label class="form-check-label small" for="cbCostIntel">Cost Intelligence</label>
+                                    </div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanMasterMachine" value="1" id="cbMasterMach">
+                                        <label class="form-check-label small" for="cbMasterMach">Master Machine</label>
+                                    </div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanLineMapping" value="1" id="cbLineMap">
+                                        <label class="form-check-label small" for="cbLineMap">Line Compatibility</label>
+                                    </div>
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanSupplierData" value="1" id="cbSupplier">
+                                        <label class="form-check-label small" for="cbSupplier">Master Supplier</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Group 4: Administration -->
+                            <div class="col-md-6">
+                                <div class="p-2 border bg-light h-100">
+                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-shield-lock me-1"></i>Administration</div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanAdminMgmt" value="1" id="cbAdmin">
+                                        <label class="form-check-label small" for="cbAdmin">Admin Portal</label>
+                                    </div>
+                                    <div class="form-check form-check-sm mb-1">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanSettings" value="1" id="cbSettings">
+                                        <label class="form-check-label small" for="cbSettings">Settings &amp; Users</label>
+                                    </div>
+                                    <div class="form-check form-check-sm">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanEmailSettings" value="1" id="cbEmailSettings">
+                                        <label class="form-check-label small" for="cbEmailSettings">Email Settings</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-3">
+                        <i class="bi bi-save me-1"></i>Simpan User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleDeletePasswordVisibility() {
+            const input = document.getElementById('deleteProtectionPasswordInput');
+            const icon = document.getElementById('deletePasswordEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        function openAddUserModal() {
+            document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-person-plus me-2"></i>Tambah User Baru';
+            document.getElementById('userForm').action = '/Settings/CreateUser';
+            document.getElementById('userIdInput').value = 0;
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('usernameInput').readOnly = false;
+            document.getElementById('fullNameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').required = true;
+            document.getElementById('passwordHelp').style.display = 'none';
+
+            document.getElementById('roleSelect').value = 'user';
+            document.getElementById('roleSelect').disabled = false;
+            onRoleSelectChange('user');
+
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        function handleEditUserClick(btn) {
+            try {
+                const userData = JSON.parse(btn.getAttribute('data-user'));
+                openEditUserModal(userData);
+            } catch (e) {
+                console.error("Error parsing user JSON data:", e);
+            }
+        }
+
+        function setCbChecked(id, isChecked) {
+            const el = document.getElementById(id);
+            if (el) el.checked = !!isChecked;
+        }
+
+        function getPropVal(obj, pascal, camel) {
+            if (!obj) return 0;
+            if (obj[pascal] !== undefined && obj[pascal] !== null) return obj[pascal];
+            if (obj[camel] !== undefined && obj[camel] !== null) return obj[camel];
+            return 0;
+        }
+
+        function openEditUserModal(user) {
+            if (!user) return;
+            const username = user.Username || user.username || '';
+            document.getElementById('userModalTitle').innerHTML = `<i class="bi bi-person-gear me-2"></i>Edit User — ${username}`;
+            document.getElementById('userForm').action = '/Settings/EditUser';
+            document.getElementById('userIdInput').value = getPropVal(user, 'Id', 'id');
+
+            const isRootAdmin = username.toLowerCase() === 'admin';
+
+            const usernameInput = document.getElementById('usernameInput');
+            usernameInput.value = username;
+            usernameInput.readOnly = isRootAdmin;
+
+            document.getElementById('fullNameInput').value = user.FullName || user.fullName || '';
+
+            const passwordInput = document.getElementById('passwordInput');
+            passwordInput.value = '';
+            passwordInput.required = false;
+            document.getElementById('passwordHelp').style.display = 'block';
+
+            const role = (user.Role || user.role || 'user').toLowerCase();
+            const roleSelect = document.getElementById('roleSelect');
+            roleSelect.value = role;
+            roleSelect.disabled = isRootAdmin;
+
+            if (role === 'admin' || isRootAdmin) {
+                onRoleSelectChange('admin');
+            } else {
+                document.getElementById('adminLockBanner').style.display = 'none';
+                document.querySelectorAll('.perm-cb').forEach(cb => cb.disabled = false);
+
+                // Set explicit user permission values safely from database
+                setCbChecked('cbMaster', getPropVal(user, 'CanMasterData', 'canMasterData') === 1);
+                setCbChecked('cbLineMap', getPropVal(user, 'CanLineMapping', 'canLineMapping') === 1);
+                setCbChecked('cbSupplier', getPropVal(user, 'CanSupplierData', 'canSupplierData') === 1);
+                setCbChecked('cbAdmin', getPropVal(user, 'CanAdminMgmt', 'canAdminMgmt') === 1);
+                setCbChecked('cbMasuk', getPropVal(user, 'CanBarangMasuk', 'canBarangMasuk') === 1);
+                setCbChecked('cbKeluar', getPropVal(user, 'CanBarangKeluar', 'canBarangKeluar') === 1);
+                setCbChecked('cbRiwayat', getPropVal(user, 'CanRiwayat', 'canRiwayat') === 1);
+
+                const reqApp = getPropVal(user, 'RequireApprovalKeluar', 'requireApprovalKeluar');
+                setCbChecked('cbReqApproval', reqApp === true || reqApp === 1);
+
+                setCbChecked('cbMasterMach', getPropVal(user, 'CanMasterMachine', 'canMasterMachine') === 1);
+                setCbChecked('cbCostIntel', getPropVal(user, 'CanCostIntelligence', 'canCostIntelligence') === 1);
+                setCbChecked('cbSettings', getPropVal(user, 'CanSettings', 'canSettings') === 1);
+                setCbChecked('cbEmailSettings', getPropVal(user, 'CanEmailSettings', 'canEmailSettings') === 1);
+            }
+
+            const modalElement = document.getElementById('userModal');
+            let modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (!modalInstance) {
+                modalInstance = new bootstrap.Modal(modalElement);
+            }
+            modalInstance.show();
+        }
+
+        function onRoleSelectChange(role, isManualChange = false) {
+            const isAdmin = (role === 'admin');
+            const banner = document.getElementById('adminLockBanner');
+            const cbs = document.querySelectorAll('.perm-cb');
+
+            if (isAdmin) {
+                banner.style.display = 'block';
+                cbs.forEach(cb => {
+                    if (cb.id === 'cbReqApproval') {
+                        cb.checked = false;
+                    } else {
+                        cb.checked = true;
+                    }
+                    cb.disabled = true;
+                });
+            } else {
+                banner.style.display = 'none';
+                cbs.forEach(cb => cb.disabled = false);
+
+                // Role Presets only apply if the user explicitly changes the role dropdown manually
+                if (isManualChange) {
+                    if (role === 'supervisor') {
+                        setCbValues(true, true, true, false, true, true, true, false, true, true, false, false);
+                    } else if (role === 'manager') {
+                        setCbValues(true, false, true, false, false, false, true, false, true, true, false, false);
+                    } else if (role === 'technician') {
+                        setCbValues(true, true, false, false, true, true, true, true, true, false, false, false);
+                    } else { // user
+                        setCbValues(true, false, false, false, true, true, true, true, false, false, false, false);
+                    }
+                }
+            }
+        }
+
+        function setCbValues(master, lineMap, supplier, admin, masuk, keluar, riwayat, reqApproval, masterMach, costIntel, set, emailSet) {
+            setCbChecked('cbMaster', master);
+            setCbChecked('cbLineMap', lineMap);
+            setCbChecked('cbSupplier', supplier);
+            setCbChecked('cbAdmin', admin);
+            setCbChecked('cbMasuk', masuk);
+            setCbChecked('cbKeluar', keluar);
+            setCbChecked('cbRiwayat', riwayat);
+            setCbChecked('cbReqApproval', reqApproval);
+            setCbChecked('cbMasterMach', masterMach);
+            setCbChecked('cbCostIntel', costIntel);
+            setCbChecked('cbSettings', set);
+            setCbChecked('cbEmailSettings', emailSet);
+        }
+    </script>
+}

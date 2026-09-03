@@ -1,0 +1,1116 @@
+@model UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.MasterData>
+
+@{
+    ViewData["Title"] = "Spareparts Catalog";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    var lines = ViewBag.Lines as List<string> ?? new List<string>();
+    var upAreas = ViewBag.UpAreas as List<string> ?? new List<string>();
+    var kpis = ViewBag.Kpis as UPMS.Web.Services.MasterDataKpiSummary ?? new UPMS.Web.Services.MasterDataKpiSummary();
+    int pageNum = Model?.PageNumber ?? 1;
+    int pageSize = Model?.PageSize ?? 50;
+    int startRowNo = (pageNum - 1) * pageSize + 1;
+}
+
+<style>
+    /* Smooth EMS table transitions and consistent Arial styling */
+    .table-ems tbody tr {
+        transition: background-color 0.12s ease-in-out;
+    }
+    .table-ems tbody tr:hover {
+        background-color: #EFF6FF !important;
+    }
+    .ems-kpi-card {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ems-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(15, 76, 129, 0.08);
+    }
+    .part-id-link {
+        color: #0F4C81;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .part-id-link:hover {
+        text-decoration: underline;
+        color: #0353E9;
+    }
+    .part-img-thumb {
+        width: 46px;
+        height: 46px;
+        object-fit: cover;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .part-img-thumb:hover {
+        transform: scale(2.2);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+        position: relative;
+        z-index: 99;
+    }
+    .detail-img-large {
+        max-height: 220px;
+        height: 200px;
+        max-width: 100%;
+        object-fit: contain;
+        cursor: zoom-in;
+        transition: transform 0.15s ease;
+    }
+    .detail-img-large:hover {
+        transform: scale(1.04);
+    }
+</style>
+
+<!-- Title Header -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Spareparts Catalog</h3>
+        <p class="text-muted small mb-0">Manage and track all sparepart inventory catalog items across UP1 and UP2.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="#" onclick="return executeSecureExport('/MasterData/ExportExcel?search=@ViewBag.Search&upArea=@ViewBag.UpArea&category=@ViewBag.Category&frequency=@ViewBag.Frequency&line=@ViewBag.Line&stockStatus=@ViewBag.StockStatus', 'Spareparts Catalog');" class="btn btn-ems-outline btn-sm">
+            <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
+        </a>
+        <button type="button" class="btn btn-ems-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-lg me-1"></i>Add Sparepart
+        </button>
+    </div>
+</div>
+
+@{
+    var currentStatus = ViewBag.StockStatus as string ?? "";
+}
+
+<!-- Header KPI Cards (EMS Theme) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="ems-kpi-card ems-kpi-danger @(currentStatus == "below" ? "border border-2 border-danger shadow-sm bg-white" : "")" onclick="filterByStockStatus('below')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Below Safety Stock">
+            <div class="ems-kpi-title text-danger d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle me-1"></i> BELOW SAFETY STOCK</span>
+                @if (currentStatus == "below")
+                {
+                    <span class="badge bg-danger text-white style-active-badge" style="font-size: 10px;">Filtered</span>
+                }
+            </div>
+            <div class="ems-kpi-value text-danger">
+                @kpis.BelowSafetyStock.ToString("N0")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="ems-kpi-card ems-kpi-warning @(currentStatus == "near" ? "border border-2 border-warning shadow-sm bg-white" : "")" onclick="filterByStockStatus('near')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Near Safety Stock">
+            <div class="ems-kpi-title text-warning d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-circle me-1"></i> NEAR SAFETY STOCK</span>
+                @if (currentStatus == "near")
+                {
+                    <span class="badge bg-warning text-dark style-active-badge" style="font-size: 10px;">Filtered</span>
+                }
+            </div>
+            <div class="ems-kpi-value text-warning">
+                @kpis.NearSafetyStock.ToString("N0")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="ems-kpi-card ems-kpi-success @(currentStatus == "normal" ? "border border-2 border-success shadow-sm bg-white" : "")" onclick="filterByStockStatus('normal')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Normal Stock">
+            <div class="ems-kpi-title text-success d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-check-circle me-1"></i> NORMAL STOCK</span>
+                @if (currentStatus == "normal")
+                {
+                    <span class="badge bg-success text-white style-active-badge" style="font-size: 10px;">Filtered</span>
+                }
+            </div>
+            <div class="ems-kpi-value text-success">
+                @kpis.NormalStock.ToString("N0")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="ems-kpi-card ems-kpi-blue @(string.IsNullOrEmpty(currentStatus) ? "border border-2 border-primary shadow-sm bg-white" : "")" onclick="filterByStockStatus('')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan Semua Sparepart">
+            <div class="ems-kpi-title text-primary d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-boxes me-1"></i> TOTAL SPAREPARTS</span>
+                @if (string.IsNullOrEmpty(currentStatus))
+                {
+                    <span class="badge bg-primary text-white style-active-badge" style="font-size: 10px;">All Items</span>
+                }
+            </div>
+            <div class="ems-kpi-value text-primary">
+                @kpis.TotalSpareparts.ToString("N0")
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="ems-filter-card mb-4">
+    <div class="ems-filter-header">
+        <span><i class="bi bi-funnel me-1 text-primary"></i>Filter &amp; Search Spareparts</span>
+        <span class="text-muted fw-normal small">@Model?.TotalCount.ToString("N0") item(s) found</span>
+    </div>
+    <div class="p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
+            <input type="hidden" name="stockStatus" id="stockStatusInput" value="@ViewBag.StockStatus" />
+            <div class="col-xl-3 col-lg-3 col-md-6">
+                <label class="form-label small fw-bold text-secondary mb-1">Search Query</label>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Part #, Item, BIN, Machine..." />
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <label class="form-label small fw-bold text-secondary mb-1">UP Area</label>
+                <select name="upArea" class="form-select form-select-sm">
+                    <option value="">[All Areas]</option>
+                    @foreach (var area in upAreas)
+                    {
+                        <option value="@area" selected="@(ViewBag.UpArea == area ? "selected" : null)">@area</option>
+                    }
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <label class="form-label small fw-bold text-secondary mb-1">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">[All Categories]</option>
+                    @foreach (var cat in categories)
+                    {
+                        <option value="@cat" selected="@(ViewBag.Category == cat ? "selected" : null)">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <label class="form-label small fw-bold text-secondary mb-1">Frequency</label>
+                <select name="frequency" class="form-select form-select-sm">
+                    <option value="">[All Frequency]</option>
+                    <option value="FAST" selected="@(ViewBag.Frequency == "FAST" ? "selected" : null)">FAST</option>
+                    <option value="SLOW" selected="@(ViewBag.Frequency == "SLOW" ? "selected" : null)">SLOW</option>
+                </select>
+            </div>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <label class="form-label small fw-bold text-secondary mb-1">Production Line</label>
+                <select name="line" class="form-select form-select-sm">
+                    <option value="">[All Lines]</option>
+                    @foreach (var l in lines)
+                    {
+                        <option value="@l" selected="@(ViewBag.Line == l ? "selected" : null)">@l</option>
+                    }
+                </select>
+            </div>
+            <div class="col-xl-1 col-lg-1 col-md-12 d-flex gap-1" style="min-width: 140px;">
+                <button type="submit" class="btn btn-ems-primary btn-sm text-nowrap px-3"><i class="bi bi-funnel"></i> Apply</button>
+                <a href="/MasterData" class="btn btn-ems-outline btn-sm text-nowrap" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Master Data Table -->
+<div class="ems-filter-card p-0 mb-4" id="spareparts-table-card" style="transition: opacity 0.15s ease-in-out;">
+    <div class="table-responsive">
+        <table class="table-ems mb-0">
+            <thead>
+                <tr>
+                    <th class="text-nowrap text-center" style="width: 35px;">NO</th>
+                    <th class="text-center text-nowrap" style="width: 40px;">IMG</th>
+                    <th class="text-nowrap">UP AREA</th>
+                    <th class="text-nowrap">BIN</th>
+                    <th class="text-nowrap">PART NUMBER</th>
+                    <th class="text-nowrap">LINE</th>
+                    <th class="text-nowrap">CATEGORY</th>
+                    <th class="text-nowrap">FREQ</th>
+                    <th class="text-nowrap">MACHINE</th>
+                    <th>ITEM</th>
+                    <th>DETAIL</th>
+                    <th class="text-nowrap">BRAND</th>
+                    <th class="text-end text-nowrap">NEED/YR</th>
+                    <th class="text-end text-nowrap" title="Time Between Maintenance (Months)">TBM/MO</th>
+                    <th class="text-end text-nowrap" title="Lead Time (Months)">LT/MO</th>
+                    <th class="text-end text-nowrap">SAFE</th>
+                    <th class="text-end text-nowrap">STOCK</th>
+                    <th class="text-end text-nowrap">PRICE</th>
+                    <th class="text-nowrap">BUDGET CODE</th>
+                    <th class="text-center text-nowrap" title="Alert Notification">ALERT</th>
+                    <th class="text-center text-nowrap">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Items.Any())
+                {
+                    int rowNo = startRowNo;
+                    foreach (var item in Model.Items)
+                    {
+                        int curr = item.CurrentStock ?? 0;
+                        int safe = item.SafetyStock ?? 0;
+
+                        string stkTextClass = "text-dark";
+                        if (safe > 0 && curr < safe) { stkTextClass = "text-danger"; }
+                        else if (safe > 0 && curr == safe) { stkTextClass = "text-warning"; }
+                        else { stkTextClass = "text-dark"; }
+
+                        <tr>
+                            <td class="col-mono text-muted text-center text-nowrap">@rowNo</td>
+                            <td class="text-center align-middle text-nowrap">
+                                @if (!string.IsNullOrEmpty(item.Image))
+                                {
+                                    <img src="@item.Image" alt="Img" class="part-img-thumb" onclick="openImagePreviewModal('@item.Image')" title="Click for Full Screen Preview" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-image text-muted" style="opacity:0.3; font-size:14px;"></i>
+                                }
+                            </td>
+                            <td class="text-nowrap"><span class="badge bg-light text-dark border">@(item.UpArea ?? "-")</span></td>
+                            <td class="text-nowrap"><span class="badge bg-light text-dark border">@(item.Bin ?? "-")</span></td>
+                            <td class="text-nowrap">
+                                <a href="javascript:void(0)" class="part-id-link" onclick="openDetailModal('@item.Id')">@item.Id</a>
+                            </td>
+                            <td class="text-nowrap"><span class="badge bg-light text-primary border">@(item.Line ?? "-")</span></td>
+                            <td class="text-nowrap"><span class="small text-secondary">@(item.Category ?? "-")</span></td>
+                            <td class="text-nowrap">
+                                <span class="badge @(item.Frequency == "FAST" ? "badge-ems-success" : "badge-ems-warning")">@(item.Frequency ?? "SLOW")</span>
+                            </td>
+                            <td class="text-nowrap"><span class="small text-muted">@(item.Machine ?? "-")</span></td>
+                            <td class="fw-normal text-dark" style="min-width: 180px;">@item.Item</td>
+                            <td style="min-width: 140px;"><span class="small text-muted text-truncate d-inline-block" style="max-width: 160px;" title="@item.Detail">@(item.Detail ?? "-")</span></td>
+                            <td class="text-nowrap"><span class="small text-secondary">@(item.Brand ?? "-")</span></td>
+                            <td class="text-end text-muted text-nowrap">@(item.QtyNeedYear.HasValue ? item.QtyNeedYear.Value.ToString("0.##") : "-")</td>
+                            <td class="text-end text-muted text-nowrap">@(item.TbmPerMonth.HasValue ? item.TbmPerMonth.Value.ToString("0.##") : "-")</td>
+                            <td class="text-end text-muted text-nowrap">@(item.LtPerMonth.HasValue ? item.LtPerMonth.Value.ToString("0.##") : "-")</td>
+                            <td class="text-end text-muted text-nowrap">@safe</td>
+                            <td class="text-end text-nowrap">
+                                <span class="fs-6 @stkTextClass">@curr</span>
+                            </td>
+                            <td class="text-end fw-normal text-nowrap">
+                                @if (item.CurrentUnitPrice.HasValue && item.CurrentUnitPrice.Value > 0)
+                                {
+                                    <span>Rp @(item.CurrentUnitPrice.Value.ToString("N0"))</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-nowrap"><span class="small fw-normal text-success">@(item.BudgetCode ?? "-")</span></td>
+                            <td class="text-center align-middle text-nowrap">
+                                <button type="button" class="btn btn-link p-0 text-decoration-none" onclick="toggleAlertSelected('@item.Id', this)" title="@(item.AlertSelected ? "Auto Email Alert Active (Click to disable)" : "Auto Email Alert Disabled (Click to enable)")">
+                                    @if (item.AlertSelected)
+                                    {
+                                        <i class="bi bi-bell-fill text-warning fs-6"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-bell text-muted opacity-25 fs-6"></i>
+                                    }
+                                </button>
+                            </td>
+                            <td class="text-center align-middle text-nowrap">
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <!-- View Detail Icon -->
+                                    <button type="button" class="btn-ems-icon-action text-info" onclick="openDetailModal('@item.Id')" title="View Detail">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <!-- Edit Icon -->
+                                    <button type="button" class="btn-ems-icon-action text-primary" onclick="openEditModal('@item.Id')" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <!-- Delete Icon -->
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'sparepart @item.Item');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="search" value="@ViewBag.Search" />
+                                        <input type="hidden" name="upAreaFilter" value="@ViewBag.UpArea" />
+                                        <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
+                                        <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
+                                        <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                                        <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
+                                        <button type="submit" class="btn-ems-icon-action text-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        rowNo++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="21" class="text-center text-muted py-5">
+                            <i class="bi bi-boxes d-block fs-3 mb-2 opacity-25"></i>
+                            No master data items match your search criteria.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="p-3 border-top d-flex align-items-center justify-content-between bg-light">
+        <span class="small text-muted">Showing page @(Model?.PageNumber ?? 1) of @(Model?.TotalPages ?? 1) (@(Model?.TotalCount ?? 0) items total)</span>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model == null || Model.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) - 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line">Previous</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">@(Model?.PageNumber ?? 1)</span></li>
+                <li class="page-item @(Model == null || Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) + 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- DYNAMIC REUSABLE MODALS -->
+<!-- ========================================================================= -->
+
+<!-- 1. Add Sparepart Modal -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="search" value="@ViewBag.Search" />
+                <input type="hidden" name="upAreaFilter" value="@ViewBag.UpArea" />
+                <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
+                <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
+                <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
+                <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                    <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-plus-circle me-2"></i>Add New Sparepart</h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID)</label>
+                            <input type="text" name="Id" class="form-control form-control-sm" placeholder="Auto-generated UPF-XXXXX if blank" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Item Name <span class="text-danger">*</span></label>
+                            <input type="text" name="Item" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">BIN Location</label>
+                            <input type="text" name="Bin" class="form-control form-control-sm" placeholder="e.g. BIN-A1" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-secondary mb-1 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-building me-1"></i>Production Line (Pilih &amp; Klik) <span class="text-muted fw-normal font-monospace" id="addLinePreviewText">(Belum dipilih)</span></span>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small text-primary" onclick="clearAllAddLines()">Clear Selection</button>
+                            </label>
+                            <input type="hidden" name="Line" id="addLineInput" value="" />
+                            <div class="p-2 border rounded d-flex flex-wrap gap-1" id="addLinePillContainer" style="max-height: 120px; overflow-y: auto; background: #F8FAFC !important;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Category</label>
+                            <input type="text" name="Category" class="form-control form-control-sm" placeholder="e.g. ELECTRICAL" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Machine</label>
+                            <input type="text" name="Machine" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-geo-alt me-1"></i>UP Area (Pilih &amp; Klik) <span class="text-muted fw-normal font-monospace" id="addUpAreaPreviewText">(UP1)</span></span>
+                            </label>
+                            <input type="hidden" name="UpArea" id="addUpAreaInput" value="UP1" />
+                            <div class="d-flex gap-2" id="addUpAreaPillContainer">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Current Stock</label>
+                            <input type="number" name="CurrentStock" class="form-control form-control-sm" value="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Safety Stock</label>
+                            <input type="number" name="SafetyStock" id="addSafetyStock" class="form-control form-control-sm" placeholder="e.g. 5" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">QTY Need / Year</label>
+                            <input type="number" step="0.1" name="QtyNeedYear" id="addQtyNeedYear" class="form-control form-control-sm" placeholder="e.g. 12" oninput="recalcAddSafetyStock()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">TBM / Month</label>
+                            <input type="number" step="0.1" name="TbmPerMonth" class="form-control form-control-sm" placeholder="e.g. 1.0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">LT / Month</label>
+                            <input type="number" step="0.1" name="LtPerMonth" id="addLtPerMonth" class="form-control form-control-sm" placeholder="e.g. 2.0" oninput="recalcAddSafetyStock()" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Frequency</label>
+                            <select name="Frequency" id="addFrequency" class="form-select form-select-sm" onchange="recalcAddSafetyStock()">
+                                <option value="FAST">FAST</option>
+                                <option value="SLOW">SLOW</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="alert alert-info border-0 p-2 mb-0 small" style="border-radius:0; background-color:#EFF6FF; color:#1E40AF; font-size:11px;">
+                                <div class="fw-bold mb-1" style="font-family: Arial, sans-serif;"><i class="bi bi-info-circle-fill me-1"></i>Info Perhitungan Safety Stock:</div>
+                                <div class="fst-italic mb-1">Safety Stock = Kebutuhan Selama Lead Time × Safety Factor</div>
+                                <ul class="mb-0 ps-3">
+                                    <li>Kebutuhan Selama Lead Time = (QTY Need/Yr ÷ 12) × LT/Month</li>
+                                    <li>Safety Factor = 100% jika FAST, 50% jika SLOW</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Brand</label>
+                            <input type="text" name="Brand" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Unit Price (IDR) <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Admin Portal Only</span></label>
+                            <input type="text" class="form-control form-control-sm text-muted" value="Managed in Admin Portal" disabled style="background:#F8FAFC;" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Budget Code</label>
+                            <input type="text" name="BudgetCode" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Sparepart Image</label>
+                            <input type="file" name="imageFile" class="form-control form-control-sm" accept="image/*" />
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center pt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="AlertSelected" value="true" id="addAlertSelected" />
+                                <label class="form-check-input-label small fw-bold text-secondary ms-1" for="addAlertSelected">Enable Stock Alert</label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-secondary mb-1">Detail Description</label>
+                            <textarea name="Detail" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-check-lg me-1"></i>Save Sparepart</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Dynamic View Detail Modal -->
+<div class="modal fade" id="dynamicDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;">
+                    <i class="bi bi-file-earmark-text me-2"></i>Sparepart Detail — <span id="detailModalIdHeader"></span>
+                </h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div id="detailModalSpinner" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="ms-2 small text-muted">Loading sparepart details...</span>
+                </div>
+                <div id="detailModalContent" style="display:none;">
+                    <div class="row mb-3 align-items-stretch">
+                        <div class="col-md-7">
+                            <div class="p-3 bg-light border h-100 d-flex flex-column justify-content-center">
+                                <div class="fw-bold fs-4 text-dark mb-2" id="detailItemName"></div>
+                                <div class="small text-muted">
+                                    Line: <strong id="detailLine" class="text-primary fs-6"></strong> &nbsp;|&nbsp;
+                                    BIN: <strong id="detailBin" class="text-dark fs-6"></strong>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    Machine: <strong id="detailMachine" class="text-dark"></strong> &nbsp;|&nbsp;
+                                    Brand: <strong id="detailBrand" class="text-dark"></strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <div id="detailImgWrapper" class="p-2 border bg-white h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 210px;">
+                                <img id="detailImage" src="" alt="Sparepart Image" class="detail-img-large" onclick="openImagePreviewModal(this.src)" title="Klik untuk perbesar gambar (Full Screen)" style="display: none;" />
+                                <span id="detailNoImg" class="text-muted small"><i class="bi bi-image d-block fs-1 opacity-25 mb-1"></i>No Image Attached</span>
+                                <small class="text-primary mt-1" id="detailImgZoomHint" style="display:none; font-size: 11px; cursor: pointer;" onclick="openImagePreviewModal(document.getElementById('detailImage').src)"><i class="bi bi-search me-1"></i>Klik gambar untuk perbesar</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 small">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr><th class="text-secondary" style="width:130px;">Part Number:</th><td class="fw-bold text-primary" id="detailId"></td></tr>
+                                <tr><th class="text-secondary">Production Line:</th><td class="fw-bold text-primary" id="detailLineField"></td></tr>
+                                <tr><th class="text-secondary">Category:</th><td id="detailCategory"></td></tr>
+                                <tr><th class="text-secondary">UP Area:</th><td id="detailUpArea"></td></tr>
+                                <tr><th class="text-secondary">Current Stock:</th><td class="fw-bold text-dark" id="detailCurrentStock"></td></tr>
+                                <tr><th class="text-secondary">Safety Stock:</th><td class="text-muted" id="detailSafetyStock"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr><th class="text-secondary" style="width:130px;">QTY Need / Year:</th><td class="fw-bold text-dark" id="detailQtyNeedYear"></td></tr>
+                                <tr><th class="text-secondary">TBM / Month:</th><td class="fw-bold text-dark" id="detailTbmPerMonth"></td></tr>
+                                <tr><th class="text-secondary">LT / Month:</th><td class="fw-bold text-dark" id="detailLtPerMonth"></td></tr>
+                                <tr><th class="text-secondary">Unit Price:</th><td class="fw-bold text-success" id="detailUnitPrice"></td></tr>
+                                <tr><th class="text-secondary">Budget Code:</th><td class="fw-bold text-success" id="detailBudgetCode"></td></tr>
+                                <tr><th class="text-secondary">Frequency:</th><td id="detailFrequency"></td></tr>
+                                <tr><th class="text-secondary">Alert Selected:</th><td id="detailAlertSelected"></td></tr>
+                                <tr><th class="text-secondary">Last Updated By:</th><td id="detailUpdatedBy"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="fw-bold text-secondary mb-1">Detail Description:</div>
+                            <div class="p-2 border bg-white" id="detailDescription" style="min-height:50px; font-size:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Dynamic Edit Sparepart Modal -->
+<div class="modal fade" id="dynamicEditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" id="editId" />
+                <input type="hidden" name="search" value="@ViewBag.Search" />
+                <input type="hidden" name="upAreaFilter" value="@ViewBag.UpArea" />
+                <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
+                <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
+                <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
+                <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                    <h6 class="modal-title fw-normal mb-0" style="font-size:13px;">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Sparepart — <span id="editModalIdHeader"></span>
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div id="editModalSpinner" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 small text-muted">Loading sparepart info...</span>
+                    </div>
+                    <div id="editModalFormBody" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID)</label>
+                                <input type="text" id="editIdDisplay" class="form-control form-control-sm" disabled style="background:#F8FAFC;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Item Name <span class="text-danger">*</span></label>
+                                <input type="text" name="Item" id="editItem" class="form-control form-control-sm" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">BIN Location</label>
+                                <input type="text" name="Bin" id="editBin" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-secondary mb-1 d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-building me-1"></i>Production Line (Pilih &amp; Klik) <span class="text-muted fw-normal font-monospace" id="editLinePreviewText">(Belum dipilih)</span></span>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small text-primary" onclick="clearAllEditLines()">Clear Selection</button>
+                                </label>
+                                <input type="hidden" name="Line" id="editLine" value="" />
+                                <div class="p-2 border rounded d-flex flex-wrap gap-1" id="editLinePillContainer" style="max-height: 120px; overflow-y: auto; background: #F8FAFC !important;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1">Category</label>
+                                <input type="text" name="Category" id="editCategory" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Machine</label>
+                                <input type="text" name="Machine" id="editMachine" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1 d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-geo-alt me-1"></i>UP Area (Pilih &amp; Klik) <span class="text-muted fw-normal font-monospace" id="editUpAreaPreviewText">(UP1)</span></span>
+                                </label>
+                                <input type="hidden" name="UpArea" id="editUpAreaInput" value="UP1" />
+                                <div class="d-flex gap-2" id="editUpAreaPillContainer">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Current Stock</label>
+                                <input type="number" name="CurrentStock" id="editCurrentStock" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Safety Stock</label>
+                                <input type="number" name="SafetyStock" id="editSafetyStock" class="form-control form-control-sm" placeholder="e.g. 5" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">QTY Need / Year</label>
+                                <input type="number" step="0.1" name="QtyNeedYear" id="editQtyNeedYear" class="form-control form-control-sm" oninput="recalcEditSafetyStock()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">TBM / Month</label>
+                                <input type="number" step="0.1" name="TbmPerMonth" id="editTbmPerMonth" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">LT / Month</label>
+                                <input type="number" step="0.1" name="LtPerMonth" id="editLtPerMonth" class="form-control form-control-sm" oninput="recalcEditSafetyStock()" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Frequency</label>
+                                <select name="Frequency" id="editFrequency" class="form-select form-select-sm" onchange="recalcEditSafetyStock()">
+                                    <option value="FAST">FAST</option>
+                                    <option value="SLOW">SLOW</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="alert alert-info border-0 p-2 mb-0 small" style="border-radius:0; background-color:#EFF6FF; color:#1E40AF; font-size:11px;">
+                                    <div class="fw-bold mb-1" style="font-family: Arial, sans-serif;"><i class="bi bi-info-circle-fill me-1"></i>Info Perhitungan Safety Stock:</div>
+                                    <div class="fst-italic mb-1">Safety Stock = Kebutuhan Selama Lead Time × Safety Factor</div>
+                                    <ul class="mb-0 ps-3">
+                                        <li>Kebutuhan Selama Lead Time = (QTY Need/Yr ÷ 12) × LT/Month</li>
+                                        <li>Safety Factor = 100% jika FAST, 50% jika SLOW</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Brand</label>
+                                <input type="text" name="Brand" id="editBrand" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Unit Price (IDR) <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Admin Portal Only</span></label>
+                                <input type="text" id="editUnitPriceDisplay" class="form-control form-control-sm text-muted" disabled style="background:#F8FAFC;" title="Unit price can only be updated in Admin Management Portal" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Budget Code</label>
+                                <input type="text" name="BudgetCode" id="editBudgetCode" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Change Image</label>
+                                <input type="file" name="imageFile" class="form-control form-control-sm" accept="image/*" />
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center pt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="AlertSelected" value="true" id="editAlertSelected" />
+                                    <label class="form-check-input-label small fw-bold text-secondary ms-1" for="editAlertSelected">Enable Stock Alert</label>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-secondary mb-1">Detail Description</label>
+                                <textarea name="Detail" id="editDetail" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-save me-1"></i>Update Sparepart</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Ultra-Large Image Preview Modal (For Technicians 40+) -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0; border: 2px solid #0F4C81;">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px; font-family: Arial, sans-serif;">
+                    <i class="bi bi-search me-2"></i>High-Resolution Sparepart Image Preview
+                </h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 text-center bg-dark">
+                <img id="previewModalImage" src="" alt="Full Resolution Sparepart Image" style="max-height: 78vh; max-width: 100%; object-fit: contain; box-shadow: 0 8px 24px rgba(0,0,0,0.5);" />
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light justify-content-between">
+                <span class="small text-muted"><i class="bi bi-info-circle me-1"></i>High-resolution image view for technical inspection.</span>
+                <button type="button" class="btn btn-ems-primary btn-sm" data-bs-dismiss="modal">Close Preview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // High-performance AJAX dynamic detail modal loader
+        async function openDetailModal(id) {
+            const modalElem = document.getElementById('dynamicDetailModal');
+            const bsModal = new bootstrap.Modal(modalElem);
+            
+            document.getElementById('detailModalIdHeader').innerText = id;
+            document.getElementById('detailModalSpinner').style.display = 'block';
+            document.getElementById('detailModalContent').style.display = 'none';
+            
+            bsModal.show();
+
+            try {
+                const response = await fetch(`/MasterData/DetailsJson?id=${encodeURIComponent(id)}`);
+                if (!response.ok) throw new Error('Item not found');
+                const item = await response.json();
+
+                document.getElementById('detailItemName').innerText = item.item || '-';
+                document.getElementById('detailBin').innerText = item.bin || '-';
+                document.getElementById('detailLine').innerText = item.line || '-';
+                document.getElementById('detailLineField').innerText = item.line || '-';
+                document.getElementById('detailMachine').innerText = item.machine || '-';
+                document.getElementById('detailBrand').innerText = item.brand || '-';
+                document.getElementById('detailId').innerText = item.id;
+                document.getElementById('detailCategory').innerText = item.category || '-';
+                document.getElementById('detailUpArea').innerText = item.upArea || '-';
+                document.getElementById('detailCurrentStock').innerText = (item.currentStock || 0) + ' pcs';
+                document.getElementById('detailSafetyStock').innerText = (item.safetyStock || 0) + ' pcs';
+                document.getElementById('detailQtyNeedYear').innerText = item.qtyNeedYear ? item.qtyNeedYear.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' pcs' : '-';
+                document.getElementById('detailTbmPerMonth').innerText = item.tbmPerMonth ? item.tbmPerMonth.toLocaleString('id-ID', { maximumFractionDigits: 2 }) : '-';
+                document.getElementById('detailLtPerMonth').innerText = item.ltPerMonth ? item.ltPerMonth.toLocaleString('id-ID', { maximumFractionDigits: 2 }) : '-';
+                document.getElementById('detailUnitPrice').innerText = 'Rp ' + (item.currentUnitPrice ? item.currentUnitPrice.toLocaleString('id-ID') : '0');
+                document.getElementById('detailBudgetCode').innerText = item.budgetCode || '-';
+                document.getElementById('detailFrequency').innerText = item.frequency || 'SLOW';
+                document.getElementById('detailAlertSelected').innerHTML = item.alertSelected 
+                    ? '<span class="badge badge-ems-warning"><i class="bi bi-bell-fill me-1"></i>Active</span>' 
+                    : '<span class="badge bg-light text-muted border">Disabled</span>';
+                document.getElementById('detailUpdatedBy').innerText = item.lastUpdatedBy || 'system';
+                document.getElementById('detailDescription').innerText = item.detail || 'N/A';
+
+                const imgElem = document.getElementById('detailImage');
+                const noImgElem = document.getElementById('detailNoImg');
+                const imgHintElem = document.getElementById('detailImgZoomHint');
+                if (item.image) {
+                    imgElem.src = item.image;
+                    imgElem.style.display = 'inline-block';
+                    noImgElem.style.display = 'none';
+                    if (imgHintElem) imgHintElem.style.display = 'block';
+                } else {
+                    imgElem.style.display = 'none';
+                    noImgElem.style.display = 'block';
+                    if (imgHintElem) imgHintElem.style.display = 'none';
+                }
+
+                document.getElementById('detailModalSpinner').style.display = 'none';
+                document.getElementById('detailModalContent').style.display = 'block';
+            } catch (err) {
+                document.getElementById('detailModalSpinner').innerHTML = `<div class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Failed to load details: ${err.message}</div>`;
+            }
+        }
+
+        // Ultra-Large Image Preview Modal for Technicians (40+ Age Friendly)
+        function openImagePreviewModal(src) {
+            if (!src) return;
+            document.getElementById('previewModalImage').src = src;
+            const modalElem = document.getElementById('imagePreviewModal');
+            const bsModal = new bootstrap.Modal(modalElem);
+            bsModal.show();
+        }
+
+        // High-performance AJAX dynamic edit modal loader
+        async function openEditModal(id) {
+            const modalElem = document.getElementById('dynamicEditModal');
+            const bsModal = new bootstrap.Modal(modalElem);
+
+            document.getElementById('editModalIdHeader').innerText = id;
+            document.getElementById('editModalSpinner').style.display = 'block';
+            document.getElementById('editModalFormBody').style.display = 'none';
+
+            bsModal.show();
+
+            try {
+                const response = await fetch(`/MasterData/DetailsJson?id=${encodeURIComponent(id)}`);
+                if (!response.ok) throw new Error('Item not found');
+                const item = await response.json();
+
+                document.getElementById('editId').value = item.id;
+                document.getElementById('editIdDisplay').value = item.id;
+                document.getElementById('editItem').value = item.item || '';
+                document.getElementById('editBin').value = item.bin || '';
+                document.getElementById('editLine').value = item.line || '';
+                renderLinePills('editLinePillContainer', 'editLine', 'editLinePreviewText', item.line || '');
+                document.getElementById('editCategory').value = item.category || '';
+                document.getElementById('editMachine').value = item.machine || '';
+                renderUpAreaPills('editUpAreaPillContainer', 'editUpAreaInput', 'editUpAreaPreviewText', item.upArea || 'UP1');
+                document.getElementById('editCurrentStock').value = item.currentStock || 0;
+                document.getElementById('editSafetyStock').value = item.safetyStock || 0;
+                document.getElementById('editQtyNeedYear').value = item.qtyNeedYear || '';
+                document.getElementById('editTbmPerMonth').value = item.tbmPerMonth || '';
+                document.getElementById('editLtPerMonth').value = item.ltPerMonth || '';
+                document.getElementById('editFrequency').value = item.frequency || 'SLOW';
+                document.getElementById('editBrand').value = item.brand || '';
+                document.getElementById('editUnitPriceDisplay').value = 'Rp ' + (item.currentUnitPrice ? item.currentUnitPrice.toLocaleString('id-ID') : '0') + ' (Admin Only)';
+                document.getElementById('editBudgetCode').value = item.budgetCode || '';
+                document.getElementById('editAlertSelected').checked = !!item.alertSelected;
+                document.getElementById('editDetail').value = item.detail || '';
+
+                document.getElementById('editModalSpinner').style.display = 'none';
+                document.getElementById('editModalFormBody').style.display = 'block';
+            } catch (err) {
+                document.getElementById('editModalSpinner').innerHTML = `<div class="text-danger small"><i class="bi bi-exclamation-circle me-1"></i>Failed to load item info: ${err.message}</div>`;
+            }
+        }
+
+        // 1-Click Toggle for Auto-Email Alert Selected
+        async function toggleAlertSelected(id, btnElem) {
+            try {
+                btnElem.style.pointerEvents = 'none';
+                const formData = new URLSearchParams();
+                formData.append('id', id);
+
+                const response = await fetch('/MasterData/ToggleAlert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (data.alertSelected) {
+                        btnElem.innerHTML = '<i class="bi bi-bell-fill text-warning fs-6"></i>';
+                        btnElem.title = 'Auto Email Alert Active (Click to disable)';
+                    } else {
+                        btnElem.innerHTML = '<i class="bi bi-bell text-muted opacity-25 fs-6"></i>';
+                        btnElem.title = 'Auto Email Alert Disabled (Click to enable)';
+                    }
+                } else {
+                    alert('Failed to toggle alert: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Failed to toggle alert:', err);
+                alert('Error toggling alert: ' + err.message);
+            } finally {
+                btnElem.style.pointerEvents = 'auto';
+            }
+        }
+        function calcSafetyStockFormula(qtyNeed, ltMonths, frequency) {
+            var need = parseFloat(qtyNeed) || 0;
+            var lt = parseFloat(ltMonths) || 0;
+            var freq = (frequency || "").toUpperCase();
+
+            if (need <= 0 || lt <= 0) return 0;
+
+            var leadTimeNeed = (need / 12.0) * lt;
+            var safetyFactor = (freq === "FAST") ? 1.0 : 0.5;
+            return Math.round(leadTimeNeed * safetyFactor);
+        }
+
+        function recalcAddSafetyStock() {
+            var need = document.getElementById("addQtyNeedYear").value;
+            var lt = document.getElementById("addLtPerMonth").value;
+            var freq = document.getElementById("addFrequency").value;
+            document.getElementById("addSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+        }
+
+        function recalcEditSafetyStock() {
+            var need = document.getElementById("editQtyNeedYear").value;
+            var lt = document.getElementById("editLtPerMonth").value;
+            var freq = document.getElementById("editFrequency").value;
+            document.getElementById("editSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+        }
+
+        const availableProductionLines = [
+            "B4", "B5", "B10", "B11", "B15", "B16", "B17", "B18", "B19", "B20", "B21", "B22", "B24",
+            "J3", "J4", "J5",
+            "T1", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T12",
+            "S6", "S8", "S9", "S10", "S14", "S15", "S16", "S18", "S19", "S20",
+            "GENERAL", "VACANT", "WASHER"
+        ];
+
+        function renderLinePills(containerId, hiddenInputId, previewTextId, currentCsvValue) {
+            var container = document.getElementById(containerId);
+            var hiddenInput = document.getElementById(hiddenInputId);
+            var previewText = document.getElementById(previewTextId);
+            if (!container || !hiddenInput) return;
+
+            var activeSet = new Set();
+            if (currentCsvValue) {
+                currentCsvValue.split(',').forEach(function(item) {
+                    var trimmed = item.trim().toUpperCase();
+                    if (trimmed) activeSet.add(trimmed);
+                });
+            }
+
+            container.innerHTML = '';
+
+            var fullLineList = [...availableProductionLines];
+            activeSet.forEach(function(code) {
+                if (!fullLineList.includes(code)) {
+                    fullLineList.push(code);
+                }
+            });
+
+            fullLineList.forEach(function(code) {
+                var isSelected = activeSet.has(code.toUpperCase());
+                
+                var pill = document.createElement('button');
+                pill.type = 'button';
+                pill.className = 'btn btn-sm text-nowrap py-1 px-2 ' + (isSelected ? 'btn-primary fw-bold' : 'btn-outline-secondary text-dark bg-white');
+                pill.style.fontSize = '11px';
+                pill.style.borderRadius = '4px';
+                pill.style.minWidth = '40px';
+                pill.style.textAlign = 'center';
+                pill.style.transition = 'background-color 0.1s ease, border-color 0.1s ease';
+                pill.textContent = code;
+
+                pill.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (activeSet.has(code.toUpperCase())) {
+                        activeSet.delete(code.toUpperCase());
+                    } else {
+                        activeSet.add(code.toUpperCase());
+                    }
+                    
+                    var newCsv = Array.from(activeSet).join(', ');
+                    hiddenInput.value = newCsv;
+
+                    renderLinePills(containerId, hiddenInputId, previewTextId, newCsv);
+                });
+
+                container.appendChild(pill);
+            });
+
+            if (previewText) {
+                var count = activeSet.size;
+                previewText.textContent = count > 0 ? '(' + count + ' Line: ' + Array.from(activeSet).join(', ') + ')' : '(Belum dipilih)';
+                previewText.style.color = count > 0 ? '#0F4C81' : '#6B7280';
+            }
+        }
+
+        function renderUpAreaPills(containerId, hiddenInputId, previewTextId, currentAreaValue) {
+            var container = document.getElementById(containerId);
+            var hiddenInput = document.getElementById(hiddenInputId);
+            var previewText = document.getElementById(previewTextId);
+            if (!container || !hiddenInput) return;
+
+            var activeSet = new Set();
+            if (currentAreaValue) {
+                currentAreaValue.split(',').forEach(function(item) {
+                    var trimmed = item.trim().toUpperCase();
+                    if (trimmed) activeSet.add(trimmed);
+                });
+            }
+            if (activeSet.size === 0) {
+                activeSet.add("UP1");
+            }
+
+            container.innerHTML = '';
+
+            ["UP1", "UP2"].forEach(function(area) {
+                var isSelected = activeSet.has(area);
+                
+                var pill = document.createElement('button');
+                pill.type = 'button';
+                pill.className = 'btn btn-sm text-nowrap py-1 px-3 ' + (isSelected ? 'btn-primary fw-bold' : 'btn-outline-secondary text-dark bg-white');
+                pill.style.fontSize = '12px';
+                pill.style.borderRadius = '4px';
+                pill.style.minWidth = '75px';
+                pill.style.textAlign = 'center';
+                pill.style.transition = 'background-color 0.1s ease, border-color 0.1s ease';
+                pill.textContent = area;
+
+                pill.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (activeSet.has(area)) {
+                        if (activeSet.size > 1) {
+                            activeSet.delete(area);
+                        }
+                    } else {
+                        activeSet.add(area);
+                    }
+                    
+                    var newCsv = Array.from(activeSet).join(', ');
+                    hiddenInput.value = newCsv;
+
+                    renderUpAreaPills(containerId, hiddenInputId, previewTextId, newCsv);
+                });
+
+                container.appendChild(pill);
+            });
+
+            if (previewText) {
+                var resultStr = Array.from(activeSet).join(', ');
+                previewText.textContent = '(' + resultStr + ')';
+                previewText.style.color = '#0F4C81';
+            }
+        }
+
+        function filterByStockStatus(status) {
+            var input = document.getElementById('stockStatusInput');
+            var filterForm = document.getElementById('filterForm');
+            if (input) {
+                input.value = status;
+            }
+            if (filterForm) {
+                var formData = new FormData(filterForm);
+                var params = new URLSearchParams(formData);
+                var url = filterForm.action + '?' + params.toString();
+                loadMasterDataAjax(url);
+            }
+        }
+
+        function clearAllAddLines() {
+            renderLinePills('addLinePillContainer', 'addLineInput', 'addLinePreviewText', '');
+        }
+
+        function clearAllEditLines() {
+            renderLinePills('editLinePillContainer', 'editLine', 'editLinePreviewText', '');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            renderLinePills('addLinePillContainer', 'addLineInput', 'addLinePreviewText', '');
+            renderUpAreaPills('addUpAreaPillContainer', 'addUpAreaInput', 'addUpAreaPreviewText', 'UP1');
+
+            var addModalElem = document.getElementById('addModal');
+            if (addModalElem) {
+                addModalElem.addEventListener('show.bs.modal', function () {
+                    renderLinePills('addLinePillContainer', 'addLineInput', 'addLinePreviewText', '');
+                    renderUpAreaPills('addUpAreaPillContainer', 'addUpAreaInput', 'addUpAreaPreviewText', 'UP1');
+                });
+            }
+
+            // Intercept clicks on pagination links inside spareparts table card
+            document.addEventListener('click', function (e) {
+                var a = e.target.closest('#spareparts-table-card .page-link');
+                if (a && a.href && !a.href.startsWith('javascript:') && !a.parentElement.classList.contains('disabled')) {
+                    e.preventDefault();
+                    loadMasterDataAjax(a.href);
+                }
+            });
+
+            // Intercept filter form submit
+            var filterForm = document.getElementById('filterForm');
+            if (filterForm) {
+                filterForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    var formData = new FormData(filterForm);
+                    var params = new URLSearchParams(formData);
+                    var url = filterForm.action + '?' + params.toString();
+                    loadMasterDataAjax(url);
+                });
+            }
+        });
+
+        function loadMasterDataAjax(url) {
+            var card = document.getElementById('spareparts-table-card');
+            if (!card) {
+                window.location.href = url;
+                return;
+            }
+            
+            card.style.opacity = '0.6';
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(res) { return res.text(); })
+                .then(function(html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    
+                    var newCard = doc.getElementById('spareparts-table-card');
+                    if (newCard) {
+                        card.innerHTML = newCard.innerHTML;
+                    }
+
+                    card.style.opacity = '1';
+                    history.pushState(null, '', url);
+                })
+                .catch(function() {
+                    card.style.opacity = '1';
+                    window.location.href = url;
+                });
+        }
+    </script>
+}

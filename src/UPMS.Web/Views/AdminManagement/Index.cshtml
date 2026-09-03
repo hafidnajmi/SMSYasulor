@@ -1,0 +1,1596 @@
+@using System.Text.Encodings.Web
+@model UPMS.Web.Models.ViewModels.AdminManagementViewModel
+
+@{
+    ViewData["Title"] = "Admin Management Portal";
+    var activeTab = Model.ActiveTab;
+}
+
+<!-- EMS Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h3 class="fw-bold mb-1" style="color: #0F4C81; font-family: Arial, Helvetica, sans-serif;">
+            Admin Management Portal
+        </h3>
+        <p class="text-muted small mb-0">Procurement comparison, bidding history tracking, and outgoing stock approvals.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-ems-outline btn-sm"><i class="bi bi-printer me-1"></i>Print View</button>
+    </div>
+</div>
+
+
+<!-- EMS Main Tabs: Procurement Comparison, Bidding History, Approval Menu, Line Compatibility Center -->
+<ul class="nav nav-tabs mb-4 ems-nav-tabs" style="border-radius:0;">
+    <li class="nav-item">
+        <a class="nav-link @(activeTab == "procurement" ? "active fw-bold text-primary" : "text-secondary")"
+           asp-action="Index" asp-route-tab="procurement" style="border-radius:0; font-family: Arial, sans-serif;">
+            <i class="bi bi-arrow-left-right me-2 text-primary"></i>Procurement Comparison
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(activeTab == "bidding" ? "active fw-bold text-primary" : "text-secondary")"
+           asp-action="Index" asp-route-tab="bidding" style="border-radius:0; font-family: Arial, sans-serif;">
+            <i class="bi bi-journal-text me-2 text-info"></i>Bidding History
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(activeTab == "approvals" ? "active fw-bold text-primary" : "text-secondary")"
+           asp-action="Index" asp-route-tab="approvals" style="border-radius:0; font-family: Arial, sans-serif;">
+            <i class="bi bi-shield-check me-2 text-warning"></i>Approval Menu
+            @if (Model.PendingBarangKeluarApprovals.Count > 0)
+            {
+                <span class="badge bg-warning text-dark ms-1">@Model.PendingBarangKeluarApprovals.Count</span>
+            }
+        </a>
+    </li>
+</ul>
+
+<!-- ========================================================================= -->
+<!-- TAB 1: PROCUREMENT COMPARISON -->
+<!-- ========================================================================= -->
+@if (activeTab == "procurement")
+{
+    <!-- KPI Summary Cards (Matching Python App) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-blue p-3">
+                <div class="ems-kpi-title"><i class="bi bi-box-seam me-1"></i>TOTAL SPAREPARTS</div>
+                <div class="ems-kpi-lg-value ems-text-blue">@Model.TotalMasterItems.ToString("N0")</div>
+                <div class="ems-kpi-sub fw-semibold">All master spareparts in catalog</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-green p-3">
+                <div class="ems-kpi-title"><i class="bi bi-currency-dollar me-1"></i>TOTAL INVENTORY VALUE</div>
+                <div class="ems-kpi-lg-value ems-text-green">Rp @Model.TotalValuation.ToString("N0")</div>
+                <div class="ems-kpi-sub fw-semibold">Total valuation of current stock</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-amber p-3">
+                <div class="ems-kpi-title"><i class="bi bi-calculator me-1"></i>AVERAGE SPAREPART PRICE</div>
+                <div class="ems-kpi-lg-value ems-text-amber">Rp @Model.AveragePrice.ToString("N0")</div>
+                <div class="ems-kpi-sub fw-semibold">Average cost per sparepart</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Table Card (13 Columns + 50 items/page Pagination Matching Python App) -->
+    <div class="ems-filter-card mb-4">
+        <div class="ems-filter-header d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-arrow-left-right me-2 text-primary"></i>Procurement Comparison & Catalog Overview</span>
+            <span class="badge bg-primary">Showing @Model.ProcurementItems.Count of @Model.FilteredTotalItems.ToString("N0") Items</span>
+        </div>
+        <div class="p-3 border-bottom bg-light">
+            <form method="get" action="/AdminManagement" id="procFilterForm">
+                <input type="hidden" name="tab" value="procurement" />
+                <input type="hidden" name="page" value="1" />
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="search" value="@Model.SearchQuery" class="form-control" placeholder="Search part number, name, bin, UP area, supplier..." />
+                            @if (!string.IsNullOrEmpty(Model.SearchQuery))
+                            {
+                                <a href="/AdminManagement?tab=procurement" class="btn btn-outline-secondary" title="Clear Search"><i class="bi bi-x"></i></a>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="category" onchange="this.form.submit()" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            @foreach (var cat in Model.AvailableCategories)
+                            {
+                                if (cat == Model.CategoryFilter)
+                                {
+                                    <option value="@cat" selected="selected">@cat</option>
+                                }
+                                else
+                                {
+                                    <option value="@cat">@cat</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="stock" onchange="this.form.submit()" class="form-select form-select-sm">
+                            <option value="">All Stock Status</option>
+                            @if (Model.StockFilter == "CRITICAL")
+                            {
+                                <option value="CRITICAL" selected="selected">Critical Low Stock</option>
+                                <option value="NORMAL">Normal Stock</option>
+                            }
+                            else if (Model.StockFilter == "NORMAL")
+                            {
+                                <option value="CRITICAL">Critical Low Stock</option>
+                                <option value="NORMAL" selected="selected">Normal Stock</option>
+                            }
+                            else
+                            {
+                                <option value="CRITICAL">Critical Low Stock</option>
+                                <option value="NORMAL">Normal Stock</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="table-ems" id="procTable">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">NO</th>
+                            <th>UP AREA</th>
+                            <th>PART NUMBER</th>
+                            <th>BIN</th>
+                            <th class="text-end">CUR STOCK</th>
+                            <th class="text-end">SAFE STOCK</th>
+                            <th>ITEM NAME</th>
+                            <th>DETAIL</th>
+                            <th class="text-end" style="min-width:140px; white-space:nowrap;">PRICE</th>
+                            <th>SUPPLIER</th>
+                            <th class="text-end" style="min-width:175px; white-space:nowrap;">TOTAL VALUE</th>
+                            <th class="text-center" style="white-space:nowrap;">BIDDING</th>
+                            <th class="text-center" style="min-width:180px; white-space:nowrap;">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ProcurementItems.Any())
+                        {
+                            int rowNo = ((Model.Page - 1) * Model.PageSize) + 1;
+                            foreach (var item in Model.ProcurementItems)
+                            {
+                                decimal unitPrice = item.CurrentUnitPrice ?? 0m;
+                                decimal itemValuation = (item.CurrentStock ?? 0) * unitPrice;
+                                bool isCritical = (item.CurrentStock ?? 0) < (item.SafetyStock ?? 0);
+                                bool hasBidding = Model.BiddingMasterDataIds.Contains(item.Id);
+                                <tr>
+                                    <td class="text-center font-monospace text-muted" style="background-color:#F8FAFC; border-right:1px solid #E2E8F0;">@(rowNo++)</td>
+                                    <td><span class="badge bg-light text-dark border fw-normal">@(item.UpArea ?? "-")</span></td>
+                                    <td><span class="font-monospace text-primary">@item.Id</span></td>
+                                    <td><span class="badge bg-light text-dark font-monospace border fw-normal">@(item.Bin ?? "-")</span></td>
+                                    <td class="text-end @(isCritical ? "text-danger fw-semibold" : "text-dark")">@(item.CurrentStock ?? 0)</td>
+                                    <td class="text-end font-monospace text-muted">@(item.SafetyStock ?? 0)</td>
+                                    <td class="text-dark">@item.Item</td>
+                                    <td style="max-width:220px;">
+                                        @if (!string.IsNullOrWhiteSpace(item.Detail))
+                                        {
+                                            <span class="small text-secondary text-truncate d-inline-block align-middle" style="max-width:200px;" title="@item.Detail">
+                                                @item.Detail
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-end font-monospace text-dark align-middle" style="white-space:nowrap;">Rp @unitPrice.ToString("N0")</td>
+                                    <td class="text-dark small align-middle">@(item.Brand ?? "-")</td>
+                                    <td class="text-end font-monospace text-primary align-middle" style="white-space:nowrap;">Rp @itemValuation.ToString("N0")</td>
+                                    <td class="text-center">
+                                        @if (hasBidding)
+                                        {
+                                            <span class="badge bg-success text-white small px-2">YES</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border small px-2">NO</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                         <div class="d-flex justify-content-center gap-1">
+                                             <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:11px; height:24px; line-height:22px;"
+                                                     onclick="showUpdatePriceModal('@item.Id', '@JavaScriptEncoder.Default.Encode(item.Item)', '@((long)unitPrice)', '@JavaScriptEncoder.Default.Encode(item.Brand ?? "")')"
+                                                     title="Manage Supplier & Update Unit Price">
+                                                 <i class="bi bi-shop me-1"></i>Price
+                                             </button>
+                                             <button type="button" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:11px; height:24px; line-height:22px;"
+                                                     onclick="showHistoryPriceModal('@item.Id', '@JavaScriptEncoder.Default.Encode(item.Item)')"
+                                                     title="View Full Price & Supplier History Records">
+                                                 <i class="bi bi-clock-history me-1"></i>History Price
+                                             </button>
+                                         </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="13" class="text-center text-muted py-4">No procurement items found matching query.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- High-Performance Smooth Pagination Footer (Matching Python App) -->
+        <div class="p-3 bg-light border-top d-flex align-items-center justify-content-between">
+            @{
+                int startRow = Model.FilteredTotalItems > 0 ? ((Model.Page - 1) * Model.PageSize) + 1 : 0;
+                int endRow = Math.Min(Model.Page * Model.PageSize, Model.FilteredTotalItems);
+            }
+            <div class="small text-muted font-monospace">
+                Showing <strong>@startRow</strong> to <strong>@endRow</strong> of <strong>@Model.FilteredTotalItems.ToString("N0")</strong> entries
+                @if (!string.IsNullOrEmpty(Model.SearchQuery) || !string.IsNullOrEmpty(Model.CategoryFilter) || !string.IsNullOrEmpty(Model.StockFilter))
+                {
+                    <span class="badge bg-warning-subtle text-dark border ms-1">Filtered</span>
+                }
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if (Model.Page > 1)
+                {
+                    <a href="/AdminManagement?tab=procurement&page=@(Model.Page - 1)&search=@Model.SearchQuery&category=@Model.CategoryFilter&stock=@Model.StockFilter"
+                       class="btn btn-sm btn-outline-secondary py-1 px-3">
+                        <i class="bi bi-chevron-left me-1"></i>Prev
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-3" disabled><i class="bi bi-chevron-left me-1"></i>Prev</button>
+                }
+
+                <span class="badge bg-primary px-3 py-2 font-monospace">Page @Model.Page of @Model.TotalPages</span>
+
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a href="/AdminManagement?tab=procurement&page=@(Model.Page + 1)&search=@Model.SearchQuery&category=@Model.CategoryFilter&stock=@Model.StockFilter"
+                       class="btn btn-sm btn-outline-secondary py-1 px-3">
+                        Next<i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-3" disabled>Next<i class="bi bi-chevron-right ms-1"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ========================================================================= -->
+<!-- TAB 2: BIDDING HISTORY -->
+<!-- ========================================================================= -->
+@if (activeTab == "bidding")
+{
+    <!-- Bidding KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-blue p-3">
+                <div class="ems-kpi-title"><i class="bi bi-journal-text me-1"></i>TOTAL BIDDING RECORDS</div>
+                <div class="ems-kpi-lg-value ems-text-blue">@Model.BiddingRecords.Count.ToString("N0")</div>
+                <div class="ems-kpi-sub fw-semibold">Recorded procurement biddings</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-green p-3">
+                <div class="ems-kpi-title"><i class="bi bi-cash-stack me-1"></i>TOTAL BIDDING VALUE</div>
+                <div class="ems-kpi-lg-value ems-text-green">Rp @Model.TotalBiddingValue.ToString("N0")</div>
+                <div class="ems-kpi-sub fw-semibold">Cumulative awarded bidding amount</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="ems-kpi-card ems-kpi-amber p-3">
+                <div class="ems-kpi-title"><i class="bi bi-award me-1"></i>TOP WINNING SUPPLIER</div>
+                <div class="ems-kpi-lg-value ems-text-amber fs-4 text-truncate">@Model.TopSupplier</div>
+                <div class="ems-kpi-sub fw-semibold">Most frequent awarded supplier</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Table Card -->
+    <div class="ems-filter-card mb-4">
+        <div class="ems-filter-header d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-journal-text me-2 text-info"></i>Bidding History & Awarded Quotes</span>
+            <div class="d-flex gap-2 align-items-center">
+                <form method="get" class="d-flex align-items-center gap-2 m-0">
+                    <input type="hidden" name="tab" value="bidding" />
+                    <select name="year" onchange="this.form.submit()" class="form-select form-select-sm" style="width:140px; border-radius:0;">
+                        <option value="">All Years</option>
+                        @foreach (var y in Model.BiddingYears)
+                        {
+                            <option value="@y" selected="@(Model.SelectedYear == y ? "selected" : null)">Year @y</option>
+                        }
+                    </select>
+                </form>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="openCopyBiddingModal()" style="border-radius:0; font-family: Arial, sans-serif;"><i class="bi bi-copy me-1"></i>Copy Data Bidding</button>
+                    <button type="button" class="btn btn-ems-primary btn-sm" onclick="openAddBiddingModal()"><i class="bi bi-plus-circle me-1"></i>Add Bidding Record</button>
+                </div>
+            </div>
+        </div>
+        <div class="p-3 border-bottom bg-light">
+            <input type="text" id="biddingSearchInput" onkeyup="filterBiddingTable()" class="form-select form-select-sm" placeholder="🔍 Search bidding ID, master part ID, supplier name..." style="border-radius:0;" />
+        </div>
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="table-ems" id="biddingTable">
+                    <thead>
+                        <tr>
+                            <th style="white-space:nowrap;">BIDDING ID</th>
+                            <th style="white-space:nowrap;">TAHUN</th>
+                            <th style="white-space:nowrap;">LINE</th>
+                            <th style="min-width:110px; white-space:nowrap;">BIN</th>
+                            <th style="min-width:130px; white-space:nowrap;">MASTER PART ID</th>
+                            <th style="min-width:180px; white-space:nowrap;">NAMA ITEM</th>
+                            <th style="min-width:180px; white-space:nowrap;">DETAIL</th>
+                            <th style="white-space:nowrap;">BUDGET CODE</th>
+                            <th class="text-center" style="white-space:nowrap;">QTY NEED</th>
+                            <th class="text-center" style="white-space:nowrap;">SAFETY STK</th>
+                            <th class="text-center" style="white-space:nowrap;">CURR STK</th>
+                            <th class="text-center" style="white-space:nowrap;">QTY BID</th>
+                            <th class="text-end" style="min-width:140px; white-space:nowrap;">PRICE (IDR)</th>
+                            <th class="text-end" style="min-width:160px; white-space:nowrap;">TOTAL VALUE (RP)</th>
+                            <th style="min-width:140px; white-space:nowrap;">SUPPLIER</th>
+                            <th style="white-space:nowrap;">BID STATUS</th>
+                            <th class="text-center" style="white-space:nowrap;">STATUS</th>
+                            <th class="text-center" style="min-width:130px; white-space:nowrap;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.BiddingRecordDtos.Any())
+                        {
+                            foreach (var bid in Model.BiddingRecordDtos)
+                            {
+                                <tr>
+                                    <td><span class="font-monospace text-primary">#@bid.Id</span></td>
+                                    <td><span class="badge bg-light text-dark border fw-normal">@bid.BiddingYear</span></td>
+                                    <td><span class="badge bg-secondary-subtle text-dark fw-normal">@bid.Line</span></td>
+                                    <td><span class="font-monospace text-muted">@bid.Bin</span></td>
+                                    <td><span class="font-monospace small text-primary">@bid.MasterDataId</span></td>
+                                    <td class="text-dark">@bid.ItemName</td>
+                                    <td class="small text-secondary">@bid.Detail</td>
+                                    <td><span class="badge bg-info-subtle text-info border fw-normal">@bid.BudgetCode</span></td>
+                                    <td class="text-center">@bid.QtyNeedYear</td>
+                                    <td class="text-center">@bid.SafetyStock</td>
+                                    <td class="text-center">@bid.CurrentStock</td>
+                                    <td class="text-center text-primary">@bid.QtyBid</td>
+                                    <td class="text-end font-monospace text-dark">Rp @bid.Price.ToString("N0")</td>
+                                    <td class="text-end font-monospace text-success">Rp @bid.TotalValue.ToString("N0")</td>
+                                    <td class="text-dark">@bid.SupplierName</td>
+                                    <td><span class="small text-secondary">@bid.BiddingStage</span></td>
+                                    <td class="text-center align-middle">
+                                        @{
+                                            var st = (bid.Status ?? "Completed").ToLower().Trim();
+                                            string badgeCss = st == "pending" ? "bg-warning-subtle text-warning-emphasis border border-warning" :
+                                                             (st == "cancelled" || st == "canceled") ? "bg-danger-subtle text-danger border border-danger" :
+                                                             "bg-success-subtle text-success border border-success";
+                                        }
+                                        <span class="badge @badgeCss small">@(bid.Status ?? "Completed")</span>
+                                    </td>
+                                    <td class="text-center align-middle" style="white-space: nowrap;">
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size:11px; border-radius:2px; font-family: Arial, sans-serif;" onclick="openEditBiddingModal(@bid.Id, '@bid.MasterDataId', '@JavaScriptEncoder.Default.Encode(bid.SupplierName ?? "")', @bid.BiddingYear, '@JavaScriptEncoder.Default.Encode(bid.BiddingStage ?? "")', @bid.Price, '@JavaScriptEncoder.Default.Encode(bid.Status ?? "Completed")', '@JavaScriptEncoder.Default.Encode(bid.Line ?? "")', '@JavaScriptEncoder.Default.Encode(bid.Bin ?? "")', '@JavaScriptEncoder.Default.Encode(bid.ItemName ?? "")', '@JavaScriptEncoder.Default.Encode(bid.Detail ?? "")', '@JavaScriptEncoder.Default.Encode(bid.BudgetCode ?? "")', @bid.QtyNeedYear, @bid.SafetyStock, @bid.CurrentStock)">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </button>
+                                            <form asp-action="DeleteBidding" asp-route-id="@bid.Id" method="post" class="d-inline m-0 p-0" onsubmit="return confirm('Hapus record bidding #@bid.Id?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:11px; border-radius:2px; font-family: Arial, sans-serif;">
+                                                    <i class="bi bi-trash me-1"></i>Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="18" class="text-center text-muted py-4">No bidding history records found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ========================================================================= -->
+<!-- TAB 3: APPROVAL MENU -->
+<!-- ========================================================================= -->
+<!-- ========================================================================= -->
+<!-- TAB 3: APPROVAL MENU (Pending Reviews Queue) -->
+<!-- ========================================================================= -->
+<!-- ========================================================================= -->
+<!-- TAB 3: APPROVAL MENU (Matching Python App Admin Management Approval Queues) -->
+<!-- ========================================================================= -->
+<!-- ========================================================================= -->
+<!-- TAB 3: APPROVAL MENU (Barang Keluar Queue) -->
+<!-- ========================================================================= -->
+@if (activeTab == "approvals")
+{
+    var pendingKeluar = Model.PendingBarangKeluarApprovals;
+
+    <!-- Approval Barang Keluar Content (Matching Python ApprovalBarangKeluarContent) -->
+    <div class="ems-filter-card mb-4" style="border-radius:0;">
+        <div class="ems-filter-header d-block p-3 border-bottom bg-light">
+            <h5 class="fw-bold mb-1" style="color: #0F4C81; font-family: Arial, sans-serif;">
+                Barang Keluar Approvals Queue
+            </h5>
+            <p class="text-muted small mb-0" style="font-family: Arial, sans-serif;">
+                Approve or reject outgoing sparepart transactions requested by users.
+            </p>
+        </div>
+        <div class="p-0">
+            <div class="table-responsive">
+                <table class="table-ems mb-0" style="font-family: Arial, sans-serif;">
+                    <thead>
+                        <tr style="background-color: #F8FAFC;">
+                            <th style="font-family: Arial, sans-serif;">TANGGAL</th>
+                            <th style="font-family: Arial, sans-serif;">PART NUMBER</th>
+                            <th style="font-family: Arial, sans-serif;">NAMA BARANG</th>
+                            <th class="text-end" style="font-family: Arial, sans-serif;">QTY</th>
+                            <th style="font-family: Arial, sans-serif;">LINE/MESIN</th>
+                            <th style="font-family: Arial, sans-serif;">PIC</th>
+                            <th style="font-family: Arial, sans-serif;">SUBMITTED BY</th>
+                            <th class="text-center" style="font-family: Arial, sans-serif;">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (pendingKeluar.Any())
+                        {
+                            foreach (var item in pendingKeluar)
+                            {
+                                <tr>
+                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="font-monospace fw-bold text-primary">#(item.MasterDataId ?? "-")</span></td>
+                                    <td class="fw-semibold">@item.ItemName</td>
+                                    <td class="text-end text-danger fw-bold fs-6">-@item.Qty</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border me-1" style="border-radius:0;">@(item.Line ?? "-")</span>
+                                        @if (!string.IsNullOrEmpty(item.Bin))
+                                        {
+                                            <span class="badge bg-light text-dark font-monospace border" style="border-radius:0;">BIN: @item.Bin</span>
+                                        }
+                                    </td>
+                                    <td class="small">@(item.Pic ?? "-")</td>
+                                    <td class="small text-secondary">@(item.RemName ?? "Technician")</td>
+                                    <td class="text-center align-middle" style="white-space: nowrap;">
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <form asp-action="ApproveKeluar" asp-route-id="@item.Id" method="post" class="d-inline m-0 p-0">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success py-1 px-2" style="font-size:11px; border-radius:0; font-family: Arial, sans-serif;" title="Approve & Potong Stok">
+                                                    <i class="bi bi-check-circle me-1"></i>Approve
+                                                </button>
+                                            </form>
+                                            <form asp-action="RejectKeluar" asp-route-id="@item.Id" method="post" class="d-inline m-0 p-0">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:11px; border-radius:0; font-family: Arial, sans-serif;" title="Reject Request">
+                                                    <i class="bi bi-x-circle me-1"></i>Reject
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5" style="font-family: Arial, sans-serif;">
+                                    <i class="bi bi-check-circle fs-3 d-block mb-2 text-success"></i>
+                                    Tidak ada pengajuan Barang Keluar pending.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+<!-- Detail Modal -->
+<div class="modal fade" id="itemDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" id="detailModalTitle" style="font-size:13px; font-family: Arial, sans-serif;">Detail Sparepart</h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3">
+                <p id="detailModalBody" class="mb-0 text-break font-monospace small"></p>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Price & Multi-Supplier Offers Modal (EMS Theme) -->
+<div class="modal fade" id="updatePriceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                <h6 class="modal-title fw-normal mb-0" style="font-size:13px; font-family: Arial, sans-serif;">
+                    <i class="bi bi-shop me-2"></i>Multi-Supplier Prices &amp; Update History
+                </h6>
+                <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 bg-light">
+                <input type="hidden" id="modalMasterDataId" />
+                
+                <!-- Part Info Header Card -->
+                <div class="mb-3 p-2 bg-white border">
+                    <label class="form-label small text-muted mb-1">Part Number &amp; Item Name</label>
+                    <div class="font-monospace fw-bold text-primary fs-6" id="modalItemLabel"></div>
+                </div>
+
+                <!-- Supplier Offers Table with Update Timestamps -->
+                <div class="bg-white p-3 border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold text-dark small" style="color:#0F4C81;">
+                            <i class="bi bi-list-stars me-1 text-primary"></i>Daftar Penawaran Harga Supplier (Multi-Supplier)
+                        </div>
+                        <span class="badge bg-info-subtle text-info border small"><i class="bi bi-clock-history me-1"></i>Tercatat Waktu Update</span>
+                    </div>
+
+                    <div id="modalOffersSpinner" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="ms-2 small text-muted">Loading supplier price offers...</span>
+                    </div>
+
+                    <div class="table-responsive" id="modalOffersTableWrapper" style="display:none;">
+                        <table class="table table-sm table-bordered align-middle mb-0" style="font-size:12px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>SUPPLIER / BRAND</th>
+                                    <th class="text-end">HARGA (IDR)</th>
+                                    <th>TERAKHIR UPDATE</th>
+                                    <th class="text-center">STATUS</th>
+                                    <th class="text-center" style="width:130px;">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalOffersTbody">
+                                <!-- Populated dynamically via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Add / Update Offer Form -->
+                <div class="bg-white p-3 border">
+                    <div class="fw-bold text-dark small mb-2"><i class="bi bi-plus-circle me-1 text-success"></i>Tambah / Update Penawaran Supplier</div>
+                    <form id="addOfferForm" onsubmit="submitSupplierOfferAjax(event)">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Pilih / Ketik Supplier</label>
+                                <select id="modalSupplierSelect" class="form-select form-select-sm" style="border-radius:0;" onchange="if(this.value) document.getElementById('modalCustomSupplier').value = this.value;">
+                                    <option value="">-- Select Registered Supplier --</option>
+                                    @foreach (var sup in Model.AvailableSuppliers)
+                                    {
+                                        <option value="@sup.Name">@sup.Name</option>
+                                    }
+                                </select>
+                                <input type="text" id="modalCustomSupplier" class="form-control form-control-sm mt-1" style="border-radius:0;" placeholder="Atau ketik nama supplier baru..." oninput="syncSupplierInput(this.value)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Harga Satuan (IDR) <span class="text-danger">*</span></label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text font-monospace" style="border-radius:0;">Rp</span>
+                                    <input type="number" id="modalNewPrice" class="form-control font-monospace fw-bold" required min="1" step="1" placeholder="Harga" style="border-radius:0;" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="modalSetPrimaryCheck" checked />
+                                    <label class="form-check-label small fw-semibold text-primary" for="modalSetPrimaryCheck">Primary (Utama)</label>
+                                </div>
+                                <button type="submit" class="btn btn-ems-primary btn-sm w-100"><i class="bi bi-floppy me-1"></i>Simpan Harga</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Bidding Modal -->
+<div class="modal fade" id="addBiddingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <form asp-action="CreateBidding" method="post" id="addBiddingForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="biddingMasterDataIdInput" name="MasterDataId" />
+                
+                <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                    <div>
+                        <h6 class="modal-title fw-normal mb-0" style="font-size:14px; font-family: Arial, sans-serif;">
+                            Tambah Bidding Baru
+                        </h6>
+                        <small class="text-white-50" style="font-size:11px;">Lengkapi data bidding dengan memilih dari Master Data atau isi manual</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body p-3 bg-light">
+                    <!-- SECTION 1: Pilih & Cari dari Master Data -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Pilih & Cari dari Master Data
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Search Sparepart</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" id="addBiddingSearchInput" class="form-control form-control-sm border-start-0" placeholder="Ketik Nama Item, Part Number (ID), atau BIN..." onkeyup="filterBiddingMasterPicker(this.value)" style="border-radius:0; font-family: Arial, sans-serif;" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Pilih Hasil Master Data</label>
+                                <select id="addBiddingMasterPicker" class="form-select form-select-sm" onchange="onBiddingMasterSelected(this.value)" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    <option value="">-- Pilih Suku Cadang dari Master Data --</option>
+                                    @foreach (var part in Model.AllMasterDataItems)
+                                    {
+                                        <option value="@part.Id" data-bin="@part.Bin" data-item="@part.Item" data-detail="@part.Detail" data-budget="@part.BudgetCode" data-line="@part.Line" data-need="@(part.QtyNeedYear ?? 0)" data-safety="@(part.SafetyStock ?? 0)" data-stock="@(part.CurrentStock ?? 0)" data-price="@(part.CurrentUnitPrice ?? 0m)" data-supplier="@part.Brand">
+                                            [@(string.IsNullOrEmpty(part.Bin) ? "-" : part.Bin)] @part.Item (ID: @part.Id)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: Identifikasi -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Identifikasi
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Tahun</label>
+                                <select name="BiddingYear" id="biddingYearInput" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    @{
+                                        int curY = DateTime.Now.Year;
+                                        for (int y = curY - 2; y <= curY + 3; y++)
+                                        {
+                                            <option value="@y" selected="@(y == curY ? "selected" : null)">@y</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Line <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="biddingLineInput" name="Line" class="form-control form-control-sm bg-light" readonly placeholder="Line" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">BIN <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="biddingBinInput" name="bin" class="form-control form-control-sm bg-light" readonly placeholder="BIN" onchange="onBiddingBinChange(this.value)" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Nama Item <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="biddingItemNameInput" name="itemName" class="form-control form-control-sm bg-light" readonly placeholder="Nama Item" required style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Detail <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="biddingDetailInput" name="Detail" class="form-control form-control-sm bg-light" readonly placeholder="Detail" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Budget Code</label>
+                                <input type="text" id="biddingBudgetCodeInput" name="BudgetCode" class="form-control form-control-sm" placeholder="Budget Code" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: Stock & Harga -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Stock & Harga
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Qty Need/Year <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="biddingQtyNeedInput" class="form-control form-control-sm bg-light" readonly placeholder="Qty Need/Year" oninput="recalcBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Safety Stock <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="biddingSafetyStockInput" class="form-control form-control-sm bg-light" readonly placeholder="Safety Stock" oninput="recalcBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Stock <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="biddingCurrentStockInput" class="form-control form-control-sm bg-light" readonly placeholder="Current Stock" oninput="recalcBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Price (Rp)</label>
+                                <input type="number" id="biddingCurrentPriceInput" name="Price" class="form-control form-control-sm font-monospace" placeholder="Current Price" oninput="recalcBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Supplier</label>
+                                <input type="text" id="biddingSupplierInput" name="SupplierName" class="form-control form-control-sm" placeholder="Current Supplier" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Bid Status</label>
+                                <select id="biddingStageInput" name="BiddingStage" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    <option value="1st">1st</option>
+                                    <option value="Additional">Additional</option>
+                                    <option value="Bidding 1">Bidding 1</option>
+                                    <option value="Bidding 2">Bidding 2</option>
+                                    <option value="Final Stage">Final Stage</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Kalkulasi Otomatis -->
+                    <div class="bg-white p-3 border">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Kalkulasi Otomatis
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">Qty Bid (Need + Safety − Stock)</label>
+                                <input type="text" id="biddingQtyBidCalc" class="form-control form-control-sm font-monospace bg-light" readonly placeholder="0" style="border-radius:0;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1">Total Value (Qty Bid × Price)</label>
+                                <input type="text" id="biddingValueCalc" class="form-control form-control-sm font-monospace fw-bold text-success bg-light" readonly placeholder="Rp 0" style="border-radius:0;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-floppy me-1"></i>Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Bidding Modal -->
+<div class="modal fade" id="editBiddingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <form asp-action="EditBidding" method="post" id="editBiddingForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editBiddingId" name="Id" />
+                <input type="hidden" id="editBiddingMasterDataIdInput" name="MasterDataId" />
+                
+                <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                    <div>
+                        <h6 class="modal-title fw-normal mb-0" style="font-size:14px; font-family: Arial, sans-serif;">
+                            Edit Bidding Record — <span id="editBiddingHeader"></span>
+                        </h6>
+                        <small class="text-white-50" style="font-size:11px;">Ubah dan sesuaikan data bidding serta suku cadang</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body p-3 bg-light">
+                    <!-- SECTION 1: Pilih & Cari dari Master Data -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Pilih & Cari dari Master Data
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Search Sparepart</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                    <input type="text" id="editBiddingSearchInput" class="form-control form-control-sm border-start-0" placeholder="Ketik Nama Item, Part Number (ID), atau BIN..." onkeyup="filterEditBiddingMasterPicker(this.value)" style="border-radius:0; font-family: Arial, sans-serif;" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Pilih Hasil Master Data</label>
+                                <select id="editBiddingMasterPicker" class="form-select form-select-sm" onchange="onEditBiddingMasterSelected(this.value)" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    <option value="">-- Pilih Suku Cadang dari Master Data --</option>
+                                    @foreach (var part in Model.AllMasterDataItems)
+                                    {
+                                        <option value="@part.Id" data-bin="@part.Bin" data-item="@part.Item" data-detail="@part.Detail" data-budget="@part.BudgetCode" data-line="@part.Line" data-need="@(part.QtyNeedYear ?? 0)" data-safety="@(part.SafetyStock ?? 0)" data-stock="@(part.CurrentStock ?? 0)" data-price="@(part.CurrentUnitPrice ?? 0m)" data-supplier="@part.Brand">
+                                            [@(string.IsNullOrEmpty(part.Bin) ? "-" : part.Bin)] @part.Item (ID: @part.Id)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: Identifikasi -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Identifikasi
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Tahun <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Fixed</span></label>
+                                <input type="text" id="editBiddingYearDisplay" class="form-control form-control-sm bg-light" readonly style="border-radius:0; font-family: Arial, sans-serif;" />
+                                <input type="hidden" name="BiddingYear" id="editBiddingYearInput" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Line <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="editBiddingLineInput" name="line" class="form-control form-control-sm bg-light" readonly placeholder="Line" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">BIN <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="editBiddingBinInput" name="bin" class="form-control form-control-sm bg-light" readonly placeholder="BIN" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Nama Item <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="editBiddingItemNameInput" name="itemName" class="form-control form-control-sm bg-light" readonly placeholder="Nama Item" required style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Detail <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="text" id="editBiddingDetailInput" name="detail" class="form-control form-control-sm bg-light" readonly placeholder="Detail" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Budget Code</label>
+                                <input type="text" id="editBiddingBudgetCodeInput" name="budgetCode" class="form-control form-control-sm" placeholder="Budget Code" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: Stock & Harga -->
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Stock & Harga
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Qty Need/Year <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="editBiddingQtyNeedInput" name="qtyNeedYear" class="form-control form-control-sm bg-light" readonly placeholder="Qty Need/Year" oninput="recalcEditBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Safety Stock <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="editBiddingSafetyStockInput" name="safetyStock" class="form-control form-control-sm bg-light" readonly placeholder="Safety Stock" oninput="recalcEditBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Stock <span class="badge bg-light text-muted border ms-1"><i class="bi bi-lock-fill me-1"></i>Catalog</span></label>
+                                <input type="number" id="editBiddingCurrentStockInput" name="currentStock" class="form-control form-control-sm bg-light" readonly placeholder="Current Stock" oninput="recalcEditBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Price (Rp)</label>
+                                <input type="number" id="editBiddingCurrentPriceInput" name="Price" class="form-control form-control-sm font-monospace" placeholder="Current Price" oninput="recalcEditBiddingSummary()" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Current Supplier</label>
+                                <input type="text" id="editBiddingSupplierInput" name="SupplierName" class="form-control form-control-sm" placeholder="Current Supplier" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Bid Status</label>
+                                <select id="editBiddingStageInput" name="BiddingStage" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    <option value="1st">1st</option>
+                                    <option value="Additional">Additional</option>
+                                    <option value="Bidding 1">Bidding 1</option>
+                                    <option value="Bidding 2">Bidding 2</option>
+                                    <option value="Final Stage">Final Stage</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Status</label>
+                                <select id="editBiddingStatusInput" name="Status" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;">
+                                    <option value="Completed">Completed</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Kalkulasi Otomatis -->
+                    <div class="bg-white p-3 border">
+                        <div class="mb-2 small text-uppercase" style="font-family: Arial, sans-serif; font-weight: bold; color: #0F4C81; border-left: 3px solid #0F4C81; padding-left: 8px;">
+                            Kalkulasi Otomatis
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Qty Bid (Need + Safety − Stock)</label>
+                                <input type="text" id="editBiddingQtyBidCalc" class="form-control form-control-sm font-monospace bg-light" readonly placeholder="0" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Total Value (Qty Bid × Price)</label>
+                                <input type="text" id="editBiddingValueCalc" class="form-control form-control-sm font-monospace fw-bold text-success bg-light" readonly placeholder="Rp 0" style="border-radius:0; font-family: Arial, sans-serif;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-floppy me-1"></i>Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Copy Bidding Modal -->
+<div class="modal fade" id="copyBiddingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
+            <form asp-action="CopyBiddingYear" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+                    <div>
+                        <h6 class="modal-title fw-normal mb-0" style="font-size:14px; font-family: Arial, sans-serif;">
+                            Copy Bidding ke Tahun Baru
+                        </h6>
+                        <small class="text-white-50" style="font-size:11px;">Duplikasi data bidding suku cadang antar tahun</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 bg-light">
+                    <!-- Info Banner -->
+                    <div class="alert alert-info border-0 p-2 mb-3 small d-flex align-items-center" style="border-radius:0; background-color:#EFF6FF; color:#1E40AF;">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div>Fitur ini menyalin seluruh item bidding dari tahun lama ke tahun baru secara otomatis untuk mempercepat proses pembuatan anggaran.</div>
+                    </div>
+
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Tahun Asal (Copy dari)</label>
+                                <select name="fromYear" id="copyFromYear" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;" required>
+                                    <option value="">-- Pilih Tahun Asal --</option>
+                                    @foreach (var y in Model.BiddingYears)
+                                    {
+                                        <option value="@y">Tahun @y</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-secondary mb-1" style="font-family: Arial, sans-serif;">Tahun Tujuan (Copy ke)</label>
+                                <select name="toYear" id="copyToYear" class="form-select form-select-sm" style="border-radius:0; font-family: Arial, sans-serif;" required>
+                                    @{
+                                        int nextY = DateTime.Now.Year + 1;
+                                        int curY3 = DateTime.Now.Year;
+                                        for (int y = curY3 - 1; y <= nextY + 2; y++)
+                                        {
+                                            <option value="@y" selected="@(y == nextY ? "selected" : null)">Tahun @y</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-check mt-3 mb-0">
+                            <input class="form-check-input" type="checkbox" name="overwrite" value="true" id="copyOverwriteCb" />
+                            <label class="form-check-label small text-secondary" for="copyOverwriteCb" style="font-family: Arial, sans-serif;">
+                                Timpa (overwrite) data jika suku cadang sudah ada di tahun tujuan
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-copy me-1"></i>Copy Data Bidding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCopyBiddingModal() {
+            var modal = new bootstrap.Modal(document.getElementById("copyBiddingModal"));
+            modal.show();
+        }
+        function showDetailModal(title, detailText) {
+            document.getElementById("detailModalTitle").innerText = title;
+            document.getElementById("detailModalBody").innerText = detailText || "No detail specification recorded.";
+            var modal = new bootstrap.Modal(document.getElementById("itemDetailModal"));
+            modal.show();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        async function loadSupplierOffers(masterDataId) {
+            var spinner = document.getElementById("modalOffersSpinner");
+            var wrapper = document.getElementById("modalOffersTableWrapper");
+            var tbody = document.getElementById("modalOffersTbody");
+
+            spinner.style.display = "block";
+            wrapper.style.display = "none";
+            tbody.innerHTML = "";
+
+            try {
+                var res = await fetch('/AdminManagement/GetSupplierOffersJson?masterDataId=' + encodeURIComponent(masterDataId));
+                var data = await res.json();
+
+                spinner.style.display = "none";
+                wrapper.style.display = "block";
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada data penawaran supplier. Silakan tambah penawaran di bawah.</td></tr>';
+                    return;
+                }
+
+                var minPrice = Math.min(...data.map(d => Number(d.price) || 999999999));
+
+                data.forEach(function(o) {
+                    var tr = document.createElement("tr");
+                    var isCheapest = (Number(o.price) === minPrice && minPrice > 0);
+
+                    if (o.isSelected) {
+                        tr.className = "table-success-subtle";
+                    } else if (isCheapest) {
+                        tr.className = "table-warning-subtle";
+                    }
+
+                    var priceFormatted = "Rp " + Number(o.price).toLocaleString("id-ID");
+                    if (isCheapest) {
+                        priceFormatted += ' <span class="badge bg-success text-white font-monospace ms-1" style="font-size:10px;"><i class="bi bi-tag-fill me-1"></i>Paling Murah</span>';
+                    }
+
+                    var statusCol = o.isSelected 
+                        ? '<span class="badge bg-success text-white fw-normal"><i class="bi bi-check-circle me-1"></i>Selected (Pilihan)</span>' 
+                        : `<button type="button" class="btn btn-sm btn-outline-success py-0 px-2 fw-normal" style="font-size:11px;" onclick="setPrimarySupplierOffer(${o.id})" title="Pilih supplier ini sebagai pilihan utama"><i class="bi bi-check-lg me-1"></i>Set Primary</button>`;
+
+                    var actionBtns = `
+                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 me-1" style="font-size:11px;" onclick="editSupplierOfferRow('${escapeHtml(o.supplierName)}', ${o.price}, ${o.isSelected})" title="Edit Penawaran">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:11px;" onclick="deleteSupplierOffer(${o.id})" title="Hapus Penawaran">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+
+                    tr.innerHTML = `
+                        <td class="text-primary fw-semibold">${escapeHtml(o.supplierName)}</td>
+                        <td class="text-end font-monospace">${priceFormatted}</td>
+                        <td><span class="small text-muted"><i class="bi bi-clock me-1"></i>${o.updatedAt} (${escapeHtml(o.updatedBy)})</span></td>
+                        <td class="text-center">${statusCol}</td>
+                        <td class="text-center">${actionBtns}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                spinner.innerHTML = `<div class="text-danger small py-2"><i class="bi bi-exclamation-circle me-1"></i>Error: ${err.message}</div>`;
+            }
+        }
+
+        function editSupplierOfferRow(supplierName, price, isSelected) {
+            var sel = document.getElementById("modalSupplierSelect");
+            sel.value = supplierName;
+            if (sel.selectedIndex <= 0 && supplierName) {
+                document.getElementById("modalCustomSupplier").value = supplierName;
+            } else {
+                document.getElementById("modalCustomSupplier").value = "";
+            }
+            document.getElementById("modalNewPrice").value = price;
+            document.getElementById("modalSetPrimaryCheck").checked = isSelected;
+            document.getElementById("modalNewPrice").focus();
+        }
+
+        function showUpdatePriceModal(id, item, currentPrice, currentSupplier) {
+            document.getElementById("modalMasterDataId").value = id;
+            document.getElementById("modalItemLabel").innerText = id + " — " + item;
+            document.getElementById("modalNewPrice").value = currentPrice || "";
+
+            var sel = document.getElementById("modalSupplierSelect");
+            var sup = currentSupplier || "";
+            sel.value = sup;
+
+            if (sel.selectedIndex <= 0 && sup.trim() !== "") {
+                var matchOpt = Array.from(sel.options).find(o => o.value.toLowerCase() === sup.trim().toLowerCase());
+                if (matchOpt) {
+                    sel.value = matchOpt.value;
+                    document.getElementById("modalCustomSupplier").value = "";
+                } else {
+                    document.getElementById("modalCustomSupplier").value = sup;
+                }
+            } else {
+                document.getElementById("modalCustomSupplier").value = "";
+            }
+
+            loadSupplierOffers(id);
+
+            var modal = new bootstrap.Modal(document.getElementById("updatePriceModal"));
+            modal.show();
+        }
+
+        async function submitSupplierOfferAjax(e) {
+            e.preventDefault();
+            var masterDataId = document.getElementById("modalMasterDataId").value;
+            var selVal = document.getElementById("modalSupplierSelect").value;
+            var custVal = document.getElementById("modalCustomSupplier").value;
+            var supplierName = (custVal && custVal.trim().length > 0) ? custVal.trim() : selVal.trim();
+            var price = parseFloat(document.getElementById("modalNewPrice").value);
+            var setAsPrimary = document.getElementById("modalSetPrimaryCheck").checked;
+
+            if (!supplierName || isNaN(price) || price <= 0) {
+                alert("Pilih/ketik nama Supplier dan masukkan harga yang valid.");
+                return;
+            }
+
+            var formData = new URLSearchParams();
+            formData.append("masterDataId", masterDataId);
+            formData.append("supplierName", supplierName);
+            formData.append("price", price);
+            formData.append("setAsPrimary", setAsPrimary);
+
+            try {
+                var res = await fetch('/AdminManagement/SaveSupplierOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                var data = await res.json();
+                if (data.success) {
+                    loadSupplierOffers(masterDataId);
+                    if (setAsPrimary) {
+                        loadProcurementTableAjax();
+                    }
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("Gagal menyimpan penawaran: " + err.message);
+            }
+        }
+
+        async function setPrimarySupplierOffer(offerId) {
+            var masterDataId = document.getElementById("modalMasterDataId").value;
+            var formData = new URLSearchParams();
+            formData.append("offerId", offerId);
+
+            try {
+                var res = await fetch('/AdminManagement/SetPrimarySupplierOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                var data = await res.json();
+                if (data.success) {
+                    loadSupplierOffers(masterDataId);
+                    loadProcurementTableAjax();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("Gagal memperbarui supplier utama: " + err.message);
+            }
+        }
+
+        async function deleteSupplierOffer(offerId) {
+            if (!confirm("Hapus penawaran harga supplier ini?")) return;
+            var masterDataId = document.getElementById("modalMasterDataId").value;
+            var formData = new URLSearchParams();
+            formData.append("offerId", offerId);
+
+            try {
+                var res = await fetch('/AdminManagement/DeleteSupplierOfferAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                var data = await res.json();
+                if (data.success) {
+                    loadSupplierOffers(masterDataId);
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert("Gagal menghapus penawaran: " + err.message);
+            }
+        }
+
+        function loadProcurementTableAjax() {
+            var url = window.location.href;
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(res => res.text())
+                .then(html => {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    var newTable = doc.getElementById('procTable');
+                    var curTable = document.getElementById('procTable');
+                    if (newTable && curTable) {
+                        curTable.innerHTML = newTable.innerHTML;
+                    }
+                }).catch(() => {});
+        }
+
+        function openAddBiddingModal() {
+            var modal = new bootstrap.Modal(document.getElementById("addBiddingModal"));
+            modal.show();
+        }
+
+        function openEditBiddingModal(id, masterDataId, supplierName, year, stage, price, status, line, bin, item, detail, budgetCode, need, safety, stock) {
+            document.getElementById("editBiddingId").value = id;
+            document.getElementById("editBiddingHeader").innerText = "#" + id;
+            document.getElementById("editBiddingMasterDataIdInput").value = masterDataId || "";
+            document.getElementById("editBiddingSupplierInput").value = supplierName || "";
+            if (document.getElementById("editBiddingYearDisplay")) {
+                document.getElementById("editBiddingYearDisplay").value = year || new Date().getFullYear();
+            }
+            document.getElementById("editBiddingYearInput").value = year || new Date().getFullYear();
+            document.getElementById("editBiddingStageInput").value = stage || "1st";
+            document.getElementById("editBiddingCurrentPriceInput").value = price || 0;
+            document.getElementById("editBiddingStatusInput").value = status || "Completed";
+
+            document.getElementById("editBiddingLineInput").value = line || "";
+            document.getElementById("editBiddingBinInput").value = bin || "";
+            document.getElementById("editBiddingItemNameInput").value = item || masterDataId || "";
+            document.getElementById("editBiddingDetailInput").value = detail || "";
+            document.getElementById("editBiddingBudgetCodeInput").value = budgetCode || "";
+            document.getElementById("editBiddingQtyNeedInput").value = need || 0;
+            document.getElementById("editBiddingSafetyStockInput").value = safety || 0;
+            document.getElementById("editBiddingCurrentStockInput").value = stock || 0;
+
+            var select = document.getElementById("editBiddingMasterPicker");
+            if (select) {
+                select.value = masterDataId || "";
+            }
+
+            recalcEditBiddingSummary();
+
+            var modal = new bootstrap.Modal(document.getElementById("editBiddingModal"));
+            modal.show();
+        }
+
+        function filterEditBiddingMasterPicker(searchVal) {
+            var s = (searchVal || "").toLowerCase().trim();
+            var select = document.getElementById("editBiddingMasterPicker");
+            if (!select) return;
+            var opts = select.options;
+            for (var i = 1; i < opts.length; i++) {
+                var txt = opts[i].text.toLowerCase();
+                if (!s || txt.includes(s)) {
+                    opts[i].style.display = "";
+                } else {
+                    opts[i].style.display = "none";
+                }
+            }
+        }
+
+        function onEditBiddingMasterSelected(partId) {
+            if (!partId) return;
+            var select = document.getElementById("editBiddingMasterPicker");
+            var selectedOpt = select.options[select.selectedIndex];
+            if (!selectedOpt || !selectedOpt.value) return;
+
+            document.getElementById("editBiddingMasterDataIdInput").value = partId;
+            document.getElementById("editBiddingBinInput").value = selectedOpt.getAttribute("data-bin") || "";
+            document.getElementById("editBiddingItemNameInput").value = selectedOpt.getAttribute("data-item") || "";
+            document.getElementById("editBiddingDetailInput").value = selectedOpt.getAttribute("data-detail") || "";
+            document.getElementById("editBiddingBudgetCodeInput").value = selectedOpt.getAttribute("data-budget") || "";
+            document.getElementById("editBiddingLineInput").value = selectedOpt.getAttribute("data-line") || "";
+            document.getElementById("editBiddingQtyNeedInput").value = selectedOpt.getAttribute("data-need") || 0;
+            document.getElementById("editBiddingSafetyStockInput").value = selectedOpt.getAttribute("data-safety") || 0;
+            document.getElementById("editBiddingCurrentStockInput").value = selectedOpt.getAttribute("data-stock") || 0;
+            document.getElementById("editBiddingCurrentPriceInput").value = selectedOpt.getAttribute("data-price") || 0;
+            document.getElementById("editBiddingSupplierInput").value = selectedOpt.getAttribute("data-supplier") || "";
+
+            recalcEditBiddingSummary();
+        }
+
+        function onEditBiddingBinChange(binVal) {
+            var b = (binVal || "").trim().toLowerCase();
+            if (!b) return;
+            var select = document.getElementById("editBiddingMasterPicker");
+            for (var i = 1; i < select.options.length; i++) {
+                var optBin = (select.options[i].getAttribute("data-bin") || "").trim().toLowerCase();
+                if (optBin === b) {
+                    select.selectedIndex = i;
+                    onEditBiddingMasterSelected(select.options[i].value);
+                    break;
+                }
+            }
+        }
+
+        function recalcEditBiddingSummary() {
+            var need = parseFloat(document.getElementById("editBiddingQtyNeedInput").value) || 0;
+            var safety = parseFloat(document.getElementById("editBiddingSafetyStockInput").value) || 0;
+            var stock = parseFloat(document.getElementById("editBiddingCurrentStockInput").value) || 0;
+            var price = parseFloat(document.getElementById("editBiddingCurrentPriceInput").value) || 0;
+
+            var qtyBid = Math.max(0, need + safety - stock);
+            var totalVal = qtyBid * price;
+
+            document.getElementById("editBiddingQtyBidCalc").value = qtyBid;
+            document.getElementById("editBiddingValueCalc").value = "Rp " + totalVal.toLocaleString("id-ID");
+        }
+
+        function filterBiddingMasterPicker(searchVal) {
+            var s = (searchVal || "").toLowerCase().trim();
+            var select = document.getElementById("addBiddingMasterPicker");
+            if (!select) return;
+            var opts = select.options;
+            for (var i = 1; i < opts.length; i++) {
+                var txt = opts[i].text.toLowerCase();
+                if (!s || txt.includes(s)) {
+                    opts[i].style.display = "";
+                } else {
+                    opts[i].style.display = "none";
+                }
+            }
+        }
+
+        function onBiddingMasterSelected(partId) {
+            if (!partId) return;
+            var select = document.getElementById("addBiddingMasterPicker");
+            var selectedOpt = select.options[select.selectedIndex];
+            if (!selectedOpt || !selectedOpt.value) return;
+
+            document.getElementById("biddingMasterDataIdInput").value = partId;
+            document.getElementById("biddingBinInput").value = selectedOpt.getAttribute("data-bin") || "";
+            document.getElementById("biddingItemNameInput").value = selectedOpt.getAttribute("data-item") || "";
+            document.getElementById("biddingDetailInput").value = selectedOpt.getAttribute("data-detail") || "";
+            document.getElementById("biddingBudgetCodeInput").value = selectedOpt.getAttribute("data-budget") || "";
+            document.getElementById("biddingLineInput").value = selectedOpt.getAttribute("data-line") || "";
+            document.getElementById("biddingQtyNeedInput").value = selectedOpt.getAttribute("data-need") || 0;
+            document.getElementById("biddingSafetyStockInput").value = selectedOpt.getAttribute("data-safety") || 0;
+            document.getElementById("biddingCurrentStockInput").value = selectedOpt.getAttribute("data-stock") || 0;
+            document.getElementById("biddingCurrentPriceInput").value = selectedOpt.getAttribute("data-price") || 0;
+            document.getElementById("biddingSupplierInput").value = selectedOpt.getAttribute("data-supplier") || "";
+
+            recalcBiddingSummary();
+        }
+
+        function onBiddingBinChange(binVal) {
+            var b = (binVal || "").trim().toLowerCase();
+            if (!b) return;
+            var select = document.getElementById("addBiddingMasterPicker");
+            for (var i = 1; i < select.options.length; i++) {
+                var optBin = (select.options[i].getAttribute("data-bin") || "").trim().toLowerCase();
+                if (optBin === b) {
+                    select.selectedIndex = i;
+                    onBiddingMasterSelected(select.options[i].value);
+                    break;
+                }
+            }
+        }
+
+        function recalcBiddingSummary() {
+            var need = parseFloat(document.getElementById("biddingQtyNeedInput").value) || 0;
+            var safety = parseFloat(document.getElementById("biddingSafetyStockInput").value) || 0;
+            var stock = parseFloat(document.getElementById("biddingCurrentStockInput").value) || 0;
+            var price = parseFloat(document.getElementById("biddingCurrentPriceInput").value) || 0;
+
+            var qtyBid = Math.max(0, need + safety - stock);
+            var totalVal = qtyBid * price;
+
+            document.getElementById("biddingQtyBidCalc").value = qtyBid;
+            document.getElementById("biddingValueCalc").value = "Rp " + totalVal.toLocaleString("id-ID");
+        }
+
+        function syncSupplierInput(val) {
+            var sel = document.getElementById("modalSupplierSelect");
+            if (val && val.trim().length > 0) {
+                var optExists = Array.from(sel.options).some(o => o.value.toLowerCase() === val.toLowerCase());
+                if (!optExists) {
+                    sel.value = "";
+                } else {
+                    sel.value = val;
+                }
+            }
+        }
+
+        function filterProcTable() {
+            var search = document.getElementById("procSearchInput").value.toLowerCase();
+            var cat = document.getElementById("procCategoryFilter") ? document.getElementById("procCategoryFilter").value.toLowerCase() : "";
+            var stock = document.getElementById("procStockFilter") ? document.getElementById("procStockFilter").value : "";
+
+            var rows = document.querySelectorAll("#procTable tbody tr");
+            rows.forEach(function(row) {
+                var text = row.innerText.toLowerCase();
+                var categoryCell = row.cells[3] ? row.cells[3].innerText.toLowerCase() : "";
+
+                var matchesSearch = !search || text.includes(search);
+                var matchesCategory = !cat || categoryCell.includes(cat);
+
+                if (matchesSearch && matchesCategory) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        function filterBiddingTable() {
+            var search = document.getElementById("biddingSearchInput").value.toLowerCase();
+            var rows = document.querySelectorAll("#biddingTable tbody tr");
+            rows.forEach(function(row) {
+                var text = row.innerText.toLowerCase();
+                if (!search || text.includes(search)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        function openEditMappingModal(id, partInfo, currentLine) {
+            document.getElementById("editMappingId").value = id;
+            document.getElementById("editMappingPartDisplay").innerText = partInfo;
+            var sel = document.getElementById("editMappingLineSelect");
+            if (sel) sel.value = currentLine || "";
+            var modal = new bootstrap.Modal(document.getElementById("editMappingModal"));
+            modal.show();
+        }
+
+        function showHistoryPriceModal(masterDataId, itemName) {
+            document.getElementById("histPartNumber").innerText = masterDataId;
+            document.getElementById("histItemName").innerText = itemName;
+            document.getElementById("histCurrentPrice").innerText = "Loading...";
+
+            var tbody = document.getElementById("histTableBody");
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Loading price history...</td></tr>';
+
+            var modal = new bootstrap.Modal(document.getElementById("historyPriceModal"));
+            modal.show();
+
+            fetch('/AdminManagement/GetPriceHistory?masterDataId=' + encodeURIComponent(masterDataId))
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.success) {
+                        document.getElementById("histCurrentPrice").innerText = "Rp 0";
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Gagal memuat data riwayat (' + ((data && data.message) ? data.message : 'Error') + ').</td></tr>';
+                        return;
+                    }
+
+                    document.getElementById("histCurrentPrice").innerText = "Rp " + (data.currentPrice || 0).toLocaleString('id-ID');
+
+                    var records = [];
+                    if (data.histories && data.histories.length > 0) {
+                        records = data.histories;
+                    } else if (data.offers && data.offers.length > 0) {
+                        records = data.offers;
+                    }
+
+                    if (records.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Belum ada catatan riwayat perubahan harga untuk sparepart ini.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = "";
+                    records.forEach((r, idx) => {
+                        var tr = document.createElement("tr");
+                        var newP = r.newPrice || 0;
+                        var oldP = r.oldPrice || 0;
+                        var diff = newP - oldP;
+                        var badgeHtml = "";
+                        if (oldP > 0 && diff > 0) {
+                            badgeHtml = ' <span class="badge bg-danger-subtle text-danger border ms-1" style="font-size:10px;">+Rp ' + diff.toLocaleString('id-ID') + '</span>';
+                        } else if (oldP > 0 && diff < 0) {
+                            badgeHtml = ' <span class="badge bg-success-subtle text-success border ms-1" style="font-size:10px;">-Rp ' + Math.abs(diff).toLocaleString('id-ID') + '</span>';
+                        }
+
+                        tr.innerHTML = '<td class="text-center font-monospace text-muted" style="background-color:#F8FAFC; border-right:1px solid #E2E8F0;">' + (idx + 1) + '</td>' +
+                            '<td class="small text-muted font-monospace">' + (r.effectiveDate || '-') + '</td>' +
+                            '<td><span class="badge bg-light text-dark border fw-medium">' + (r.supplierName || '-') + '</span></td>' +
+                            '<td class="text-end font-monospace fw-bold text-primary">Rp ' + newP.toLocaleString('id-ID') + badgeHtml + '</td>' +
+                            '<td><span class="small text-secondary">' + (r.reason || 'Price Update') + '</span></td>' +
+                            '<td class="small text-muted">' + (r.updatedBy || 'admin') + '</td>';
+
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById("histCurrentPrice").innerText = "Rp 0";
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Terjadi kesalahan koneksi saat memuat data riwayat.</td></tr>';
+                });
+        }
+    </script>
+}
+
+<!-- Modal Edit Line Mapping -->
+<div class="modal fade" id="editMappingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 0; font-family: Arial, sans-serif;">
+            <form asp-action="EditMapping" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editMappingId" />
+                <div class="modal-header text-white" style="background-color: #0F4C81; border-radius: 0;">
+                    <h6 class="modal-title fw-bold" style="font-family: Arial, sans-serif;"><i class="bi bi-pencil-square me-2"></i>Edit Line Mapping</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div class="bg-white p-3 border mb-3">
+                        <div class="small text-muted mb-1">Sparepart Info</div>
+                        <div class="fw-bold text-primary" id="editMappingPartDisplay"></div>
+                    </div>
+                    <div class="bg-white p-3 border">
+                        <label class="form-label small text-secondary mb-1">Production Line *</label>
+                        <select name="lineName" id="editMappingLineSelect" class="form-select form-select-sm" style="border-radius:0;">
+                            @foreach (var l in Model.AvailableProductionLines)
+                            {
+                                <option value="@l">@l</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:0;">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary" style="border-radius:0; background-color: #0F4C81; border-color: #0F4C81;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal History Price Records -->
+<div class="modal fade" id="historyPriceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 0; font-family: Arial, sans-serif;">
+            <div class="modal-header text-white" style="background-color: #0F4C81; border-radius: 0;">
+                <h6 class="modal-title fw-bold" style="font-family: Arial, sans-serif;"><i class="bi bi-clock-history me-2"></i>History Price & Supplier Records</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light p-3">
+                <div class="bg-white p-3 border mb-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <span class="text-primary font-monospace fw-bold me-2" id="histPartNumber">-</span>
+                            <span class="fw-semibold text-dark" id="histItemName">-</span>
+                        </div>
+                        <div class="col-md-5 text-end">
+                            <span class="small text-muted me-1">Current Price:</span>
+                            <span class="fw-bold text-success font-monospace" id="histCurrentPrice">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border p-0">
+                    <div class="table-responsive" style="max-height: 350px;">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 12px;">
+                            <thead class="table-light text-secondary">
+                                <tr>
+                                    <th style="width: 50px;">NO</th>
+                                    <th>DATE</th>
+                                    <th>SUPPLIER</th>
+                                    <th class="text-end">UNIT PRICE (IDR)</th>
+                                    <th>CHANGE / SOURCE</th>
+                                    <th>UPDATED BY</th>
+                                </tr>
+                            </thead>
+                            <tbody id="histTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">Loading history data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-top py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" style="border-radius:0;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
