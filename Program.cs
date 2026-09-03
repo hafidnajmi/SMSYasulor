@@ -10,7 +10,10 @@ using UPMS.Web.Services;
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseStaticWebAssets();
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.UseStaticWebAssets();
+}
 
 // Listen on appropriate ports for Local Development vs Dewa Cloud Production
 var envPort = Environment.GetEnvironmentVariable("PORT");
