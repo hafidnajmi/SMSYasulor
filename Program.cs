@@ -11,17 +11,29 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Fix: Dewacloud runs app from bin/Debug/net10.0/ so wwwroot is NOT found by default.
-// Detect this and explicitly set ContentRoot to the project root folder.
+// Fix: Dewacloud may run app from bin/Debug/net10.0/ OR from the project root.
+// Probe multiple candidate locations until we find where wwwroot actually lives.
 if (!Directory.Exists(builder.Environment.WebRootPath))
 {
-    // Go up 3 levels from bin/Debug/net10.0/ → project root
-    var projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../.."));
-    var wwwrootPath = Path.Combine(projectRoot, "wwwroot");
-    if (Directory.Exists(wwwrootPath))
+    var candidateRoots = new[]
     {
-        builder.WebHost.UseContentRoot(projectRoot);
-        builder.WebHost.UseWebRoot(wwwrootPath);
+        AppContext.BaseDirectory,                                               // already here
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),        // 1 level up
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../..")),     // 2 levels up
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../..")),  // 3 levels up (bin/Debug/net10.0 → project)
+        Directory.GetCurrentDirectory(),                                        // cwd (dotnet run from project root)
+    };
+
+    foreach (var candidate in candidateRoots)
+    {
+        var wwwrootPath = Path.Combine(candidate, "wwwroot");
+        if (Directory.Exists(wwwrootPath))
+        {
+            Console.WriteLine($"[Startup] Found wwwroot at: {wwwrootPath}");
+            builder.WebHost.UseContentRoot(candidate);
+            builder.WebHost.UseWebRoot(wwwrootPath);
+            break;
+        }
     }
 }
 
