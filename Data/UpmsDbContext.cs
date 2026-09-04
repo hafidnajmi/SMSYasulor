@@ -25,6 +25,7 @@ namespace UPMS.Web.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<AppSetting> AppSettings => Set<AppSetting>();
         public DbSet<EmailSupplierLog> EmailSupplierLogs => Set<EmailSupplierLog>();
+        public DbSet<PmSchedule> PmSchedules => Set<PmSchedule>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

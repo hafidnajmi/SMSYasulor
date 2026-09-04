@@ -105,6 +105,22 @@ CREATE TABLE IF NOT EXISTS ""sparepart_line_mapping"" (
     usage_count INT,
     last_used_at TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ""pm_schedule"" (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    machine_id INT,
+    machine_code VARCHAR(100),
+    machine_name VARCHAR(200),
+    scheduled_date TIMESTAMP NOT NULL,
+    status VARCHAR(20) DEFAULT 'P',
+    technician VARCHAR(150),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100)
+);
 ";
                 await db.Database.ExecuteSqlRawAsync(sql);
 

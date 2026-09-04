@@ -327,6 +327,12 @@ body {
                     }
                 }
 
+                <div class="ems-nav-header">Maintenance</div>
+                <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index">
+                    <i class="bi bi-calendar-check text-success"></i>
+                    <span>Manage PM</span>
+                </a>
+
                 @if (rbacCostIntel || rbacMasterMachine || rbacLineMapping || rbacSupplierData)
                 {
                     <div class="ems-nav-header">Analytics & Mapping</div>

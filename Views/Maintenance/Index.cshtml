@@ -1,0 +1,641 @@
+@using System.Text.Encodings.Web
+@model IEnumerable<UPMS.Web.Models.Entities.PmSchedule>
+@{
+    ViewData["Title"] = "Manage PM (Preventive Maintenance)";
+    int selectedYear = ViewBag.SelectedYear ?? DateTime.Now.Year;
+    int selectedMonth = ViewBag.SelectedMonth ?? DateTime.Now.Month;
+    var machines = ViewBag.Machines as List<UPMS.Web.Models.Entities.MachineMaster> ?? new List<UPMS.Web.Models.Entities.MachineMaster>();
+    var monthEvents = ViewBag.MonthEvents as List<UPMS.Web.Models.Entities.PmSchedule> ?? new List<UPMS.Web.Models.Entities.PmSchedule>();
+
+    DateTime firstDayOfMonth = new DateTime(selectedYear, selectedMonth, 1);
+    int daysInMonth = DateTime.DaysInMonth(selectedYear, selectedMonth);
+    int startDayOfWeek = (int)firstDayOfMonth.DayOfWeek; // 0 = Sunday
+
+    string monthName = firstDayOfMonth.ToString("MMMM yyyy", new System.Globalization.CultureInfo("id-ID"));
+    DateTime prevMonthDate = firstDayOfMonth.AddMonths(-1);
+    DateTime nextMonthDate = firstDayOfMonth.AddMonths(1);
+}
+
+<style>
+    /* Microsoft Calendar Style for PM Management */
+    .pm-calendar-card {
+        background: #ffffff;
+        border: 1px solid var(--color-border);
+        border-radius: 0px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .pm-calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.25rem;
+        background: #F9FAFB;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .pm-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-left: 1px solid var(--color-border);
+        border-top: 1px solid var(--color-border);
+    }
+    .pm-day-header {
+        background: #F3F4F6;
+        text-align: center;
+        padding: 0.5rem 0.25rem;
+        font-weight: 700;
+        font-size: 12px;
+        color: #374151;
+        border-right: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .pm-day-cell {
+        min-height: 110px;
+        background: #ffffff;
+        border-right: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        padding: 0.35rem;
+        position: relative;
+        transition: background 0.15s ease;
+    }
+    .pm-day-cell:hover {
+        background: #F9FAFB;
+    }
+    .pm-day-cell.other-month {
+        background: #F9FAFB;
+        opacity: 0.4;
+    }
+    .pm-day-cell.is-today {
+        background: #EFF6FF !important;
+    }
+    .pm-day-number {
+        font-size: 12px;
+        font-weight: 700;
+        color: #4B5563;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+    }
+    .pm-day-cell.is-today .pm-day-number-badge {
+        background: #0F4C81;
+        color: #ffffff;
+        width: 20px;
+        height: 20px;
+        border-radius: 50% !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+    }
+    .pm-add-btn {
+        opacity: 0;
+        font-size: 12px;
+        color: #0F4C81;
+        cursor: pointer;
+        padding: 0 4px;
+        transition: opacity 0.15s ease;
+    }
+    .pm-day-cell:hover .pm-add-btn {
+        opacity: 1;
+    }
+    
+    /* Exact PM Status Tags per Specification:
+       P (Planning) : Light grey bg (#E5E7EB), dark text (#1F2937)
+       E (Execute)  : Light grey bg (#E5E7EB), green text (#10B981)
+       R (Revision) : Light grey bg (#E5E7EB), blue text (#06B6D4)
+       M (Missed)   : Yellow bg (#FACC15), black text (#000000)
+    */
+    .pm-tag {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 2px 6px;
+        margin-bottom: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 2px !important;
+        cursor: pointer;
+        border: 1px solid rgba(0,0,0,0.08);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .pm-tag:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+    }
+    
+    .pm-tag-p {
+        background-color: #E5E7EB !important;
+        color: #1F2937 !important;
+    }
+    .pm-tag-p .pm-letter {
+        color: #1F2937;
+        font-weight: 900;
+    }
+    
+    .pm-tag-e {
+        background-color: #E5E7EB !important;
+        color: #10B981 !important;
+    }
+    .pm-tag-e .pm-letter {
+        color: #10B981;
+        font-weight: 900;
+    }
+
+    .pm-tag-r {
+        background-color: #E5E7EB !important;
+        color: #06B6D4 !important;
+    }
+    .pm-tag-r .pm-letter {
+        color: #06B6D4;
+        font-weight: 900;
+    }
+
+    .pm-tag-m {
+        background-color: #FACC15 !important;
+        color: #000000 !important;
+    }
+    .pm-tag-m .pm-letter {
+        color: #000000;
+        font-weight: 900;
+    }
+
+    .pm-legend-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 2px !important;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h4 class="page-title mb-0"><i class="bi bi-calendar-check text-primary me-2"></i>Manage PM (Preventive Maintenance)</h4>
+        <p class="text-muted small mb-0">Jadwal pemeliharaan berkala mesin & fasilitas produksi</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-ems-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addPmModal">
+            <i class="bi bi-plus-circle me-1"></i>Tambah Jadwal PM
+        </button>
+        <a asp-action="ExportExcel" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" class="btn btn-outline-success btn-sm px-3">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+    </div>
+</div>
+
+<!-- Status Summary KPI Cards -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card p-2 pm-legend-badge pm-tag-p w-100 justify-content-between shadow-sm">
+            <div>
+                <span class="fs-5 pm-letter">P</span>
+                <span class="ms-2 fw-bold text-dark">Planning</span>
+            </div>
+            <span class="fs-5 fw-bold text-dark">@ViewBag.PlanningCount</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-2 pm-legend-badge pm-tag-e w-100 justify-content-between shadow-sm">
+            <div>
+                <span class="fs-5 pm-letter">E</span>
+                <span class="ms-2 fw-bold" style="color:#10B981;">Execute</span>
+            </div>
+            <span class="fs-5 fw-bold" style="color:#10B981;">@ViewBag.ExecuteCount</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-2 pm-legend-badge pm-tag-r w-100 justify-content-between shadow-sm">
+            <div>
+                <span class="fs-5 pm-letter">R</span>
+                <span class="ms-2 fw-bold" style="color:#06B6D4;">Revision</span>
+            </div>
+            <span class="fs-5 fw-bold" style="color:#06B6D4;">@ViewBag.RevisionCount</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-2 pm-legend-badge pm-tag-m w-100 justify-content-between shadow-sm">
+            <div>
+                <span class="fs-5 pm-letter">M</span>
+                <span class="ms-2 fw-bold text-dark">Missed</span>
+            </div>
+            <span class="fs-5 fw-bold text-dark">@ViewBag.MissedCount</span>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar & Navigation -->
+<div class="card p-3 mb-3" style="border-radius:0;">
+    <form method="get" asp-action="Index" class="row g-2 align-items-center">
+        <div class="col-md-2 col-6">
+            <label class="form-label small text-muted mb-1">Bulan</label>
+            <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                @for (int m = 1; m <= 12; m++)
+                {
+                    var mDate = new DateTime(2026, m, 1);
+                    <option value="@m" selected="@(m == selectedMonth)">@mDate.ToString("MMMM", new System.Globalization.CultureInfo("id-ID"))</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label small text-muted mb-1">Tahun</label>
+            <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+                @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 3; y++)
+                {
+                    <option value="@y" selected="@(y == selectedYear)">@y</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 col-6">
+            <label class="form-label small text-muted mb-1">Mesin / Line</label>
+            <select name="machine" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- Semua Mesin --</option>
+                @foreach (var mc in machines)
+                {
+                    <option value="@mc.MachineName" selected="@(ViewBag.SelectedMachine == mc.MachineName)">@mc.MachineName (@mc.Line)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label small text-muted mb-1">Status</label>
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- Semua Status --</option>
+                <option value="P" selected="@(ViewBag.SelectedStatus == "P")">P - Planning</option>
+                <option value="E" selected="@(ViewBag.SelectedStatus == "E")">E - Execute</option>
+                <option value="R" selected="@(ViewBag.SelectedStatus == "R")">R - Revision</option>
+                <option value="M" selected="@(ViewBag.SelectedStatus == "M")">M - Missed</option>
+            </select>
+        </div>
+        <div class="col-md-3 col-12 d-flex align-items-end gap-2 mt-md-4">
+            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari kegiatan/teknisi..." value="@ViewBag.SearchQuery" />
+            <button type="submit" class="btn btn-secondary btn-sm px-3"><i class="bi bi-search"></i></button>
+        </div>
+    </form>
+</div>
+
+<!-- View Mode Switch Tabs -->
+<ul class="nav nav-tabs mb-3" id="pmViewTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-view" type="button" role="tab">
+            <i class="bi bi-calendar3 me-1"></i>Tampilan Kalender
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-view" type="button" role="tab">
+            <i class="bi bi-list-task me-1"></i>Tampilan List Tabel (@Model.Count())
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="pmViewTabContent">
+    <!-- CALENDAR VIEW TAB -->
+    <div class="tab-pane fade show active" id="calendar-view" role="tabpanel">
+        <div class="pm-calendar-card">
+            <!-- Navigation Month Bar -->
+            <div class="pm-calendar-header">
+                <div class="d-flex align-items-center gap-2">
+                    <a asp-action="Index" asp-route-year="@prevMonthDate.Year" asp-route-month="@prevMonthDate.Month" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <h5 class="mb-0 fw-bold text-dark me-2">@monthName</h5>
+                    <a asp-action="Index" asp-route-year="@nextMonthDate.Year" asp-route-month="@nextMonthDate.Month" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <a asp-action="Index" asp-route-year="@DateTime.Now.Year" asp-route-month="@DateTime.Now.Month" class="btn btn-outline-primary btn-sm px-3">
+                        <i class="bi bi-clock me-1"></i>Bulan Ini
+                    </a>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="pm-calendar-grid">
+                <!-- Day Headers (Sun-Sat) -->
+                <div class="pm-day-header text-danger">Minggu</div>
+                <div class="pm-day-header">Senin</div>
+                <div class="pm-day-header">Selasa</div>
+                <div class="pm-day-header">Rabu</div>
+                <div class="pm-day-header">Kamis</div>
+                <div class="pm-day-header">Jumat</div>
+                <div class="pm-day-header text-primary">Sabtu</div>
+
+                <!-- Padding empty cells before 1st of month -->
+                @for (int p = 0; p < startDayOfWeek; p++)
+                {
+                    <div class="pm-day-cell other-month"></div>
+                }
+
+                <!-- Days 1..daysInMonth -->
+                @for (int day = 1; day <= daysInMonth; day++)
+                {
+                    DateTime currentDate = new DateTime(selectedYear, selectedMonth, day);
+                    bool isToday = currentDate.Date == DateTime.Now.Date;
+                    var dayEvents = monthEvents.Where(e => e.ScheduledDate.Date == currentDate.Date).ToList();
+
+                    <div class="pm-day-cell @(isToday ? "is-today" : "")">
+                        <div class="pm-day-number">
+                            <span class="@(isToday ? "pm-day-number-badge" : "")">@day</span>
+                            <span class="pm-add-btn" title="Tambah Jadwal PM Tanggal Ini" onclick="openAddModalForDate('@currentDate.ToString("yyyy-MM-dd")')">
+                                <i class="bi bi-plus-circle-fill"></i>
+                            </span>
+                        </div>
+
+                        <!-- Render PM Tags on Date -->
+                        @foreach (var pm in dayEvents)
+                        {
+                            string statusClass = pm.Status.ToUpper() switch
+                            {
+                                "P" => "pm-tag-p",
+                                "E" => "pm-tag-e",
+                                "R" => "pm-tag-r",
+                                "M" => "pm-tag-m",
+                                _ => "pm-tag-p"
+                            };
+
+                            <div class="pm-tag @statusClass" 
+                                 onclick="openEditModal(@pm.Id, '@JavaScriptEncoder.Default.Encode(pm.Title)', '@pm.ScheduledDate.ToString("yyyy-MM-dd")', '@pm.Status', '@pm.MachineId', '@JavaScriptEncoder.Default.Encode(pm.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Notes ?? "")')"
+                                 title="@pm.Title - @pm.MachineName (Status: @pm.Status)">
+                                <span class="pm-letter">@pm.Status.ToUpper()</span>
+                                <span>@pm.Title</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Remaining grid padding cells for 35 or 42 total slots -->
+                @{
+                    int totalCellsUsed = startDayOfWeek + daysInMonth;
+                    int remainingCells = (totalCellsUsed <= 35) ? 35 - totalCellsUsed : 42 - totalCellsUsed;
+                }
+                @for (int r = 0; r < remainingCells; r++)
+                {
+                    <div class="pm-day-cell other-month"></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE LIST VIEW TAB -->
+    <div class="tab-pane fade" id="list-view" role="tabpanel">
+        <div class="card p-0" style="border-radius:0;">
+            <div class="table-responsive">
+                <table class="table table-hover table-ems align-middle mb-0" style="font-size:12px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">No</th>
+                            <th width="110">Tanggal</th>
+                            <th>Judul Kegiatan PM</th>
+                            <th>Mesin / Line</th>
+                            <th width="120" class="text-center">Status</th>
+                            <th>Teknisi / PIC</th>
+                            <th>Catatan</th>
+                            <th width="120" class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="bi bi-info-circle fs-4 d-block mb-1"></i>
+                                    Tidak ada jadwal PM ditemukan untuk filter ini.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int no = 1;
+                            foreach (var item in Model)
+                            {
+                                string statusBadgeClass = item.Status.ToUpper() switch
+                                {
+                                    "P" => "pm-tag-p",
+                                    "E" => "pm-tag-e",
+                                    "R" => "pm-tag-r",
+                                    "M" => "pm-tag-m",
+                                    _ => "pm-tag-p"
+                                };
+
+                                <tr>
+                                    <td>@(no++)</td>
+                                    <td class="fw-bold">@item.ScheduledDate.ToString("yyyy-MM-dd")</td>
+                                    <td class="fw-bold text-primary">@item.Title</td>
+                                    <td>@(item.MachineName ?? "-")</td>
+                                    <td class="text-center">
+                                        <span class="pm-legend-badge @statusBadgeClass px-3 py-1">
+                                            <span class="pm-letter">@item.Status.ToUpper()</span>
+                                            <span>
+                                                @(item.Status.ToUpper() switch {
+                                                    "P" => "Planning",
+                                                    "E" => "Execute",
+                                                    "R" => "Revision",
+                                                    "M" => "Missed",
+                                                    _ => item.Status
+                                                })
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td>@(item.Technician ?? "-")</td>
+                                    <td>@(item.Notes ?? "-")</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-primary btn-sm p-1 px-2" title="Edit"
+                                                onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm p-1 px-2 ms-1" title="Hapus"
+                                                onclick="triggerDelete(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Jadwal PM -->
+<div class="modal fade" id="addPmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header bg-primary text-white py-2 px-3">
+                <h6 class="modal-title mb-0"><i class="bi bi-plus-circle me-2"></i>Tambah Jadwal PM Baru</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Judul / Kegiatan PM <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" class="form-control form-control-sm" placeholder="Contoh: Maintenance Cleaning & Lubrication" required />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
+                            <input type="date" id="addScheduledDate" name="ScheduledDate" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Status Awal <span class="text-danger">*</span></label>
+                            <select name="Status" class="form-select form-select-sm" required>
+                                <option value="P">P - Planning</option>
+                                <option value="E">E - Execute</option>
+                                <option value="R">R - Revision</option>
+                                <option value="M">M - Missed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mesin / Line</label>
+                        <select name="MachineId" class="form-select form-select-sm">
+                            <option value="">-- Pilih Mesin --</option>
+                            @foreach (var mc in machines)
+                            {
+                                <option value="@mc.Id">@mc.MachineName (@mc.Line)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Teknisi / Penanggung Jawab (PIC)</label>
+                        <input type="text" name="Technician" class="form-control form-control-sm" placeholder="Nama teknisi / tim maintenance" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Catatan / Deskripsi Detail</label>
+                        <textarea name="Notes" class="form-control form-control-sm" rows="2" placeholder="Catatan spesifik tentang pemeliharaan ini..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-circle me-1"></i>Simpan Jadwal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Jadwal PM -->
+<div class="modal fade" id="editPmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header bg-dark text-white py-2 px-3">
+                <h6 class="modal-title mb-0"><i class="bi bi-pencil-square me-2"></i>Edit & Update Status PM</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editId" name="Id" />
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Judul / Kegiatan PM <span class="text-danger">*</span></label>
+                        <input type="text" id="editTitle" name="Title" class="form-control form-control-sm" required />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
+                            <input type="date" id="editScheduledDate" name="ScheduledDate" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Status PM <span class="text-danger">*</span></label>
+                            <select id="editStatus" name="Status" class="form-select form-select-sm" required>
+                                <option value="P">P - Planning</option>
+                                <option value="E">E - Execute</option>
+                                <option value="R">R - Revision</option>
+                                <option value="M">M - Missed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Mesin / Line</label>
+                        <select id="editMachineId" name="MachineId" class="form-select form-select-sm">
+                            <option value="">-- Pilih Mesin --</option>
+                            @foreach (var mc in machines)
+                            {
+                                <option value="@mc.Id">@mc.MachineName (@mc.Line)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Teknisi / Penanggung Jawab (PIC)</label>
+                        <input type="text" id="editTechnician" name="Technician" class="form-control form-control-sm" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Catatan / Detail Progress</label>
+                        <textarea id="editNotes" name="Notes" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteFromEditModal()">
+                        <i class="bi bi-trash me-1"></i>Hapus
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-save me-1"></i>Update PM</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Form -->
+<form id="deletePmForm" asp-action="Delete" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="deleteId" name="id" />
+</form>
+
+@section Scripts {
+    <script>
+        function openAddModalForDate(dateStr) {
+            document.getElementById('addScheduledDate').value = dateStr;
+            var addModal = new bootstrap.Modal(document.getElementById('addPmModal'));
+            addModal.show();
+        }
+
+        function openEditModal(id, title, dateStr, status, machineId, machineName, technician, notes) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editScheduledDate').value = dateStr;
+            document.getElementById('editStatus').value = status;
+            document.getElementById('editMachineId').value = machineId || '';
+            document.getElementById('editTechnician').value = technician;
+            document.getElementById('editNotes').value = notes;
+
+            var editModal = new bootstrap.Modal(document.getElementById('editPmModal'));
+            editModal.show();
+        }
+
+        function triggerDelete(id, title) {
+            if (confirm("Apakah Anda yakin ingin menghapus jadwal PM: '" + title + "'?")) {
+                document.getElementById('deleteId').value = id;
+                document.getElementById('deletePmForm').submit();
+            }
+        }
+
+        function confirmDeleteFromEditModal() {
+            var id = document.getElementById('editId').value;
+            var title = document.getElementById('editTitle').value;
+            if (confirm("Apakah Anda yakin ingin menghapus jadwal PM: '" + title + "'?")) {
+                document.getElementById('deleteId').value = id;
+                document.getElementById('deletePmForm').submit();
+            }
+        }
+    </script>
+}
