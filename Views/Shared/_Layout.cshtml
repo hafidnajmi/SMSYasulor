@@ -4,16 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Sparepart Management System (SMS)</title>
-    <link rel="icon" type="image/png" href="~/lib/app_icon.png" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="icon" type="image/png" href="/lib/app_icon.png" />
+    <!-- CDN: local wwwroot serving unreliable on Dewacloud, use CDN as primary -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body>
     <!-- Top Header Navigation -->
     <header class="ems-header">
         <a href="/" class="ems-logo-container">
-            <img src="~/lib/app_icon.png" alt="SMS Logo" style="height: 38px; width: auto; object-fit: contain;" class="me-2" />
+            <img src="/lib/app_icon.png" alt="SMS Logo" style="height: 38px; width: auto; object-fit: contain;" class="me-2" />
             <div>
                 <div class="fw-semibold text-dark" style="font-size: 14px; line-height: 1.1;">Sparepart Management System</div>
                 <div class="ems-logo-subtitle">Enterprise Management Suite</div>
@@ -266,9 +267,9 @@
         </div>
     </div>
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmBXFFxgI5vEDTol6OBXBe5LRaH" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="/js/site.js"></script>
     <script>
         let pendingDeleteCallback = null;
         let pendingExportCallback = null;
