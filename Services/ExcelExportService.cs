@@ -61,11 +61,12 @@ namespace UPMS.Web.Services
 
             worksheet.Cell(1, 1).Value = "ID";
             worksheet.Cell(1, 2).Value = "Tanggal";
-            worksheet.Cell(1, 3).Value = "BIN";
-            worksheet.Cell(1, 4).Value = "Nama Item";
-            worksheet.Cell(1, 5).Value = "QTY";
-            worksheet.Cell(1, 6).Value = "PIC";
-            worksheet.Cell(1, 7).Value = "Supplier";
+            worksheet.Cell(1, 3).Value = "Part Number";
+            worksheet.Cell(1, 4).Value = "BIN";
+            worksheet.Cell(1, 5).Value = "Nama Item";
+            worksheet.Cell(1, 6).Value = "QTY";
+            worksheet.Cell(1, 7).Value = "PIC";
+            worksheet.Cell(1, 8).Value = "Supplier";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -77,11 +78,12 @@ namespace UPMS.Web.Services
             {
                 worksheet.Cell(row, 1).Value = item.Id;
                 worksheet.Cell(row, 2).Value = item.Tanggal.ToString("yyyy-MM-dd");
-                worksheet.Cell(row, 3).Value = item.Bin ?? "";
-                worksheet.Cell(row, 4).Value = item.ItemName;
-                worksheet.Cell(row, 5).Value = item.Qty;
-                worksheet.Cell(row, 6).Value = item.Pic ?? "";
-                worksheet.Cell(row, 7).Value = item.Supplier ?? "";
+                worksheet.Cell(row, 3).Value = item.PartNumber ?? "";
+                worksheet.Cell(row, 4).Value = item.Bin ?? "";
+                worksheet.Cell(row, 5).Value = item.ItemName;
+                worksheet.Cell(row, 6).Value = item.Qty;
+                worksheet.Cell(row, 7).Value = item.Pic ?? "";
+                worksheet.Cell(row, 8).Value = item.Supplier ?? "";
                 row++;
             }
 
@@ -99,15 +101,16 @@ namespace UPMS.Web.Services
 
             worksheet.Cell(1, 1).Value = "ID";
             worksheet.Cell(1, 2).Value = "Tanggal";
-            worksheet.Cell(1, 3).Value = "BIN";
-            worksheet.Cell(1, 4).Value = "Nama Item";
-            worksheet.Cell(1, 5).Value = "QTY";
-            worksheet.Cell(1, 6).Value = "Line";
-            worksheet.Cell(1, 7).Value = "Maintenance Type";
-            worksheet.Cell(1, 8).Value = "PIC";
-            worksheet.Cell(1, 9).Value = "Unit Price";
-            worksheet.Cell(1, 10).Value = "Total Cost";
-            worksheet.Cell(1, 11).Value = "Status";
+            worksheet.Cell(1, 3).Value = "Part Number";
+            worksheet.Cell(1, 4).Value = "BIN";
+            worksheet.Cell(1, 5).Value = "Nama Item";
+            worksheet.Cell(1, 6).Value = "QTY";
+            worksheet.Cell(1, 7).Value = "Line";
+            worksheet.Cell(1, 8).Value = "Maintenance Type";
+            worksheet.Cell(1, 9).Value = "PIC";
+            worksheet.Cell(1, 10).Value = "Unit Price";
+            worksheet.Cell(1, 11).Value = "Total Cost";
+            worksheet.Cell(1, 12).Value = "Status";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -119,15 +122,16 @@ namespace UPMS.Web.Services
             {
                 worksheet.Cell(row, 1).Value = item.Id;
                 worksheet.Cell(row, 2).Value = item.Tanggal.ToString("yyyy-MM-dd");
-                worksheet.Cell(row, 3).Value = item.Bin ?? "";
-                worksheet.Cell(row, 4).Value = item.ItemName;
-                worksheet.Cell(row, 5).Value = item.Qty;
-                worksheet.Cell(row, 6).Value = item.Line ?? "";
-                worksheet.Cell(row, 7).Value = item.MaintenanceType ?? "";
-                worksheet.Cell(row, 8).Value = item.Pic ?? "";
-                worksheet.Cell(row, 9).Value = item.UnitPrice ?? 0m;
-                worksheet.Cell(row, 10).Value = item.TotalCost ?? 0m;
-                worksheet.Cell(row, 11).Value = item.ApprovalStatus ?? "Approved";
+                worksheet.Cell(row, 3).Value = item.PartNumber ?? item.MasterDataId ?? "";
+                worksheet.Cell(row, 4).Value = item.Bin ?? "";
+                worksheet.Cell(row, 5).Value = item.ItemName;
+                worksheet.Cell(row, 6).Value = item.Qty;
+                worksheet.Cell(row, 7).Value = item.Line ?? "";
+                worksheet.Cell(row, 8).Value = item.MaintenanceType ?? "";
+                worksheet.Cell(row, 9).Value = item.Pic ?? "";
+                worksheet.Cell(row, 10).Value = item.UnitPrice ?? 0m;
+                worksheet.Cell(row, 11).Value = item.TotalCost ?? 0m;
+                worksheet.Cell(row, 12).Value = item.ApprovalStatus ?? "Approved";
                 row++;
             }
 

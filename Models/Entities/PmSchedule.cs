@@ -44,6 +44,10 @@ namespace UPMS.Web.Models.Entities
         [Column("technician")]
         public string? Technician { get; set; }
 
+        [StringLength(100)]
+        [Column("up_area")]
+        public string? UpArea { get; set; }
+
         [Column("notes")]
         public string? Notes { get; set; }
 

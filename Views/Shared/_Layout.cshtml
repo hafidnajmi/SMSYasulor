@@ -5,9 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Sparepart Management System (SMS)</title>
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" />
+    <!-- Immediate Sidebar Collapsed State Check to prevent layout flicker -->
+    <script>
+        (function() {
+            if (localStorage.getItem('ems_sidebar_collapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        })();
+    </script>
     <!-- CDN: local wwwroot serving unreliable on Dewacloud, use CDN as primary -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Inline site.css: avoids dependency on /css/site.css which is 404 on Dewacloud -->
     <style>
 :root {
@@ -28,6 +38,7 @@
     --bs-font-monospace:   Arial, Helvetica, sans-serif;
     --bs-body-font-family: Arial, Helvetica, sans-serif;
     --sidebar-width:       240px;
+    --sidebar-collapsed-width: 64px;
     --topbar-height:       56px;
 }
 *, *::before, *::after,
@@ -54,6 +65,9 @@ body {
     margin: 0;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+}
+body:not(.modal-open) {
+    overflow-y: auto !important;
 }
 .ems-header, .ems-sidebar, .ems-filter-card, .ems-kpi-card,
 .btn, .form-control, .form-select, .badge, .table-ems, .modal-content, .dropdown-menu {
@@ -92,7 +106,7 @@ body {
 .ems-logo-subtitle {
     font-size: 11px;
     color: var(--color-text-muted);
-    font-weight: 600;
+    font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -112,40 +126,208 @@ body {
     top: var(--topbar-height);
     bottom: 0; left: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1020;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    transition: width 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
+.ems-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.ems-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ems-sidebar::-webkit-scrollbar-thumb {
+    background-color: #CBD5E1;
+    border-radius: 2px;
+}
+.ems-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: #94A3B8;
+}
+
 .ems-nav-header {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--color-text-muted);
-    padding: 1rem 1.25rem 0.35rem;
+    padding: 0.9rem 1.25rem 0.35rem;
     font-weight: 600;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
 }
 .ems-nav-link {
     color: var(--color-secondary);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.55rem 1.25rem;
+    padding: 0 0 0 18px;
+    height: 40px;
     font-size: 13px;
     font-weight: 400;
     border-left: 3px solid transparent;
     text-decoration: none;
-    transition: background-color 0.1s ease, color 0.1s ease;
+    white-space: nowrap;
+    margin: 1px 0;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.ems-nav-link:hover { background-color: #F3F4F6; color: var(--color-primary); }
+.ems-nav-link:hover {
+    background-color: #F3F4F6;
+    color: var(--color-primary);
+}
 .ems-nav-link.active {
     background-color: #EFF6FF;
     color: var(--color-primary);
     border-left-color: var(--color-primary);
     font-weight: 600;
 }
-.ems-sidebar-footer { padding: 0.85rem 1.25rem; border-top: 1px solid var(--color-border); }
-.ems-wrapper { margin-left: var(--sidebar-width); padding-top: var(--topbar-height); min-height: 100vh; }
+.ems-nav-link i {
+    font-size: 1.15rem;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-align: center;
+}
+.ems-nav-link span {
+    margin-left: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.15s ease;
+}
+.ems-sidebar-footer {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--color-border);
+}
+.ems-sidebar-footer button {
+    height: 40px;
+    padding: 0 0 0 18px;
+    width: 100%;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    color: var(--color-secondary);
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.ems-sidebar-footer button:hover {
+    background-color: #FEF2F2;
+    color: #DC2626;
+}
+.ems-sidebar-footer button i {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.ems-sidebar-footer button span {
+    margin-left: 12px;
+    white-space: nowrap;
+}
+.ems-wrapper {
+    margin-left: var(--sidebar-width);
+    padding-top: var(--topbar-height);
+    min-height: 100vh;
+    transition: margin-left 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ==========================================
+   Collapsed Sidebar Rules (Microsoft Azure Style)
+   ========================================== */
+.sidebar-collapsed .ems-sidebar {
+    width: 60px !important;
+}
+.sidebar-collapsed .ems-wrapper {
+    margin-left: 60px !important;
+}
+
+/* Group Headers: turn into a clean subtle 1px divider in collapsed mode */
+.sidebar-collapsed .ems-nav-header {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: 8px 12px !important;
+    background-color: #E5E7EB !important;
+    border: none !important;
+    overflow: hidden !important;
+    opacity: 1 !important;
+}
+.sidebar-collapsed .ems-nav-header:first-child {
+    display: none !important;
+}
+
+/* Nav Links in Collapsed Mode */
+.sidebar-collapsed .ems-nav-link {
+    width: 100% !important;
+    height: 40px !important;
+    padding: 0 0 0 15px !important;
+    margin: 1px 0 !important;
+    justify-content: flex-start !important;
+    border-radius: 0 !important;
+    border-left: 3px solid transparent !important;
+    border-top: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+.sidebar-collapsed .ems-nav-link:hover {
+    background-color: #F3F4F6 !important;
+    color: var(--color-primary) !important;
+}
+.sidebar-collapsed .ems-nav-link.active {
+    background-color: #EFF6FF !important;
+    color: var(--color-primary) !important;
+    border-left-color: var(--color-primary) !important;
+    box-shadow: none !important;
+}
+.sidebar-collapsed .ems-nav-link span {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+}
+.sidebar-collapsed .ems-nav-link i {
+    font-size: 1.15rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+/* Sidebar Footer in Collapsed Mode */
+.sidebar-collapsed .ems-sidebar-footer {
+    padding: 0.5rem 0 !important;
+}
+.sidebar-collapsed .ems-sidebar-footer button {
+    width: 100% !important;
+    height: 40px !important;
+    padding: 0 0 0 15px !important;
+    justify-content: flex-start !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+.sidebar-collapsed .ems-sidebar-footer button:hover {
+    background-color: #FEF2F2 !important;
+    color: #DC2626 !important;
+}
+.sidebar-collapsed .ems-sidebar-footer span {
+    display: none !important;
+}
+
 .ems-content { padding: 1.5rem 1.75rem; }
 .page-title { font-size: 18px; font-weight: 600; color: var(--color-text); margin: 0 0 2px 0; line-height: 1.3; }
 .page-subtitle { font-size: 13px; color: var(--color-text-muted); margin: 0; }
@@ -199,13 +381,15 @@ body {
 .btn-ems-primary:hover { background-color: #0353E9; border-color: #0353E9; color: #FFFFFF; }
 .btn-ems-outline { background-color: #FFFFFF; color: var(--color-secondary); border: 1px solid var(--color-border); font-weight: 500; font-size: 13px; padding: 0.35rem 0.9rem; border-radius: 0px !important; display: inline-flex; align-items: center; gap: 0.35rem; }
 .btn-ems-outline:hover { background-color: #F3F4F6; border-color: #9CA3AF; color: var(--color-text); }
-.table-ems { width: 100%; font-size: 12px; margin: 0; border-collapse: collapse; table-layout: auto; }
-.table-ems th { background-color: #F8FAFC; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.65rem; border-bottom: 2px solid var(--color-border); vertical-align: middle; white-space: nowrap; }
+.table-ems { width: 100%; font-size: 12px; margin: 0; border-collapse: separate; border-spacing: 0; table-layout: auto; }
+.table-ems th { position: sticky; top: 0; z-index: 10; background-color: #F8FAFC !important; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.55rem 0.65rem; border-bottom: 2px solid var(--color-border); vertical-align: middle; white-space: nowrap; box-shadow: 0 1px 0 var(--color-border); }
 .table-ems td { padding: 0.5rem 0.65rem; vertical-align: middle; border-bottom: 1px solid #E2E8F0; color: #1E293B; }
 .table-ems tbody tr:hover { background-color: #F1F5F9; }
 .text-nowrap, .table-ems td.text-nowrap, .table-ems th.text-nowrap { white-space: nowrap !important; }
-.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.table-responsive::-webkit-scrollbar { height: 6px; }
+.table-responsive { max-height: calc(100vh - 270px); min-height: 180px; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; border-bottom: 1px solid var(--color-border); }
+.modal .table-responsive { max-height: 55vh; }
+.recent-activity-card .table-responsive { max-height: 320px; }
+.table-responsive::-webkit-scrollbar { width: 6px; height: 8px; }
 .table-responsive::-webkit-scrollbar-track { background: #F1F5F9; }
 .table-responsive::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
 .table-responsive::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
@@ -223,22 +407,71 @@ body {
 .btn-ems-icon-action.text-info:hover    { background: #ECFEFF; border-color: #A5F3FC; }
 .btn-ems-icon-action.text-warning:hover { background: #FFFBEB; border-color: #FDE68A; }
 .btn-ems-icon-action.text-danger:hover  { background: #FEF2F2; border-color: #FECACA; }
+
+/* Responsive Mobile Layout Adjustments */
+@@media (max-width: 768px) {
+    .ems-header {
+        padding: 0 0.85rem !important;
+    }
+    .ems-logo-subtitle {
+        display: none !important;
+    }
+    .ems-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-in-out;
+        width: 260px !important;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+    }
+    .ems-sidebar.show-mobile {
+        transform: translateX(0) !important;
+    }
+    .ems-wrapper {
+        margin-left: 0 !important;
+    }
+    .ems-content {
+        padding: 0.85rem 0.65rem !important;
+    }
+    .ems-sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1015;
+    }
+    .ems-sidebar-overlay.show {
+        display: block;
+    }
+}
     </style>
 </head>
 <body>
     <!-- Top Header Navigation -->
     <header class="ems-header">
-        <a href="/" class="ems-logo-container">
-            <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 38px; width: auto; object-fit: contain;" class="me-2" />
-            <div>
-                <div class="fw-semibold text-dark" style="font-size: 14px; line-height: 1.1;">Sparepart Management System</div>
-                <div class="ems-logo-subtitle">Enterprise Management Suite</div>
-            </div>
-        </a>
+        <div class="d-flex align-items-center">
+            <!-- Desktop Sidebar Collapse Toggle Button -->
+            <button class="btn btn-sm btn-link text-dark p-1 me-2 d-none d-md-flex align-items-center justify-content-center" type="button" id="sidebarToggleBtn" onclick="toggleDesktopSidebar()" title="Toggle Sidebar (Collapse/Expand)" style="width: 32px; height: 32px; font-size: 18px; border-radius: 4px !important; text-decoration: none;">
+                <i class="bi bi-list fs-5"></i>
+            </button>
+            <!-- Mobile Sidebar Toggle Button -->
+            <button class="btn btn-sm btn-outline-secondary d-md-none me-2 p-1 px-2" type="button" onclick="toggleMobileSidebar()" title="Toggle Menu">
+                <i class="bi bi-list fs-5"></i>
+            </button>
+            <a href="/" class="ems-logo-container">
+                <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 46px; width: auto; object-fit: contain;" class="me-2" />
+                <div>
+                    <div class="fw-normal text-dark" style="font-size: 15px; line-height: 1.1; font-weight: 400;">Sparepart Management System</div>
+                    <div class="ems-logo-subtitle" style="font-weight: 400;">Enterprise Management Suite</div>
+                </div>
+            </a>
+        </div>
 
         <div class="d-flex align-items-center gap-3">
             @if (User.Identity != null && User.Identity.IsAuthenticated)
             {
+                var activeDept = Context.Request.Cookies["SMS_ACTIVE_DEPT"] ?? "Filling";
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold" style="font-size:11px; border-radius:0; font-family: Arial, sans-serif !important;">
+                    @activeDept.ToUpper()
+                </span>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-link text-decoration-none p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                         <div class="ems-user-avatar">@(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "A")</div>
@@ -259,6 +492,9 @@ body {
         </div>
     </header>
 
+    <!-- Global Toast Container -->
+    <div id="ems-toast-container" style="position:fixed; top:70px; right:20px; z-index:10000; pointer-events:none;"></div>
+
 @using Microsoft.EntityFrameworkCore
 @inject UPMS.Web.Data.UpmsDbContext DbContext
 @{
@@ -273,8 +509,8 @@ body {
     bool rbacBarangMasuk = isUserAdmin || (userEntity?.CanBarangMasuk == 1);
     bool rbacBarangKeluar = isUserAdmin || (userEntity?.CanBarangKeluar == 1);
     bool rbacRiwayat = isUserAdmin || (userEntity?.CanRiwayat == 1);
+    bool rbacManagePm = isUserAdmin || (userEntity?.CanManagePm == 1);
     bool rbacCostIntel = isUserAdmin || (userEntity?.CanCostIntelligence == 1);
-    bool rbacMasterMachine = isUserAdmin || (userEntity?.CanMasterMachine == 1) || (userEntity?.CanSparepartMachine == 1);
     bool rbacLineMapping = isUserAdmin || (userEntity?.CanLineMapping == 1);
     bool rbacSupplierData = isUserAdmin || (userEntity?.CanSupplierData == 1);
     bool rbacAdminMgmt = isUserAdmin || (userEntity?.CanAdminMgmt == 1) || (userEntity?.CanBidding == 1);
@@ -282,12 +518,13 @@ body {
     bool rbacEmailSettings = isUserAdmin || (userEntity?.CanEmailSettings == 1);
 }
 
+    <div class="ems-sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     <div class="app-wrapper">
         <!-- Sidebar Navigation -->
         <aside class="ems-sidebar">
             <div>
                 <div class="ems-nav-header">Dashboard</div>
-                <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index" title="Dashboard">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
@@ -295,7 +532,7 @@ body {
                 @if (rbacMasterData)
                 {
                     <div class="ems-nav-header">Master Data</div>
-                    <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MasterData" ? "active" : "")" asp-controller="MasterData" asp-action="Index">
+                    <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MasterData" ? "active" : "")" asp-controller="MasterData" asp-action="Index" title="Spareparts Catalog">
                         <i class="bi bi-boxes"></i>
                         <span>Spareparts Catalog</span>
                     </a>
@@ -306,60 +543,61 @@ body {
                     <div class="ems-nav-header">Transactions</div>
                     @if (rbacBarangMasuk)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")" asp-controller="BarangMasuk" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")" asp-controller="BarangMasuk" asp-action="Index" title="Barang Masuk">
                             <i class="bi bi-box-arrow-in-down text-success"></i>
                             <span>Barang Masuk</span>
                         </a>
                     }
                     @if (rbacBarangKeluar)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")" asp-controller="BarangKeluar" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")" asp-controller="BarangKeluar" asp-action="Index" title="Barang Keluar">
                             <i class="bi bi-box-arrow-up-right text-danger"></i>
                             <span>Barang Keluar</span>
                         </a>
                     }
                     @if (rbacRiwayat)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "History" ? "active" : "")" asp-controller="History" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "History" ? "active" : "")" asp-controller="History" asp-action="Index" title="Transaction Logs">
                             <i class="bi bi-clock-history text-primary"></i>
                             <span>Transaction Logs</span>
                         </a>
                     }
                 }
 
-                <div class="ems-nav-header">Maintenance</div>
-                <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index">
-                    <i class="bi bi-calendar-check text-success"></i>
-                    <span>Manage PM</span>
-                </a>
+                @if (rbacManagePm)
+                {
+                    <div class="ems-nav-header">Maintenance</div>
+                    <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Maintenance" asp-action="Index" title="Manage PM">
+                        <i class="bi bi-calendar-check text-success"></i>
+                        <span>Manage PM</span>
+                    </a>
+                    <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" && ViewContext.RouteData.Values["action"]?.ToString() == "PmPlan" ? "active" : "")" asp-controller="Maintenance" asp-action="PmPlan" title="Preventive Maintenance Plan">
+                        <i class="bi bi-list-task text-primary"></i>
+                        <span>Preventive Maintenance Plan</span>
+                    </a>
+                }
 
-                @if (rbacCostIntel || rbacMasterMachine || rbacLineMapping || rbacSupplierData)
+                @if (rbacCostIntel || rbacLineMapping || rbacSupplierData)
                 {
                     <div class="ems-nav-header">Analytics & Mapping</div>
                     @if (rbacCostIntel)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CostIntelligence" ? "active" : "")" asp-controller="CostIntelligence" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CostIntelligence" ? "active" : "")" asp-controller="CostIntelligence" asp-action="Index" title="Cost Intelligence">
                             <i class="bi bi-graph-up-arrow"></i>
                             <span>Cost Intelligence</span>
                         </a>
                     }
-                    @if (rbacMasterMachine)
-                    {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MasterMachine" ? "active" : "")" asp-controller="MasterMachine" asp-action="Index">
-                            <i class="bi bi-cpu"></i>
-                            <span>Master Machine</span>
-                        </a>
-                    }
+
                     @if (rbacLineMapping)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "LineCompatibility" ? "active" : "")" asp-controller="LineCompatibility" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "LineCompatibility" ? "active" : "")" asp-controller="LineCompatibility" asp-action="Index" title="Line Compatibility">
                             <i class="bi bi-diagram-3-fill text-info"></i>
                             <span>Line Compatibility</span>
                         </a>
                     }
                     @if (rbacSupplierData)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")" asp-controller="Supplier" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")" asp-controller="Supplier" asp-action="Index" title="Master Supplier">
                             <i class="bi bi-truck text-warning"></i>
                             <span>Master Supplier</span>
                         </a>
@@ -371,21 +609,21 @@ body {
                     <div class="ems-nav-header">Administration</div>
                     @if (rbacAdminMgmt)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminManagement" ? "active" : "")" asp-controller="AdminManagement" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminManagement" ? "active" : "")" asp-controller="AdminManagement" asp-action="Index" title="Admin Portal">
                             <i class="bi bi-shield-check text-warning"></i>
                             <span>Admin Portal</span>
                         </a>
                     }
                     @if (rbacSettings)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index" title="Settings & Users">
                             <i class="bi bi-gear"></i>
                             <span>Settings & Users</span>
                         </a>
                     }
                     @if (rbacEmailSettings)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "EmailSettings" ? "active" : "")" asp-controller="EmailSettings" asp-action="Index">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "EmailSettings" ? "active" : "")" asp-controller="EmailSettings" asp-action="Index" title="Email Settings">
                             <i class="bi bi-envelope-at text-info"></i>
                             <span>Email Settings</span>
                         </a>
@@ -395,7 +633,7 @@ body {
 
             <div class="ems-sidebar-footer">
                 <form asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="btn btn-link nav-link p-0 text-secondary small d-flex align-items-center gap-2">
+                    <button type="submit" class="btn btn-link nav-link p-0 text-secondary small d-flex align-items-center gap-2" title="Logout">
                         <i class="bi bi-box-arrow-right fs-6"></i>
                         <span>Logout</span>
                     </button>
@@ -488,16 +726,30 @@ body {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmBXFFxgI5vEDTol6OBXBe5LRaH" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/site.js"></script>
     <script>
         let pendingDeleteCallback = null;
         let pendingExportCallback = null;
 
-        function executeSecureDelete(formOrCallback, itemDesc) {
+        function toggleDesktopSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            document.documentElement.classList.toggle('sidebar-collapsed');
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('ems_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+        }
+
+        // Apply body class on DOM ready if saved as collapsed
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('ems_sidebar_collapsed') === 'true') {
+                document.body.classList.add('sidebar-collapsed');
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        });
+
+        function executeSecureDelete(formOrCallback, itemDesc, forcePassword = false) {
             const isAdmin = @((User.Identity?.IsAuthenticated == true && User.IsInRole("admin")).ToString().ToLower());
-            if (isAdmin) {
+            if (isAdmin && !forcePassword) {
                 if (confirm("Apakah Anda yakin ingin menghapus" + (itemDesc ? (" " + itemDesc) : " data ini") + "?")) {
                     if (typeof formOrCallback === 'function') {
                         formOrCallback();
@@ -513,8 +765,14 @@ body {
             document.getElementById('secureDeletePasswordInput').value = '';
             document.getElementById('secureDeleteError').style.display = 'none';
 
-            const modal = new bootstrap.Modal(document.getElementById('secureDeleteModal'));
-            modal.show();
+            const modalEl = document.getElementById('secureDeleteModal');
+            if (window.bootstrap && window.bootstrap.Modal) {
+                const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            } else if (modalEl) {
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+            }
             return false;
         }
 
@@ -540,8 +798,14 @@ body {
             .then(data => {
                 if (data.success) {
                     const modalEl = document.getElementById('secureDeleteModal');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        const modal = window.bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+                    if (modalEl) {
+                        modalEl.classList.remove('show');
+                        modalEl.style.display = 'none';
+                    }
 
                     if (typeof pendingDeleteCallback === 'function') {
                         pendingDeleteCallback();
@@ -564,8 +828,14 @@ body {
             document.getElementById('secureExportPasswordInput').value = '';
             document.getElementById('secureExportError').style.display = 'none';
 
-            const modal = new bootstrap.Modal(document.getElementById('secureExportModal'));
-            modal.show();
+            const modalEl = document.getElementById('secureExportModal');
+            if (window.bootstrap && window.bootstrap.Modal) {
+                const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            } else if (modalEl) {
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+            }
             return false;
         }
 
@@ -591,8 +861,14 @@ body {
             .then(data => {
                 if (data.success) {
                     const modalEl = document.getElementById('secureExportModal');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    if (modal) modal.hide();
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        const modal = window.bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+                    if (modalEl) {
+                        modalEl.classList.remove('show');
+                        modalEl.style.display = 'none';
+                    }
 
                     if (typeof pendingExportCallback === 'function') {
                         pendingExportCallback();
@@ -608,6 +884,51 @@ body {
                 errEl.textContent = 'Terjadi kesalahan otentikasi.';
                 errEl.style.display = 'block';
             });
+        }
+
+        function showEmsToast(type, message) {
+            var container = document.getElementById('ems-toast-container');
+            if (!container) return;
+
+            var toastEl = document.createElement('div');
+            var isSuccess = (type === 'success');
+            var bgClass = isSuccess ? '#059669' : '#DC2626';
+            var iconClass = isSuccess ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+            toastEl.style.cssText = 'min-width:280px; max-width:420px; background:' + bgClass + '; color:#fff; padding:10px 14px; font-size:13px; font-weight:500; border-radius:0px; box-shadow:0 4px 12px rgba(0,0,0,0.18); opacity:0; transform:translateY(-10px); transition:all 0.25s ease-in-out; display:flex; align-items:center; gap:10px; margin-bottom:8px; pointer-events:auto;';
+            toastEl.innerHTML = '<i class="bi ' + iconClass + ' fs-5"></i><span style="flex:1; line-height:1.3;">' + message + '</span><button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer; opacity:0.8;">&times;</button>';
+
+            container.appendChild(toastEl);
+
+            setTimeout(function() {
+                toastEl.style.opacity = '1';
+                toastEl.style.transform = 'translateY(0)';
+            }, 10);
+
+            setTimeout(function() {
+                toastEl.style.opacity = '0';
+                toastEl.style.transform = 'translateY(-10px)';
+                setTimeout(function() { if(toastEl.parentElement) toastEl.remove(); }, 250);
+            }, 3500);
+        }
+
+        function clearModalLocks() {
+            document.querySelectorAll('.modal-backdrop').forEach(function(b) { b.remove(); });
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            document.documentElement.style.removeProperty('overflow');
+        }
+
+        document.addEventListener('hidden.bs.modal', function () {
+            clearModalLocks();
+        });
+
+        function toggleMobileSidebar() {
+            var sidebar = document.querySelector('.ems-sidebar');
+            var overlay = document.querySelector('.ems-sidebar-overlay');
+            if (sidebar) sidebar.classList.toggle('show-mobile');
+            if (overlay) overlay.classList.toggle('show');
         }
     </script>
     @await RenderSectionAsync("Scripts", required: false)

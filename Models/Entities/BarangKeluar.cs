@@ -27,13 +27,13 @@ namespace UPMS.Web.Models.Entities
         [Column("qty")]
         public int Qty { get; set; }
 
-        [StringLength(100)]
-        [Column("rem_name")]
-        public string? RemName { get; set; }
-
         [StringLength(50)]
         [Column("master_data_id")]
         public string? MasterDataId { get; set; }
+
+        [StringLength(100)]
+        [Column("part_number")]
+        public string? PartNumber { get; set; }
 
         [StringLength(100)]
         [Column("line")]
@@ -45,10 +45,6 @@ namespace UPMS.Web.Models.Entities
         [StringLength(50)]
         [Column("maintenance_type")]
         public string? MaintenanceType { get; set; }
-
-        [StringLength(100)]
-        [Column("failure_reason")]
-        public string? FailureReason { get; set; }
 
         [StringLength(500)]
         [Column("action_note")]

@@ -425,6 +425,8 @@
 @if (activeTab == "approvals")
 {
     var pendingKeluar = Model.PendingBarangKeluarApprovals;
+    var userMap = ViewBag.UserMap as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var machineMap = ViewBag.MachineMap as Dictionary<int, string> ?? new Dictionary<int, string>();
 
     <!-- Approval Barang Keluar Content (Matching Python ApprovalBarangKeluarContent) -->
     <div class="ems-filter-card mb-4" style="border-radius:0;">
@@ -456,20 +458,31 @@
                         {
                             foreach (var item in pendingKeluar)
                             {
+                                string submitterName = (item.UserId.HasValue && userMap.TryGetValue(item.UserId.Value, out var uName) && !string.IsNullOrWhiteSpace(uName))
+                                    ? uName
+                                    : (!string.IsNullOrWhiteSpace(item.Pic) ? item.Pic : "Technician");
+                                string machineName = (item.MachineId.HasValue && machineMap.TryGetValue(item.MachineId.Value, out var mName) && !string.IsNullOrWhiteSpace(mName))
+                                    ? mName
+                                    : "";
+
                                 <tr>
-                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
-                                    <td><span class="font-monospace fw-bold text-primary">#(item.MasterDataId ?? "-")</span></td>
-                                    <td class="fw-semibold">@item.ItemName</td>
-                                    <td class="text-end text-danger fw-bold fs-6">-@item.Qty</td>
+                                    <td class="small text-muted font-monospace">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="font-monospace text-primary">@(item.PartNumber ?? item.MasterDataId ?? "-")</span></td>
+                                    <td class="text-dark">@item.ItemName</td>
+                                    <td class="text-end text-danger font-monospace">-@item.Qty</td>
                                     <td>
                                         <span class="badge bg-light text-dark border me-1" style="border-radius:0;">@(item.Line ?? "-")</span>
-                                        @if (!string.IsNullOrEmpty(item.Bin))
+                                        @if (!string.IsNullOrWhiteSpace(machineName))
+                                        {
+                                            <span class="badge bg-light text-dark border me-1" style="border-radius:0;">@machineName</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(item.Bin))
                                         {
                                             <span class="badge bg-light text-dark font-monospace border" style="border-radius:0;">BIN: @item.Bin</span>
                                         }
                                     </td>
-                                    <td class="small">@(item.Pic ?? "-")</td>
-                                    <td class="small text-secondary">@(item.RemName ?? "Technician")</td>
+                                    <td class="small text-dark">@(item.Pic ?? "-")</td>
+                                    <td class="small text-secondary">@submitterName</td>
                                     <td class="text-center align-middle" style="white-space: nowrap;">
                                         <div class="d-flex align-items-center justify-content-center gap-1">
                                             <form asp-action="ApproveKeluar" asp-route-id="@item.Id" method="post" class="d-inline m-0 p-0">

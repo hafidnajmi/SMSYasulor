@@ -10,7 +10,7 @@ namespace UPMS.Web.Models.Entities
         [Key]
         [StringLength(50)]
         [Column("id")]
-        public string Id { get; set; } = string.Empty;
+        public string? Id { get; set; }
 
         [Required]
         [StringLength(200)]

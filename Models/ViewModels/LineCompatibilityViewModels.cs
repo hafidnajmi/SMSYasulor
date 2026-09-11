@@ -87,9 +87,13 @@ namespace UPMS.Web.Models.ViewModels
         public string? SelectedLine { get; set; }
         public LineHealthDto? SelectedLineData { get; set; }
         public string LineSearch { get; set; } = "";
+        public string AreaFilter { get; set; } = "";
         public string LineSort { get; set; } = "line_code";
         public string DetailSearch { get; set; } = "";
         public string KpiTab { get; set; } = "parts"; // parts | machines
+        public decimal TotalMappedValue { get; set; }
+        public int TotalMappedPartsCount { get; set; }
+        public int TotalMappedStockQty { get; set; }
 
         // ── Parts list (KPI: parts sub-tab) ──────────────────────────────────
         public List<CompatiblePartDto> CompatibleParts { get; set; } = new();

@@ -1,0 +1,880 @@
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Preventive Maintenance Plan";
+    var allLines = ViewBag.AllLines as List<string> ?? new List<string>();
+    var machines = ViewBag.Machines as List<UPMS.Web.Models.Entities.MachineMaster> ?? new List<UPMS.Web.Models.Entities.MachineMaster>();
+    var selectedLine = ViewBag.SelectedLine as string ?? "";
+    var selectedMachine = ViewBag.SelectedMachine as string ?? "";
+    var monthAbbrevs = new[] { "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des" };
+    var masterSparepartList = ViewBag.MasterSparepartList as List<UPMS.Web.Models.Entities.MasterData> ?? new List<UPMS.Web.Models.Entities.MasterData>();
+
+    bool canEditPm = ViewBag.CanEditPm != null ? (bool)ViewBag.CanEditPm : true;
+}
+
+<style>
+    /* Microsoft Fluent Enterprise Theme Settings - Flat Theme (0 Border Radius) */
+    :root {
+        --ms-primary: #0078d4;
+        --ms-primary-hover: #106ebe;
+        --ms-primary-light: #eff6fc;
+        --ms-neutral-light: #f3f2f1;
+        --ms-neutral-border: #e1dfdd;
+        --ms-neutral-dark: #323130;
+        --ms-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Universal 0-radius reset for all UI elements in PmPlan */
+    .plan-header-banner,
+    .plan-add-form-card,
+    .plan-table-card,
+    .fluent-month-pill,
+    .preset-btn-sm,
+    .badge-fluent-all,
+    .badge-fluent-q,
+    .badge-fluent-6m,
+    .month-chip-active,
+    .month-chip-inactive,
+    .multiselect-button,
+    .multiselect-menu,
+    .form-control,
+    .form-select,
+    .btn,
+    .badge,
+    .alert,
+    .input-group-text {
+        border-radius: 0 !important;
+    }
+
+    .plan-header-banner {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid var(--ms-neutral-border);
+        border-radius: 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .plan-add-form-card {
+        background: #ffffff;
+        border: 1px solid var(--ms-neutral-border);
+        border-top: 4px solid var(--ms-primary);
+        border-radius: 0;
+        box-shadow: var(--ms-card-shadow);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.25rem;
+        display: none;
+        transition: all 0.3s ease;
+    }
+
+    .plan-table-card {
+        background: #ffffff;
+        border: 1px solid var(--ms-neutral-border);
+        border-radius: 0;
+        box-shadow: var(--ms-card-shadow);
+        overflow: hidden;
+    }
+
+    .plan-table-header {
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--ms-neutral-border);
+        background: #faf9f8;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    /* Microsoft Fluent Month Checklist Pills */
+    .fluent-month-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .fluent-month-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 6px 14px;
+        border-radius: 0;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        background-color: var(--ms-neutral-light);
+        border: 1px solid var(--ms-neutral-border);
+        color: #605e5c;
+    }
+
+    .fluent-month-pill:hover {
+        background-color: #edebe9;
+        color: #201f1e;
+        border-color: #c8c6c4;
+    }
+
+    .fluent-month-pill.active {
+        background-color: var(--ms-primary);
+        border-color: var(--ms-primary);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);
+    }
+
+    .fluent-month-pill.active:hover {
+        background-color: var(--ms-primary-hover);
+        border-color: var(--ms-primary-hover);
+    }
+
+    .fluent-month-pill input[type="checkbox"] {
+        display: none;
+    }
+
+    .preset-btn-sm {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 0;
+        border: 1px solid #d2d0ce;
+        background: #ffffff;
+        color: #323130;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .preset-btn-sm:hover {
+        background: var(--ms-primary-light);
+        color: var(--ms-primary);
+        border-color: #c7e0f4;
+    }
+
+    /* Table Month Badges */
+    .badge-fluent-all {
+        background-color: #dff6dd;
+        color: #107c41;
+        border: 1px solid #107c41;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .badge-fluent-q {
+        background-color: #deecf9;
+        color: #005a9e;
+        border: 1px solid #0078d4;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .badge-fluent-6m {
+        background-color: #fff4ce;
+        color: #797775;
+        border: 1px solid #ffb900;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 0;
+    }
+
+    .month-chip-active {
+        background-color: #107c41;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 600;
+        padding: 2px 5px;
+        border-radius: 0;
+    }
+
+    .month-chip-inactive {
+        background-color: #f3f2f1;
+        color: #a19f9d;
+        border: 1px solid #e1dfdd;
+        font-size: 9.5px;
+        padding: 2px 5px;
+        border-radius: 0;
+    }
+
+    .freq-badge-monthly   { background: #0078d4 !important; color: #fff !important; }
+    .freq-badge-quarterly { background: #008272 !important; color: #fff !important; }
+    .freq-badge-6months   { background: #797775 !important; color: #fff !important; }
+    .freq-badge-yearly    { background: #d13438 !important; color: #fff !important; }
+    .freq-badge-custom    { background: #605e5c !important; color: #fff !important; }
+
+    .plan-table th { font-size: 11.5px; font-weight: 600; color: #323130; white-space: nowrap; background: #faf9f8; }
+    .plan-table td { font-size: 11.5px; vertical-align: middle; }
+
+    .multiselect-dropdown { position: relative; }
+    .multiselect-button {
+        background: #fff;
+        border: 1px solid #8a8886;
+        border-radius: 0 !important;
+        padding: 0.25rem 0.75rem;
+        width: 100%;
+        text-align: left;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 32px;
+    }
+    .multiselect-menu {
+        display: none;
+        position: absolute;
+        z-index: 9999;
+        background: #fff;
+        border: 1px solid var(--ms-neutral-border);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+        border-radius: 0;
+        min-width: 280px;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .multiselect-menu.show { display: block; }
+    .multiselect-option { cursor: pointer; font-size: 12px; }
+    .multiselect-option:hover { background: var(--ms-primary-light); }
+</style>
+
+<!-- Top Title Bar -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 plan-header-banner p-3">
+    <div>
+        <h4 class="page-title mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-calendar2-check-fill text-primary"></i>Preventive Maintenance Plan
+        </h4>
+        <p class="text-muted small mb-0 mt-1">Master template sparepart standar per Line &amp; Mesin, termasuk jadwal bulan aktif (Jan - Des)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Maintenance" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i>Kembali ke Manage PM
+        </a>
+        @if (canEditPm)
+        {
+            <button type="button" class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1 shadow-sm" onclick="showAddForm()" style="background-color: var(--ms-primary); border-color: var(--ms-primary);">
+                <i class="bi bi-plus-lg me-1"></i>Tambah Part Standar
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Add / Edit Form Card -->
+<div id="addFormCard" class="plan-add-form-card">
+    <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" id="formCardTitle">
+            <i class="bi bi-plus-circle-fill text-primary"></i>Tambah Template Part Standar Baru
+        </h6>
+        <button type="button" class="btn btn-sm btn-light border-0" onclick="hideAddForm()">
+            <i class="bi bi-x-lg text-muted"></i>
+        </button>
+    </div>
+    <form id="saveStandardPartForm" onsubmit="submitSaveStandardPart(event)">
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="tplId" name="Id" value="0" />
+        
+        <!-- Row 1: Line, Mesin, Sparepart, Qty, Satuan -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1">Line <span class="text-danger">*</span></label>
+                <select id="tplFormLine" name="Line" class="form-select form-select-sm" required onchange="onTplLineChanged()">
+                    <option value="">Pilih Line</option>
+                    @foreach (var l in allLines)
+                    {
+                        <option value="@l" selected="@(l == selectedLine)">@l</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-dark mb-1">Mesin PM (Opsional)</label>
+                <select id="tplFormMachine" name="MachineName" class="form-select form-select-sm">
+                    <option value="">Semua Mesin di Line</option>
+                    @foreach (var mc in machines)
+                    {
+                        <option value="@mc.MachineName" data-line="@mc.Line" selected="@(mc.MachineName == selectedMachine)">@mc.MachineName (@mc.Line)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-dark mb-1">Sparepart (dari Katalog) <span class="text-danger">*</span></label>
+                <div class="mb-0">
+                    <div class="input-group input-group-sm mb-1">
+                        <span class="input-group-text bg-light py-0"><i class="bi bi-search" style="font-size:11px;"></i></span>
+                        <input type="text" id="tplSparepartSearch" class="form-control form-control-sm py-0" placeholder="Ketik untuk filter sparepart..." onkeyup="filterSparepartSelect(this.value)" />
+                    </div>
+                    <select id="tplFormSparepart" name="SparepartId" class="form-select form-select-sm" required onchange="onTemplateSparepartSelected(this)">
+                        <option value="">Pilih Sparepart Catalog...</option>
+                        @foreach (var sp in masterSparepartList)
+                        {
+                            <option value="@sp.Id" data-name="@sp.Item" data-bin="@sp.Bin">
+                                @sp.Item (@sp.Id) @(!string.IsNullOrEmpty(sp.Bin) ? $"[Bin: {sp.Bin}]" : "")
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <input type="hidden" id="tplFormSparepartName" name="SparepartName" />
+        </div>
+
+        <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1">Default Qty <span class="text-danger">*</span></label>
+                <input type="number" id="tplFormQty" name="DefaultQuantity" class="form-control form-control-sm text-center fw-bold" value="1" min="0.1" step="0.1" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1">Satuan</label>
+                <select id="tplFormUnit" name="Unit" class="form-select form-select-sm">
+                    <option value="Pcs">Pcs</option>
+                    <option value="Set">Set</option>
+                    <option value="Roll">Roll</option>
+                    <option value="Box">Box</option>
+                    <option value="Meter">Meter</option>
+                    <option value="Ltr">Ltr</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1">Frekuensi PM</label>
+                <select id="tplFormFreq" name="Frequency" class="form-select form-select-sm">
+                    <option value="Monthly">Monthly (Bulanan)</option>
+                    <option value="Quarterly">Quarterly (3 Bulanan)</option>
+                    <option value="6 Months">6 Months (6 Bulanan)</option>
+                    <option value="Yearly">Yearly (Tahunan)</option>
+                    <option value="Custom">Custom (Manual Selection)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1">Durasi Estimasi (Min)</label>
+                <input type="number" id="tplFormDuration" name="DurationMin" class="form-control form-control-sm text-center" value="30" min="5" step="5" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-dark mb-1">Catatan / Detail Pekerjaan</label>
+                <input type="text" id="tplFormNotes" name="Notes" class="form-control form-control-sm" placeholder="Contoh: Cek V-Belt, Ganti Oli..." />
+            </div>
+        </div>
+
+        <!-- Microsoft Fluent Style Target Month Selector -->
+        <div class="mb-3 p-2.5 border rounded-1 bg-white">
+            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
+                <label class="form-label small fw-bold text-dark mb-0 d-flex align-items-center gap-1">
+                    <i class="bi bi-calendar-check text-primary"></i>Pilih Bulan Aktif Pelaksanaan PM:
+                </label>
+                <div class="d-flex gap-1 flex-wrap">
+                    <button type="button" class="preset-btn-sm" onclick="setMonthPreset('all')"><i class="bi bi-check-all me-1 text-success"></i>Semua 12 Bulan</button>
+                    <button type="button" class="preset-btn-sm" onclick="setMonthPreset('q')"><i class="bi bi-pie-chart me-1 text-info"></i>Triwulan (Jan,Apr,Jul,Okt)</button>
+                    <button type="button" class="preset-btn-sm" onclick="setMonthPreset('6m')"><i class="bi bi-calendar2-range me-1 text-primary"></i>6 Bulanan (Jan,Jul)</button>
+                    <button type="button" class="preset-btn-sm" onclick="setMonthPreset('clear')"><i class="bi bi-x-circle me-1 text-muted"></i>Reset</button>
+                </div>
+            </div>
+            <input type="hidden" id="tplFormTargetMonths" name="TargetMonths" value="1,2,3,4,5,6,7,8,9,10,11,12" />
+            
+            <div class="fluent-month-grid">
+                @for (int m = 1; m <= 12; m++)
+                {
+                    <label id="pillLabel_@m" class="fluent-month-pill active" data-month="@m" onclick="toggleMonthPill(@m)">
+                        <input type="checkbox" id="tplMonth_@m" class="month-check d-none" value="@m" checked />
+                        <span>@monthAbbrevs[m - 1]</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+            <button type="button" class="btn btn-secondary btn-sm px-3" onclick="hideAddForm()">Batal</button>
+            <button type="submit" class="btn btn-primary btn-sm px-4">
+                <i class="bi bi-check-lg me-1"></i>Simpan Standard Part
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Filter + Table Card -->
+<div class="plan-table-card">
+    <div class="plan-table-header">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div style="min-width: 140px;">
+                <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Filter Line</label>
+                <select id="filterLine" class="form-select form-select-sm" onchange="onFilterLineChanged()">
+                    <option value="">Semua Line</option>
+                    @foreach (var l in allLines)
+                    {
+                        <option value="@l" selected="@(l == selectedLine)">@l</option>
+                    }
+                </select>
+            </div>
+            <div style="min-width: 180px;">
+                <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Filter Mesin</label>
+                <select id="filterMachine" class="form-select form-select-sm" onchange="applyFilter()">
+                    <option value="">Semua Mesin</option>
+                    @foreach (var mc in machines)
+                    {
+                        <option value="@mc.MachineName" data-line="@mc.Line" selected="@(mc.MachineName == selectedMachine)">@mc.MachineName (@mc.Line)</option>
+                    }
+                </select>
+            </div>
+            <div style="min-width: 150px;">
+                <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Frekuensi</label>
+                <select id="filterFreq" class="form-select form-select-sm" onchange="applyFilter()">
+                    <option value="">Semua Frekuensi</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="6 Months">6 Months</option>
+                    <option value="Yearly">Yearly</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+            <div style="min-width: 220px; flex-grow: 1; max-width: 320px;">
+                <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Cari Sparepart</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search" style="font-size: 11px;"></i></span>
+                    <input type="text" id="filterSearch" class="form-control form-control-sm border-start-0" placeholder="Nama/kode sparepart..." oninput="applyFilter()" />
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <span class="badge bg-primary py-1.5 px-3 shadow-sm" id="partCountBadge" style="font-size:12px; background-color: var(--ms-primary) !important;">0 Part</span>
+            <button class="btn btn-outline-secondary btn-sm" onclick="loadPlanData()" title="Refresh data">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive" style="max-height: calc(100vh - 310px); overflow-y: auto;">
+        <table class="table table-sm table-hover align-middle mb-0 plan-table">
+            <thead>
+                <tr>
+                    <th width="40" class="text-center">No</th>
+                    <th width="70" class="text-center">Line</th>
+                    <th>Mesin</th>
+                    <th>Kode</th>
+                    <th>Nama Sparepart</th>
+                    <th width="90">BIN</th>
+                    <th width="50" class="text-center">Qty</th>
+                    <th width="60" class="text-center">Satuan</th>
+                    <th width="95" class="text-center">Frekuensi</th>
+                    <th width="70" class="text-center">Durasi</th>
+                    <th style="min-width: 240px;">Bulan Aktif (Jan - Des)</th>
+                    <th>Catatan</th>
+                    @if (canEditPm)
+                    {
+                        <th width="50" class="text-center">Aksi</th>
+                    }
+                </tr>
+            </thead>
+            <tbody id="planTableBody">
+                <tr>
+                    <td colspan="13" class="text-center py-5 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var canEditPmUser = @(canEditPm ? "true" : "false");
+    var allPartsData = [];
+
+    function escapeHtml(t) {
+        if (!t) return '';
+        return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function getFreqBadgeClass(freq) {
+        var map = {'Monthly':'freq-badge-monthly','Quarterly':'freq-badge-quarterly','6 Months':'freq-badge-6months','Yearly':'freq-badge-yearly'};
+        return map[freq] || 'freq-badge-custom';
+    }
+
+    /* Microsoft Fluent Month Badges Render Logic */
+    function buildMonthBadges(targetMonths) {
+        var abbrevs = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        var actives = (targetMonths || '1,2,3,4,5,6,7,8,9,10,11,12').split(',').map(m => m.trim()).filter(m => m.length > 0);
+
+        if (actives.length === 12) {
+            return `<span class="badge-fluent-all" title="Aktif setiap bulan (Januari - Desember)"><i class="bi bi-check-circle-fill me-1"></i>Setiap Bulan (12 Bulan)</span>`;
+        }
+        
+        var actStr = actives.sort((a,b) => parseInt(a)-parseInt(b)).join(',');
+        if (actStr === '1,4,7,10') {
+            return `<span class="badge-fluent-q" title="Jan, Apr, Jul, Okt"><i class="bi bi-pie-chart-fill me-1"></i>Triwulan (Jan, Apr, Jul, Okt)</span>`;
+        }
+        if (actStr === '1,7') {
+            return `<span class="badge-fluent-6m" title="Jan, Jul"><i class="bi bi-calendar2-range-fill me-1"></i>6 Bulanan (Jan, Jul)</span>`;
+        }
+
+        // Render sleek mini chips
+        return abbrevs.map((a, i) => {
+            var mNum = (i+1).toString();
+            var isAct = actives.includes(mNum);
+            var cls = isAct ? 'month-chip-active' : 'month-chip-inactive';
+            return `<span class="${cls}">${a}</span>`;
+        }).join(' ');
+    }
+
+    function renderTable(items) {
+        var tbody = document.getElementById('planTableBody');
+        var badge = document.getElementById('partCountBadge');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="13" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                Belum ada data. Klik <strong>Tambah Part Standar</strong> untuk mulai mengisi.
+            </td></tr>`;
+            if (badge) badge.textContent = '0 Part';
+            return;
+        }
+        if (badge) badge.textContent = items.length + ' Part';
+        var html = '';
+        items.forEach((item, idx) => {
+            var freqCls = getFreqBadgeClass(item.frequency || 'Monthly');
+            var monthBadges = buildMonthBadges(item.targetMonths);
+            html += `
+                <tr>
+                    <td class="text-center text-muted small">${idx+1}</td>
+                    <td class="text-center"><span class="badge bg-dark">${escapeHtml(item.line)}</span></td>
+                    <td class="small fw-semibold text-dark">${escapeHtml(item.machineName || '-')}</td>
+                    <td><code class="text-primary fw-bold" style="font-size:11px;">${escapeHtml(item.sparepartId)}</code></td>
+                    <td class="fw-semibold text-dark">${escapeHtml(item.sparepartName)}</td>
+                    <td><span class="badge bg-light text-dark border" style="font-size:11px;">${escapeHtml(item.bin || '-')}</span></td>
+                    <td class="text-center fw-bold">${item.defaultQuantity || 1}</td>
+                    <td class="text-center text-muted">${escapeHtml(item.unit || 'Pcs')}</td>
+                    <td class="text-center"><span class="badge ${freqCls}" style="font-size:10px;">${escapeHtml(item.frequency || 'Monthly')}</span></td>
+                    <td class="text-center text-muted small">${item.durationMin || 30} min</td>
+                    <td><div class="d-flex flex-wrap gap-1 align-items-center">${monthBadges}</div></td>
+                    <td class="text-muted small" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '-')}</td>
+                    ${canEditPmUser ? `
+                    <td class="text-center">
+                        <button class="btn btn-xs btn-outline-danger py-0 px-1" onclick="deleteStandardPart(${item.id})" title="Hapus">
+                            <i class="bi bi-trash" style="font-size:12px;"></i>
+                        </button>
+                    </td>
+                    ` : ''}
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function applyFilter() {
+        var line   = (document.getElementById('filterLine').value || '').trim().toLowerCase();
+        var machine= (document.getElementById('filterMachine').value || '').trim().toLowerCase();
+        var freq   = (document.getElementById('filterFreq').value || '').trim().toLowerCase();
+        var search = (document.getElementById('filterSearch').value || '').trim().toLowerCase();
+
+        var filtered = allPartsData.filter(item => {
+            var matchLine    = !line    || (item.line || '').toLowerCase() === line;
+            var matchMachine = !machine || (item.machineName || '').toLowerCase().includes(machine);
+            var matchFreq    = !freq    || (item.frequency || '').toLowerCase() === freq;
+            var matchSearch  = !search  ||
+                (item.sparepartId || '').toLowerCase().includes(search) ||
+                (item.sparepartName || '').toLowerCase().includes(search);
+            return matchLine && matchMachine && matchFreq && matchSearch;
+        });
+        renderTable(filtered);
+    }
+
+    function loadPlanData() {
+        var tbody = document.getElementById('planTableBody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</td></tr>`;
+        fetch('/Maintenance/GetStandardTemplateParts?line=&machine=')
+            .then(r => r.json())
+            .then(items => {
+                allPartsData = items || [];
+                applyFilter();
+            })
+            .catch(err => {
+                console.error(err);
+                if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-3 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Gagal memuat data. Silakan refresh halaman.</td></tr>`;
+            });
+    }
+
+    // ── FLUENT MONTH PILL TOGGLE LOGIC ──────────────────────────────────────
+    function toggleMonthPill(mi) {
+        var chk = document.getElementById('tplMonth_' + mi);
+        var label = document.getElementById('pillLabel_' + mi);
+        if (!chk || !label) return;
+
+        chk.checked = !chk.checked;
+        if (chk.checked) {
+            label.classList.add('active');
+        } else {
+            label.classList.remove('active');
+        }
+        syncTplMonthsHidden();
+    }
+
+    function setMonthPillState(mi, isChecked) {
+        var chk = document.getElementById('tplMonth_' + mi);
+        var label = document.getElementById('pillLabel_' + mi);
+        if (!chk || !label) return;
+
+        chk.checked = isChecked;
+        if (isChecked) {
+            label.classList.add('active');
+        } else {
+            label.classList.remove('active');
+        }
+    }
+
+    function setMonthPreset(type) {
+        for (var mi = 1; mi <= 12; mi++) {
+            if (type === 'all')                          setMonthPillState(mi, true);
+            else if (type === 'clear')                  setMonthPillState(mi, false);
+            else if (type === 'quarterly' || type === 'q')   setMonthPillState(mi, [1,4,7,10].includes(mi));
+            else if (type === 'semester'  || type === '6m')  setMonthPillState(mi, [1,7].includes(mi));
+        }
+        syncTplMonthsHidden();
+    }
+
+    function syncTplMonthsHidden() {
+        var checked = Array.from(document.querySelectorAll('.month-check:checked')).map(c => c.value);
+        var h = document.getElementById('tplFormTargetMonths');
+        if (h) h.value = checked.length > 0 ? checked.join(',') : '1,2,3,4,5,6,7,8,9,10,11,12';
+    }
+
+    function onTplFrequencyChanged() {
+        var freq = document.getElementById('tplFormFrequency')?.value;
+        if (freq === 'Monthly') setMonthPreset('all');
+        else if (freq === 'Quarterly') setMonthPreset('quarterly');
+        else if (freq === '6 Months') setMonthPreset('semester');
+        else if (freq === 'Yearly') {
+            for (var mi = 1; mi <= 12; mi++) setMonthPillState(mi, mi === 1);
+            syncTplMonthsHidden();
+        }
+    }
+
+    function filterSparepartSelect(query) {
+        var sel = document.getElementById('tplFormSparepart');
+        if (!sel) return;
+        var q = (query || '').toLowerCase().trim();
+        var opts = sel.options;
+        for (var i = 0; i < opts.length; i++) {
+            if (i === 0) continue;
+            var txt = opts[i].text.toLowerCase();
+            opts[i].style.display = txt.includes(q) ? '' : 'none';
+        }
+    }
+
+    function onTemplateSparepartSelected(sel) {
+        var opt = sel.options[sel.selectedIndex];
+        var hiddenNm = document.getElementById('tplFormSparepartName');
+        if (hiddenNm && opt) {
+            hiddenNm.value = opt.getAttribute('data-name') || opt.text || '';
+        }
+    }
+
+    function onSparepartSelectChanged(sel) {
+        var opt = sel.options[sel.selectedIndex];
+        var hiddenNm = document.getElementById('tplFormSparepartName');
+        if (hiddenNm && opt) {
+            hiddenNm.value = opt.getAttribute('data-name') || opt.text || '';
+        }
+    }
+
+    function isLineMatch(machineLine, targetLine) {
+        if (!targetLine || !targetLine.trim()) return true;
+        if (!machineLine || !machineLine.trim()) return false;
+        
+        var sel = targetLine.trim().toLowerCase();
+        var raw = machineLine.trim().toLowerCase();
+        
+        if (raw === sel) return true;
+        
+        var tokens = raw.split(/[,;\/\n\r]+/).map(t => t.trim());
+        for (var i = 0; i < tokens.length; i++) {
+            var t = tokens[i];
+            if (t === sel) return true;
+            var cleanT = t.replace(/^line\s+/i, '').trim();
+            if (cleanT === sel) return true;
+        }
+        return false;
+    }
+
+    function onTplLineChanged() {
+        var selectedLine = (document.getElementById('tplFormLine')?.value || '').trim();
+        var machineSelect = document.getElementById('tplFormMachine');
+        if (!machineSelect) return;
+        
+        var opts = machineSelect.options;
+        for (var i = 0; i < opts.length; i++) {
+            var opt = opts[i];
+            if (i === 0) {
+                opt.style.display = '';
+                continue;
+            }
+            var mLine = opt.getAttribute('data-line') || '';
+            var match = isLineMatch(mLine, selectedLine);
+            opt.style.display = match ? '' : 'none';
+        }
+        if (machineSelect.selectedIndex > 0 && machineSelect.options[machineSelect.selectedIndex].style.display === 'none') {
+            machineSelect.value = '';
+        }
+    }
+
+    function onFilterLineChanged() {
+        var selectedLine = (document.getElementById('filterLine')?.value || '').trim();
+        var machineSelect = document.getElementById('filterMachine');
+        if (machineSelect) {
+            var opts = machineSelect.options;
+            for (var i = 0; i < opts.length; i++) {
+                var opt = opts[i];
+                if (i === 0) {
+                    opt.style.display = '';
+                    continue;
+                }
+                var mLine = opt.getAttribute('data-line') || '';
+                var match = isLineMatch(mLine, selectedLine);
+                opt.style.display = match ? '' : 'none';
+            }
+            if (machineSelect.selectedIndex > 0 && machineSelect.options[machineSelect.selectedIndex].style.display === 'none') {
+                machineSelect.value = '';
+            }
+        }
+        applyFilter();
+    }
+
+    // ── ADD / EDIT FORM DISPLAY ─────────────────────────────────────────────
+    function showAddForm() {
+        document.getElementById('tplId').value = '0';
+        document.getElementById('tplFormLine').value = document.getElementById('filterLine').value || '';
+        document.getElementById('tplFormMachine').value = '';
+        onTplLineChanged();
+        var selSp = document.getElementById('tplFormSparepart');
+        if (selSp) selSp.value = '';
+        var nmSp = document.getElementById('tplFormSparepartName');
+        if (nmSp) nmSp.value = '';
+        var srchSp = document.getElementById('tplSparepartSearch');
+        if (srchSp) srchSp.value = '';
+        filterSparepartSelect('');
+        document.getElementById('tplFormQty').value = '1';
+        document.getElementById('tplFormUnit').value = 'Pcs';
+        document.getElementById('tplFormFreq').value = 'Monthly';
+        document.getElementById('tplFormDuration').value = '30';
+        document.getElementById('tplFormNotes').value = '';
+        setMonthPreset('all');
+        document.getElementById('formCardTitle').innerHTML = '<i class="bi bi-plus-circle-fill me-2 text-primary"></i>Tambah Template Part Standar Baru';
+        var card = document.getElementById('addFormCard');
+        card.style.display = 'block';
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideAddForm() {
+        document.getElementById('addFormCard').style.display = 'none';
+    }
+
+    function submitSaveStandardPart(evt) {
+        evt.preventDefault();
+        var form = document.getElementById('saveStandardPartForm');
+        var formData = new FormData(form);
+        fetch('/Maintenance/SaveStandardPart', {
+            method: 'POST', body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                hideAddForm();
+                loadPlanData();
+                showToast('success', data.message || 'Berhasil disimpan.');
+            } else {
+                showToast('danger', data.message || 'Gagal menyimpan.');
+            }
+        })
+        .catch(() => showToast('danger', 'Terjadi kesalahan saat menyimpan.'));
+    }
+
+    function deleteStandardPart(id) {
+        executeSecureDelete(function() {
+            var form = new FormData();
+            form.append('id', id);
+            var token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) form.append('__RequestVerificationToken', token.value);
+            fetch('/Maintenance/DeleteStandardPart', {
+                method: 'POST', body: form,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) { loadPlanData(); showToast('success', 'Item berhasil dihapus.'); }
+                else showToast('danger', data.message || 'Gagal menghapus.');
+            })
+            .catch(() => showToast('danger', 'Terjadi kesalahan saat menghapus.'));
+        }, 'item template sparepart standar ini', true);
+    }
+
+    // ── SPAREPART DROPDOWN PICKER ────────────────────────────────────────────
+    document.addEventListener('click', function(e) {
+        var opt = e.target.closest('.tpl-sp-option');
+        if (!opt) return;
+        var id      = opt.getAttribute('data-sp-id') || '';
+        var name    = opt.getAttribute('data-sp-name') || '';
+        var display = opt.getAttribute('data-sp-display') || name || id;
+        var idInp = document.getElementById('tplFormSparepartId');
+        var nmInp = document.getElementById('tplFormSparepartName');
+        var lbl   = document.getElementById('tplSparepartLabel');
+        if (idInp) idInp.value = id;
+        if (nmInp) nmInp.value = name || id;
+        if (lbl)   lbl.textContent = display || '-- Pilih / Cari Sparepart --';
+        var menu = opt.closest('.multiselect-menu');
+        if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+    });
+
+    function selectSingleSparepart(id, name, display, idInputId, nameInputId, labelId, itemEl) {
+        if (idInputId)   { var el = document.getElementById(idInputId);   if (el) el.value = id; }
+        if (nameInputId) { var el = document.getElementById(nameInputId); if (el) el.value = name || id; }
+        if (labelId)     { var el = document.getElementById(labelId);     if (el) el.textContent = display || '-- Pilih / Cari Sparepart --'; }
+        var menu = itemEl ? itemEl.closest('.multiselect-menu') : null;
+        if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+    }
+
+    function toggleMultiselectMenu(btn, evt) {
+        evt.stopPropagation();
+        var menu = btn.nextElementSibling;
+        if (!menu) return;
+        var isOpen = menu.classList.contains('show');
+        document.querySelectorAll('.multiselect-menu.show').forEach(m => { m.classList.remove('show'); m.style.display = 'none'; });
+        if (!isOpen) { menu.classList.add('show'); menu.style.display = 'block'; }
+    }
+
+    function filterMultiSelectOptions(input) {
+        var val = input.value.toLowerCase();
+        var list = input.closest('.multiselect-menu').querySelector('.options-list');
+        if (!list) return;
+        list.querySelectorAll('.multiselect-option').forEach(opt => {
+            opt.style.display = opt.textContent.toLowerCase().includes(val) ? '' : 'none';
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.multiselect-dropdown')) {
+            document.querySelectorAll('.multiselect-menu.show').forEach(m => { m.classList.remove('show'); m.style.display = 'none'; });
+        }
+    });
+
+    // ── TOAST ────────────────────────────────────────────────────────────────
+    function showToast(type, message) {
+        var container = document.getElementById('toastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;';
+            document.body.appendChild(container);
+        }
+        var toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible py-2 px-3 mb-0 shadow-sm`;
+        toast.style.cssText = 'min-width:260px;border-radius:6px;font-size:13px;';
+        toast.innerHTML = `${escapeHtml(message)}<button type="button" class="btn-close btn-sm p-1" onclick="this.parentElement.remove()"></button>`;
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentElement) toast.remove(); }, 3500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPlanData();
+        onFilterLineChanged();
+        onTplLineChanged();
+    });
+</script>
+@Html.AntiForgeryToken()
+}

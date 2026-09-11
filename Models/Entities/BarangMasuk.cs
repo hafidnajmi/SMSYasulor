@@ -49,6 +49,9 @@ namespace UPMS.Web.Models.Entities
         [Column("remarks")]
         public string? Remarks { get; set; }
 
+        [Column("user_id")]
+        public int? UserId { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

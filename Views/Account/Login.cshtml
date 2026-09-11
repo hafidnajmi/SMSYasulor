@@ -15,14 +15,89 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <style>
         body {
-            background-color: #F3F5F8;
+            background-color: #FFFFFF;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif !important;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background Image Layer (Cropped to Right Half 50vw Only) */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 50vw;
+            width: 50vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            will-change: opacity;
+        }
+
+        .bg-layer.active {
+            opacity: 1;
+        }
+
+        /* Left Side Dynamic Department Title Block (Pure Solid White Background Area) */
+        .left-dept-title-box {
+            position: fixed;
+            top: 48%;
+            left: 6%;
+            transform: translateY(-50%);
+            z-index: 5;
+            user-select: none;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .left-dept-title-up {
+            font-size: 64px;
+            font-weight: 900;
+            color: #0047AB;
+            line-height: 1;
+            display: inline-block;
+            position: relative;
+            letter-spacing: -0.5px;
+            margin-right: 14px;
+        }
+
+        .left-dept-title-up::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background-color: #0047AB;
+        }
+
+        .left-dept-title-name {
+            font-size: 64px;
+            font-weight: 900;
+            color: #0047AB;
+            line-height: 1;
+            display: inline-block;
+            letter-spacing: 0px;
+            text-transform: uppercase;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Main Center Layout Wrapper */
+        .login-wrapper {
+            position: relative;
+            z-index: 10;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: Arial, Helvetica, sans-serif !important;
-            margin: 0;
-            padding: 20px;
+            padding: 24px;
         }
 
         .login-card {
@@ -30,41 +105,15 @@
             max-width: 440px;
             background: #ffffff;
             border-radius: 0px !important;
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-            padding: 48px 40px 36px;
-        }
-
-        .ems-logo-badge {
-            background: linear-gradient(135deg, #005BAB 0%, #003870 100%);
-            border-radius: 6px;
-            padding: 10px 24px;
-            display: inline-block;
-            box-shadow: 0 4px 12px rgba(0, 91, 171, 0.25);
-        }
-
-        .ems-logo-text {
-            font-weight: 900;
-            font-style: italic;
-            font-size: 32px;
-            color: #ffffff;
-            line-height: 1;
-            letter-spacing: 2px;
-        }
-
-        .ems-logo-sub {
-            font-size: 8.5px;
-            color: #E2E8F0;
-            font-weight: 500;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            margin-top: 3px;
+            border: 1px solid #CBD5E1;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+            padding: 42px 38px 32px;
         }
 
         .form-label-ems {
             font-size: 11px;
             font-weight: 700;
-            color: #334155;
+            color: #475569;
             letter-spacing: 0.8px;
             text-transform: uppercase;
             margin-bottom: 6px;
@@ -74,37 +123,54 @@
         .input-group-ems {
             display: flex;
             width: 100%;
+            border-radius: 0px !important;
         }
 
         .input-group-ems .input-group-text {
-            background-color: #EBF2FA;
-            border: 1px solid #94A3B8;
+            background-color: #F1F5F9;
+            border: 1px solid #CBD5E1;
             border-right: none;
             border-radius: 0px !important;
             color: #64748B;
-            padding: 10px 14px;
+            padding: 0 14px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s ease;
         }
 
-        .input-group-ems .form-control {
-            background-color: #EBF2FA;
-            border: 1px solid #94A3B8;
+        .input-group-ems .form-control,
+        .input-group-ems .form-select {
+            background-color: #F1F5F9;
+            border: 1px solid #CBD5E1;
             border-left: none;
             border-radius: 0px !important;
             color: #0F172A;
             font-size: 14px;
             font-weight: 500;
-            padding: 10px 12px;
+            height: 44px;
+            padding: 0 12px;
+            line-height: 44px;
             box-shadow: none;
+            transition: border-color 0.2s ease;
         }
 
-        .input-group-ems .form-control:focus {
-            background-color: #EBF2FA;
-            border-color: #1E3A8A;
+        .input-group-ems .form-select {
+            padding-right: 32px;
+        }
+
+        .input-group-ems:focus-within .input-group-text,
+        .input-group-ems:focus-within .form-control,
+        .input-group-ems:focus-within .form-select {
+            background-color: #FFFFFF;
+            border-color: #0047AB;
             box-shadow: none;
+            outline: none;
         }
 
         .btn-ems-login {
-            background-color: #2B4C7E;
+            background-color: #0047AB;
             color: #ffffff;
             font-weight: 700;
             font-size: 13px;
@@ -118,13 +184,33 @@
         }
 
         .btn-ems-login:hover {
-            background-color: #1E385C;
+            background-color: #003380;
             color: #ffffff;
+        }
+
+        .btn-ems-tech {
+            background-color: #F8FAFC;
+            color: #0047AB;
+            border: 1px solid #0047AB;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 10px;
+            border-radius: 0px !important;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .btn-ems-tech:hover {
+            background-color: #EFF6FF;
+            color: #003380;
+            border-color: #003380;
         }
 
         .login-divider {
             border-top: 1px solid #E2E8F0;
-            margin: 28px 0 20px;
+            margin: 24px 0 16px;
         }
 
         .login-footer-text {
@@ -133,55 +219,182 @@
             text-align: center;
             line-height: 1.5;
         }
+
+        @@media (max-width: 1024px) {
+            .bg-layer {
+                left: 0;
+                width: 100vw;
+            }
+            .left-dept-title-box {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <!-- Logo Section -->
-        <div class="text-center mb-4">
-            <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="max-height: 160px; width: auto; object-fit: contain; margin-bottom: 4px;" />
-            <h5 class="fw-bold mb-0" style="color: #1E3A8A; letter-spacing: 0.8px; font-size: 15px; margin-top: 0;">SPAREPART MANAGEMENT SYSTEM</h5>
-        </div>
+    <!-- Dual Background Layer System for Smooth Crossfade (Cropped to Right Half 50vw) -->
+    <div id="bgLayerA" class="bg-layer active" style="background-image: url('/filling.png');"></div>
+    <div id="bgLayerB" class="bg-layer"></div>
 
-        <!-- Validation Error Message -->
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger py-2 small rounded-0 mb-3">
-                <div asp-validation-summary="All"></div>
+    <!-- Left Side Dynamic Department Title (Pure Solid White Area) -->
+    <div class="left-dept-title-box">
+        <span class="left-dept-title-up">UP</span>
+        <span class="left-dept-title-name" id="leftDeptName">FILLING</span>
+    </div>
+
+    <!-- Center Login Form Card -->
+    <div class="login-wrapper">
+        <div class="login-card">
+            <!-- Logo Header Section -->
+            <div class="text-center mb-4">
+                <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="max-height: 140px; width: auto; object-fit: contain; margin-bottom: 6px;" />
+                <h6 class="fw-bold mb-0" style="color: #0047AB; letter-spacing: 1px; font-size: 14px; text-transform: uppercase;">
+                    SPAREPART MANAGEMENT SYSTEM
+                </h6>
             </div>
-        }
 
-        <!-- Login Form -->
-        <form asp-controller="Account" asp-action="Login" method="post">
-            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-
-            <div class="mb-3">
-                <label class="form-label-ems">USERNAME</label>
-                <div class="input-group-ems">
-                    <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <input type="text" name="username" id="username" class="form-control" placeholder="Username" required autofocus autocomplete="username" />
+            <!-- Validation Errors -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger py-2 small rounded-0 mb-3">
+                    <div asp-validation-summary="All"></div>
                 </div>
-            </div>
+            }
 
-            <div class="mb-4">
-                <label class="form-label-ems">PASSWORD</label>
-                <div class="input-group-ems">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input type="password" name="password" id="password" class="form-control" placeholder="••••••••••••" required autocomplete="current-password" />
+            <!-- Login Form -->
+            <form asp-controller="Account" asp-action="Login" method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                <div class="mb-3">
+                    <label class="form-label-ems">USERNAME</label>
+                    <div class="input-group-ems">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" id="username" class="form-control" placeholder="Username" required autofocus autocomplete="username" />
+                    </div>
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label-ems">PASSWORD</label>
+                    <div class="input-group-ems">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="••••••••••••" required autocomplete="current-password" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-ems">DEPARTMENT SYSTEM</label>
+                    <div class="input-group-ems">
+                        <span class="input-group-text"><i class="bi bi-building"></i></span>
+                        <select name="department" id="department" class="form-select">
+                            <option value="Filling" selected>Filling</option>
+                            <option value="Process">Process</option>
+                            <option value="Utility">Utility</option>
+                        </select>
+                    </div>
+                    <div class="form-text mt-1 text-muted fw-normal" style="font-size: 11px;">
+                        Pilih departemen untuk login ke sistem terintegrasi.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-ems-login mb-2">
+                    SIGN IN <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+
+                <div class="d-flex align-items-center my-3">
+                    <hr class="flex-grow-1 text-muted opacity-25 my-0" />
+                    <span class="px-2 text-muted small font-monospace" style="font-size: 10px; letter-spacing: 0.8px;">LOG IN ALTERNATIF</span>
+                    <hr class="flex-grow-1 text-muted opacity-25 my-0" />
+                </div>
+
+                <button type="button" class="btn btn-ems-tech d-flex align-items-center justify-content-center gap-2" onclick="loginAsTechnician()">
+                    <i class="bi bi-person-badge"></i> LOGIN AS TECHNICIAN
+                </button>
+            </form>
+
+            <script>
+                function loginAsTechnician() {
+                    var uInput = document.getElementById('username');
+                    var pInput = document.getElementById('password');
+                    if (uInput && pInput) {
+                        uInput.value = 'technician';
+                        pInput.value = 'technician123';
+                        document.getElementById('loginForm').submit();
+                    }
+                }
+
+                // High-Performance Smooth Background Crossfade System (No Hard Refresh)
+                (function() {
+                    var activeLayerIndex = 0;
+                    var layerA = document.getElementById('bgLayerA');
+                    var layerB = document.getElementById('bgLayerB');
+                    var deptSelect = document.getElementById('department');
+                    var leftDeptName = document.getElementById('leftDeptName');
+
+                    var deptImages = {
+                        'Filling': '/filling.png',
+                        'Process': '/process.png',
+                        'Utility': '/utility1.png'
+                    };
+
+                    // Preload all local images
+                    Object.keys(deptImages).forEach(function(key) {
+                        var img = new Image();
+                        img.src = deptImages[key];
+                    });
+
+                    function switchBackgroundSmoothly(deptName) {
+                        var targetUrl = deptImages[deptName] || deptImages['Filling'];
+                        var currentActive = (activeLayerIndex === 0) ? layerA : layerB;
+                        var nextActive = (activeLayerIndex === 0) ? layerB : layerA;
+
+                        if (!nextActive || !currentActive) return;
+
+                        // Set target background image
+                        nextActive.style.backgroundImage = "url('" + targetUrl + "')";
+
+                        // Crossfade opacity
+                        nextActive.classList.add('active');
+                        currentActive.classList.remove('active');
+
+                        // Update Left Side Department Title text with smooth transition
+                        var upperDept = deptName.toUpperCase();
+                        if (leftDeptName) {
+                            leftDeptName.style.opacity = '0';
+                            leftDeptName.style.transform = 'translateY(5px)';
+                            setTimeout(function() {
+                                leftDeptName.textContent = upperDept;
+                                leftDeptName.style.opacity = '1';
+                                leftDeptName.style.transform = 'translateY(0)';
+                            }, 150);
+                        }
+
+                        // Toggle active index
+                        activeLayerIndex = (activeLayerIndex === 0) ? 1 : 0;
+                    }
+
+                    if (deptSelect) {
+                        deptSelect.addEventListener('change', function() {
+                            switchBackgroundSmoothly(this.value);
+                        });
+
+                        document.addEventListener('DOMContentLoaded', function() {
+                            switchBackgroundSmoothly(deptSelect.value || 'Filling');
+                        });
+
+                        switchBackgroundSmoothly(deptSelect.value || 'Filling');
+                    }
+                })();
+            </script>
+
+            <!-- Footer -->
+            <div class="login-divider"></div>
+            <div class="login-footer-text">
+                &copy; 2026 IGS Sparepart Management System<br />
+                Security Protocol TLS 1.3 Active
             </div>
-
-            <button type="submit" class="btn btn-ems-login mb-2">
-                SIGN IN <i class="bi bi-arrow-right ms-2"></i>
-            </button>
-        </form>
-
-        <!-- Footer -->
-        <div class="login-divider"></div>
-        <div class="login-footer-text">
-            &copy; 2026 IGS Sparepart Management System<br />
-            Security Protocol TLS 1.3 Active
         </div>
     </div>
 </body>
 </html>
+

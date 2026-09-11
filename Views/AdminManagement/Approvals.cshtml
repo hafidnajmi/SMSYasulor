@@ -39,6 +39,7 @@
                     <tr>
                         <th>TRANSACTION ID</th>
                         <th>DATE</th>
+                        <th>PART NUMBER</th>
                         <th>ITEM NAME</th>
                         <th>BIN</th>
                         <th>LINE</th>
@@ -55,6 +56,7 @@
                             <tr>
                                 <td><span class="font-monospace fw-bold text-primary">#@item.Id</span></td>
                                 <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? item.MasterDataId ?? "-")</span></td>
                                 <td class="fw-semibold">@item.ItemName</td>
                                 <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
                                 <td><span class="badge bg-light text-dark border">@(item.Line ?? "-")</span></td>
@@ -78,7 +80,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">No pending stock approval requests in queue.</td>
+                            <td colspan="9" class="text-center text-muted py-4">No pending stock approval requests in queue.</td>
                         </tr>
                     }
                 </tbody>

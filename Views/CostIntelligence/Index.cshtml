@@ -38,7 +38,7 @@
         <p class="text-muted small mb-0">Analysis of sparepart expenditure across production lines, machinery, and maintenance activities.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportToExcel", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = Model.ActiveTab })', 'Cost Intelligence');" class="btn btn-ems-outline btn-sm">
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportToExcel", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, year = Model.SelectedYear, tab = Model.ActiveTab })', 'Cost Intelligence');" class="btn btn-ems-outline btn-sm">
             <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export CSV
         </a>
     </div>
@@ -48,23 +48,33 @@
 <div class="ems-filter-card mb-4">
     <div class="ems-filter-header">
         <span><i class="bi bi-funnel me-1 text-primary"></i>Period &amp; Line Filter</span>
-        <span class="text-muted fw-normal small">Active Filter: @Model.StartDate to @Model.EndDate (@Model.SelectedLine)</span>
+        <span class="text-muted fw-normal small">Active Filter: @Model.StartDate to @Model.EndDate (@Model.SelectedLine) @(Model.SelectedYear.HasValue ? $"| Year: {Model.SelectedYear}" : "| 12M Rolling")</span>
     </div>
     <div class="p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
             <input type="hidden" name="tab" value="@Model.ActiveTab" />
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-secondary mb-1">Filter Year</label>
+                <select name="year" class="form-select form-select-sm" onchange="onYearSelectChange(this.value)">
+                    <option value="" selected="@(Model.SelectedYear == null ? "selected" : null)">Rolling 12M</option>
+                    @foreach (var y in Model.AvailableYears)
+                    {
+                        <option value="@y" selected="@(Model.SelectedYear == y ? "selected" : null)">Year @y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">Start Date</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
-                    <input type="date" name="startDate" value="@Model.StartDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                    <input type="date" id="startDateInput" name="startDate" value="@Model.StartDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">End Date</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
-                    <input type="date" name="endDate" value="@Model.EndDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                    <input type="date" id="endDateInput" name="endDate" value="@Model.EndDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
                 </div>
             </div>
             <div class="col-md-3">
@@ -139,8 +149,11 @@
 <!-- 12-Month Historical Monthly Expenditure Trend & Spike Detection -->
 <div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
     <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between" style="color: #0F4C81;">
-        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>12-Month Expenditure Trend &amp; Cost Spike Detection</span>
-        <span class="badge bg-light text-secondary border small">Line: @Model.SelectedLine</span>
+        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Monthly Expenditure Trend &amp; Cost Spike Detection</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-secondary border small">Trend Period: @(Model.SelectedYear.HasValue ? $"Year {Model.SelectedYear}" : "Rolling 12M")</span>
+            <span class="badge bg-light text-secondary border small">Line: @Model.SelectedLine</span>
+        </div>
     </div>
     <div class="card-body p-3">
         <div style="height: 220px; position: relative;">
@@ -648,6 +661,17 @@ else
             } catch (err) {
                 document.getElementById('machineDrilldownSpinner').innerHTML = `<div class="text-danger small py-2"><i class="bi bi-exclamation-circle me-1"></i>Error: ${err.message}</div>`;
             }
+        }
+
+        // Auto update start and end dates when a specific year is selected
+        function onYearSelectChange(yearVal) {
+            const startInput = document.getElementById('startDateInput');
+            const endInput = document.getElementById('endDateInput');
+            if (yearVal) {
+                if (startInput) startInput.value = yearVal + '-01-01';
+                if (endInput) endInput.value = yearVal + '-12-31';
+            }
+            document.getElementById('filterForm').submit();
         }
     </script>
 }

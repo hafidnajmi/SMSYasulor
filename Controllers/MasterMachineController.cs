@@ -30,82 +30,9 @@ namespace UPMS.Web.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(string? selectedLine, string? lineSearch, string? search, string statusFilter = "all")
+        public IActionResult Index(string? selectedLine, string? lineSearch, string? search, string statusFilter = "all")
         {
-            var allMachines = await _db.MachineMasters.AsNoTracking().ToListAsync();
-            var lineMappings = await _db.SparepartLineMappings.AsNoTracking().ToListAsync();
-            var masterParts = await _db.MasterDatas.AsNoTracking().Where(m => !m.IsDeleted).ToListAsync();
-
-            // Distinct lines from database + predefined CleanLines
-            var dbLines = allMachines.Where(m => !string.IsNullOrWhiteSpace(m.Line)).Select(m => m.Line!).Distinct().ToList();
-            var masterLines = masterParts.Where(m => !string.IsNullOrWhiteSpace(m.Line)).Select(m => m.Line!).Distinct().ToList();
-            var combinedLines = CleanLines.Concat(dbLines).Concat(masterLines)
-                .SelectMany(s => s.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-                .Distinct()
-                .OrderBy(l => l)
-                .ToList();
-
-            var lineDtos = new List<MachineLineDto>();
-            foreach (var lineCode in combinedLines)
-            {
-                if (!string.IsNullOrWhiteSpace(lineSearch) && !lineCode.ToLower().Contains(lineSearch.Trim().ToLower()))
-                    continue;
-
-                var lineMachines = allMachines.Where(m => IsLineMatch(m.Line, lineCode)).ToList();
-                lineDtos.Add(new MachineLineDto
-                {
-                    LineCode = lineCode,
-                    Area = GetArea(lineCode),
-                    TotalMachines = lineMachines.Count,
-                    ActiveMachines = lineMachines.Count(m => (m.Status ?? "active").Equals("active", StringComparison.OrdinalIgnoreCase))
-                });
-            }
-
-            var vm = new MasterMachineViewModel
-            {
-                TotalMachines = allMachines.Count,
-                ActiveMachines = allMachines.Count(m => (m.Status ?? "active").Equals("active", StringComparison.OrdinalIgnoreCase)),
-                TotalLines = lineDtos.Count(l => l.TotalMachines > 0),
-                UnmappedMachines = allMachines.Count(m => !lineMappings.Any(lm => lm.LineId == m.Id || IsLineMatch(lm.MappingSource, m.Line))),
-                Lines = lineDtos,
-                LineSearch = lineSearch ?? "",
-                Search = search ?? "",
-                StatusFilter = statusFilter ?? "all"
-            };
-
-            // Selected Line fallback
-            if (string.IsNullOrEmpty(selectedLine) && lineDtos.Any())
-            {
-                selectedLine = lineDtos.First().LineCode;
-            }
-            vm.SelectedLine = selectedLine;
-
-            // Filter Machines for Selected Line
-            var filtered = allMachines.AsEnumerable();
-            if (!string.IsNullOrEmpty(selectedLine) && !selectedLine.Equals("ALL", StringComparison.OrdinalIgnoreCase))
-            {
-                filtered = filtered.Where(m => IsLineMatch(m.Line, selectedLine));
-            }
-
-            if (!string.IsNullOrWhiteSpace(statusFilter) && !statusFilter.Equals("all", StringComparison.OrdinalIgnoreCase))
-            {
-                filtered = filtered.Where(m => (m.Status ?? "active").Equals(statusFilter, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string q = search.Trim().ToLower();
-                filtered = filtered.Where(m =>
-                    (m.MachineCode?.ToLower().Contains(q) ?? false) ||
-                    (m.MachineName?.ToLower().Contains(q) ?? false) ||
-                    (m.MachineType?.ToLower().Contains(q) ?? false) ||
-                    (m.Manufacturer?.ToLower().Contains(q) ?? false) ||
-                    (m.Model?.ToLower().Contains(q) ?? false)
-                );
-            }
-
-            vm.Machines = filtered.OrderBy(m => m.MachineCode).ToList();
-            return View(vm);
+            return RedirectToAction("Index", "LineCompatibility", new { selectedLine = selectedLine, kpiTab = "machines", detailSearch = search });
         }
 
         [HttpPost]

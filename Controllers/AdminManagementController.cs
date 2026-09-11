@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Data;
+using UPMS.Web.Helpers;
 using UPMS.Web.Models.Entities;
 using UPMS.Web.Models.ViewModels;
 using UPMS.Web.Services;
@@ -225,6 +226,28 @@ namespace UPMS.Web.Controllers
                     .Where(b => b.ApprovalStatus != null && b.ApprovalStatus.ToLower() == "pending")
                     .OrderByDescending(b => b.Tanggal)
                     .ToListAsync();
+
+                var pendingUserIds = vm.PendingBarangKeluarApprovals
+                    .Where(b => b.UserId.HasValue)
+                    .Select(b => b.UserId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                ViewBag.UserMap = await _db.Users
+                    .AsNoTracking()
+                    .Where(u => pendingUserIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => !string.IsNullOrWhiteSpace(u.FullName) ? u.FullName : u.Username);
+
+                var pendingMachineIds = vm.PendingBarangKeluarApprovals
+                    .Where(b => b.MachineId.HasValue)
+                    .Select(b => b.MachineId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                ViewBag.MachineMap = await _db.MachineMasters
+                    .AsNoTracking()
+                    .Where(m => pendingMachineIds.Contains(m.Id))
+                    .ToDictionaryAsync(m => m.Id, m => !string.IsNullOrWhiteSpace(m.MachineCode) ? m.MachineCode : m.MachineName);
 
                 // 5. Line Compatibility Center Data
                 var lineMappingsRaw = await _db.SparepartLineMappings.AsNoTracking().ToListAsync();
@@ -498,14 +521,19 @@ namespace UPMS.Web.Controllers
             }
             catch { }
 
+            var item = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == masterDataId);
+            if (item != null)
+            {
+                await PriceHelper.RecalculateMasterDataPriceAsync(_db, item);
+                await _db.SaveChangesAsync();
+            }
+
             var offers = await _db.SupplierOffers
                 .Where(o => o.MasterDataId == masterDataId)
                 .OrderByDescending(o => o.IsSelected)
                 .ThenByDescending(o => o.UpdatedAt)
                 .AsNoTracking()
                 .ToListAsync();
-
-            var item = await _db.MasterDatas.AsNoTracking().FirstOrDefaultAsync(m => m.Id == masterDataId);
 
             if (!offers.Any() && item != null && ((item.CurrentUnitPrice ?? 0) > 0 || !string.IsNullOrWhiteSpace(item.Brand)))
             {
@@ -611,6 +639,11 @@ namespace UPMS.Web.Controllers
                     UpdatedAt = DateTime.Now
                 });
             }
+            else
+            {
+                await _db.SaveChangesAsync();
+                await PriceHelper.RecalculateMasterDataPriceAsync(_db, masterItem);
+            }
 
             await _db.SaveChangesAsync();
             return Json(new { success = true, message = $"Penawaran {cleanSup} Rp {price:N0} berhasil disimpan." });
@@ -665,8 +698,17 @@ namespace UPMS.Web.Controllers
             var offer = await _db.SupplierOffers.FindAsync(offerId);
             if (offer != null)
             {
+                string masterDataId = offer.MasterDataId;
                 _db.SupplierOffers.Remove(offer);
                 await _db.SaveChangesAsync();
+
+                var masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == masterDataId);
+                if (masterItem != null)
+                {
+                    await PriceHelper.RecalculateMasterDataPriceAsync(_db, masterItem);
+                    await _db.SaveChangesAsync();
+                }
+
                 return Json(new { success = true, message = "Penawaran supplier berhasil dihapus." });
             }
             return Json(new { success = false, message = "Penawaran tidak ditemukan." });

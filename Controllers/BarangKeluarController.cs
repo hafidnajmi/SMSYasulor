@@ -28,22 +28,35 @@ namespace UPMS.Web.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(int? year, string? search, int page = 1)
+        public async Task<IActionResult> Index(int? year, string? search, int page = 1, string? dept = null)
         {
+            if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanBarangKeluar))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Barang Keluar.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+            if (!string.IsNullOrWhiteSpace(dept))
+            {
+                Response.Cookies.Append("SMS_ACTIVE_DEPT", dept.Trim(), new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = Request.IsHttps,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTimeOffset.UtcNow.AddDays(7)
+                });
+            }
+
+            string activeDept = !string.IsNullOrWhiteSpace(dept)
+                ? dept.Trim()
+                : (Request.Cookies["SMS_ACTIVE_DEPT"] ?? "Filling");
+
+            ViewBag.ActiveDept = activeDept;
+
             var history = await _inventoryService.GetBarangKeluarHistoryAsync(year, search, page, 50);
             ViewBag.Year = year;
             ViewBag.Search = search;
 
-            var pics = new List<string>
-            {
-                "Adit", "Sudrajat", "Rimba", "Susilo", "Aricko", "Chandra",
-                "Marjuki", "Jayadi", "Zulfi", "Priyanto", "Andra", "Madsari",
-                "Rohmadi", "Slamet", "Bobot", "Bachir", "Suryanto", "Ferry",
-                "Suyut", "Bambang", "Aji", "Ricky", "Hafid", "Hussein",
-                "Yully", "Raisa", "Agus"
-            };
-            pics.Sort();
-            ViewBag.Pics = pics;
+            ViewBag.Pics = await UPMS.Web.Helpers.PicHelper.GetPicsBarangKeluarAsync(_db);
 
             var rawLines = await _db.MasterDatas
                 .Where(m => !m.IsDeleted && !string.IsNullOrEmpty(m.Line))

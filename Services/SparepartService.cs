@@ -147,10 +147,23 @@ namespace UPMS.Web.Services
         {
             if (string.IsNullOrWhiteSpace(item.Id))
             {
-                item.Id = await _db.GenerateNextUpfIdAsync("seq_upf_master");
+                do
+                {
+                    item.Id = await _db.GenerateNextUpfIdAsync("seq_upf_master");
+                } while (await _db.MasterDatas.AnyAsync(m => m.Id == item.Id));
+            }
+            else
+            {
+                bool exists = await _db.MasterDatas.AnyAsync(m => m.Id == item.Id);
+                if (exists)
+                {
+                    throw new InvalidOperationException($"Part Number (ID) '{item.Id}' is already registered in the system. Please specify a unique ID or leave it blank to auto-generate.");
+                }
             }
 
             item.IsDeleted = false;
+            item.LastUpdatedBy = string.IsNullOrWhiteSpace(username) ? "system" : username;
+            item.LastPriceUpdate = DateTime.UtcNow;
             _db.MasterDatas.Add(item);
 
             var auditLog = new AuditLog
@@ -159,7 +172,7 @@ namespace UPMS.Web.Services
                 RecordId = item.Id,
                 Action = "INSERT",
                 NewData = JsonSerializer.Serialize(item),
-                ChangedBy = username,
+                ChangedBy = string.IsNullOrWhiteSpace(username) ? "system" : username,
                 ChangedAt = DateTime.UtcNow
             };
             _db.AuditLogs.Add(auditLog);
@@ -191,6 +204,8 @@ namespace UPMS.Web.Services
             existing.LtPerMonth = item.LtPerMonth;
             existing.BudgetCode = item.BudgetCode;
             existing.AlertSelected = item.AlertSelected;
+            existing.LastUpdatedBy = string.IsNullOrWhiteSpace(username) ? "system" : username;
+            existing.LastPriceUpdate = DateTime.UtcNow;
 
             if (item.Image != null)
             {
@@ -207,7 +222,7 @@ namespace UPMS.Web.Services
                 Action = "UPDATE",
                 OldData = oldDataJson,
                 NewData = JsonSerializer.Serialize(existing),
-                ChangedBy = username,
+                ChangedBy = string.IsNullOrWhiteSpace(username) ? "system" : username,
                 ChangedAt = DateTime.UtcNow
             };
             _db.AuditLogs.Add(auditLog);

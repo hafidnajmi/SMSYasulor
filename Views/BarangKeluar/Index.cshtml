@@ -7,11 +7,20 @@
     var maintTypes = ViewBag.MaintenanceTypes as List<string> ?? new List<string> { "PM", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
 }
 
+@{
+    var currentDept = ViewBag.ActiveDept as string ?? Context.Request.Cookies["SMS_ACTIVE_DEPT"] ?? "Filling";
+}
+
 <!-- EMS Title Header -->
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
-        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Barang Keluar</h3>
-        <p class="text-muted small mb-0">Record &amp; Riwayat Pengeluaran Sparepart</p>
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="fw-bold mb-1" style="color: #0F4C81;">Barang Keluar</h3>
+            <span class="badge bg-primary px-3 py-2 fw-bold" style="font-size: 11px; border-radius: 0; font-family: Arial, sans-serif !important;">
+                @currentDept.ToUpper()
+            </span>
+        </div>
+        <p class="text-muted small mb-0">Record &amp; Riwayat Pengeluaran Sparepart — Form Pengambilan Barang Technician UP @currentDept.ToUpper()</p>
     </div>
 </div>
 
@@ -32,10 +41,11 @@
                 <div class="mb-3 position-relative">
                     <label class="form-label small fw-medium text-secondary mb-1">Barcode / BIN / Part Number Lookup</label>
                     <div class="input-group input-group-sm mb-1">
-                        <input type="text" id="barcodeLookup" class="form-control form-control-sm font-monospace" placeholder="Scan barcode or enter BIN/Part #..." autofocus onkeypress="if(event.key==='Enter'){event.preventDefault();lookupBarcode();}" oninput="onKeluarSearchInput(this.value)" autocomplete="off" />
+                        <input type="text" id="barcodeLookup" class="form-control form-control-sm font-monospace" placeholder="Scan barcode (hands-free rapid scan)..." autofocus onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();lookupBarcode();}" oninput="handleBarcodeScannerInput(this)" autocomplete="off" />
                         <button type="button" class="btn btn-outline-secondary" onclick="lookupBarcode()"><i class="bi bi-search"></i> Lookup</button>
                     </div>
-                    <button type="button" class="btn btn-ems-primary btn-sm w-100 mb-1 fw-medium" onclick="openCameraModal()">
+                    <div id="lookupStatusToast" class="small fw-semibold mt-1 py-1 px-2 rounded-1" style="font-size: 11px; display: none;"></div>
+                    <button type="button" id="btnScanCamera" class="btn btn-ems-primary btn-sm w-100 mt-1 mb-1 fw-medium" onclick="openCameraModal()">
                         <i class="bi bi-camera-fill me-1"></i> Scan Barcode via Camera
                     </button>
                     <div id="keluarSearchResults" class="list-group position-absolute w-100 shadow" style="z-index: 1050; display: none; max-height: 200px; overflow-y: auto;"></div>
@@ -43,14 +53,14 @@
 
                 <hr class="my-2 text-muted opacity-25" />
 
-                <!-- Tanggal Pengeluaran -->
+                <!-- Tanggal Pengeluaran (Locked / Non-Editable Real-time Timestamp) -->
                 <div class="mb-3">
                     <label class="form-label small fw-medium text-secondary mb-1">Tanggal &amp; Waktu</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-primary"></i></span>
-                        <input type="datetime-local" id="keluarTanggal" name="Tanggal" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        <span class="input-group-text bg-light text-secondary"><i class="bi bi-calendar-event text-primary"></i></span>
+                        <input type="datetime-local" id="keluarTanggal" name="Tanggal" class="form-control form-control-sm bg-light text-muted font-monospace" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" readonly tabindex="-1" style="pointer-events: none; cursor: not-allowed;" />
                     </div>
-                    <div class="form-text small text-muted fw-normal" style="font-size: 11px;">Pilih tanggal &amp; jam pengeluaran (otomatis terisi jam &amp; menit saat ini).</div>
+                    <div class="form-text small text-muted fw-normal" style="font-size: 11px;">Tanggal &amp; jam pengeluaran otomatis terisi real-time saat ini (tidak dapat diubah).</div>
                 </div>
 
                 <hr class="my-2 text-muted opacity-25" />
@@ -81,7 +91,7 @@
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-medium text-secondary mb-1">Part Number</label>
-                        <input type="text" id="keluarPartNumber" class="form-control form-control-sm font-monospace bg-light" placeholder="Kode Part Number..." readonly />
+                        <input type="text" id="keluarPartNumber" name="PartNumber" class="form-control form-control-sm font-monospace bg-light" placeholder="Kode Part Number..." readonly />
                         <div class="form-text small text-muted fw-normal" style="font-size: 11px;">Kode Part Number sparepart (auto-fill).</div>
                     </div>
                     <div class="col-md-6">
@@ -106,7 +116,7 @@
                     <div class="col-md-6">
                         <label class="form-label small fw-medium text-secondary mb-1">Actual Usage Line *</label>
                         <select name="Line" id="lineSelect" class="form-select form-select-sm" required onchange="onLineChange(this.value); syncFormToActiveCart();">
-                            <option value="">-- Pilih Line --</option>
+                            <option value="">Pilih Line</option>
                             @foreach (var l in lines)
                             {
                                 <option value="@l">@l</option>
@@ -117,7 +127,7 @@
                     <div class="col-md-6">
                         <label class="form-label small fw-medium text-secondary mb-1">Mesin *</label>
                         <select name="MachineId" id="machineSelect" class="form-select form-select-sm" disabled onchange="syncFormToActiveCart()">
-                            <option value="">-- Pilih Mesin --</option>
+                            <option value="">Pilih Mesin</option>
                         </select>
                         <div class="form-text small text-muted fw-normal" style="font-size: 11px;">Pilih nama mesin tempat sparepart digunakan (wajib jika tersedia).</div>
                     </div>
@@ -133,7 +143,7 @@
                     <div class="col-md-6">
                         <label class="form-label small fw-medium text-secondary mb-1">PIC Technician *</label>
                         <select name="Pic" id="picSelect" class="form-select form-select-sm" required onchange="syncFormToActiveCart()">
-                            <option value="">-- Pilih PIC --</option>
+                            <option value="">Pilih PIC</option>
                             @foreach (var pic in pics)
                             {
                                 <option value="@pic" selected="@(User.Identity?.Name?.Equals(pic, StringComparison.OrdinalIgnoreCase) == true ? "selected" : null)">@pic</option>
@@ -147,7 +157,7 @@
                 <div class="mb-3">
                     <label class="form-label small fw-medium text-secondary mb-1">Maintenance Type *</label>
                     <select name="MaintenanceType" id="maintTypeSelect" class="form-select form-select-sm" required onchange="syncFormToActiveCart()">
-                        <option value="">-- Pilih Maint. Type --</option>
+                        <option value="">Pilih Maint. Type</option>
                         @foreach (var mt in maintTypes)
                         {
                             <option value="@mt">@mt</option>
@@ -188,6 +198,7 @@
                     <tr>
                         <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
                         <th>DATE</th>
+                        <th>PART NUMBER</th>
                         <th>BIN</th>
                         <th>ITEM NAME</th>
                         <th class="text-end">QTY</th>
@@ -206,6 +217,7 @@
                             <tr>
                                 <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNo++)</td>
                                 <td class="small text-muted font-monospace">@item.Tanggal.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? item.MasterDataId ?? "-")</span></td>
                                 <td><span class="badge bg-light text-dark border">@(item.Bin ?? "-")</span></td>
                                 <td class="fw-normal">@item.ItemName</td>
                                 <td class="text-end text-danger fw-normal">@item.Qty</td>
@@ -231,7 +243,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">Belum ada riwayat transaksi barang keluar.</td>
+                            <td colspan="10" class="text-center text-muted py-4">Belum ada riwayat transaksi barang keluar.</td>
                         </tr>
                     }
                 </tbody>
@@ -240,10 +252,10 @@
     </div>
 </div>
 
-<!-- Camera Barcode Scanner Modal - Powered by Quagga2 -->
+<!-- Camera Barcode Scanner Modal - Powered by Quagga2 & Native BarcodeDetector -->
 <style>
 /* Fix Quagga2 canvas overlay — canvas must sit ON TOP of video, not below it */
-#quagga-viewport { position: relative; width: 100%; background: #000; border: 2px solid #0B4A8F; border-radius: 4px; overflow: hidden; }
+#quagga-viewport { position: relative; width: 100%; background: #000; border: 2px solid #0B4A8F; border-radius: 4px; overflow: hidden; min-height: 280px; }
 #quagga-viewport video { width: 100% !important; height: auto !important; display: block !important; object-fit: cover; }
 #quagga-viewport canvas { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; }
 </style>
@@ -256,18 +268,24 @@
                     <span id="cameraFacingBadge" class="badge bg-primary small"><i class="bi bi-camera me-1"></i> Kamera</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-light border-0 px-2" onclick="toggleFacingMode()" title="Ganti Kamera">
-                        <i class="bi bi-camera-reversed fs-5"></i>
+                    <button type="button" class="btn btn-sm btn-light border-0 px-2 py-1 small fw-medium text-dark d-flex align-items-center gap-1 shadow-sm" onclick="cycleCameraDevice()" title="Ganti Perangkat Kamera / Lensa Belakang">
+                        <i class="bi bi-arrow-repeat text-primary fs-6"></i> <span style="font-size: 12px;">Ganti Kamera</span>
                     </button>
                     <button type="button" class="btn-close btn-close-white" onclick="stopCameraModal()"></button>
                 </div>
             </div>
             <div class="modal-body p-2">
-                <select id="cameraSelect" class="form-select form-select-sm mb-2" onchange="switchToCamera(this.value)" style="display:none;"></select>
+                <div id="cameraSelectContainer" class="mb-2" style="display:none;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light text-secondary fw-medium" style="font-size:11px;"><i class="bi bi-camera-video me-1 text-primary"></i> Pilih Kamera:</span>
+                        <select id="cameraSelect" class="form-select form-select-sm fw-medium" onchange="switchToCamera(this.value)"></select>
+                    </div>
+                </div>
                 <!-- Quagga2 will inject <video> then <canvas> inside this div -->
                 <div id="quagga-viewport">
-                    <div id="quagga-loading" style="min-height:280px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;">
-                        <i class="bi bi-camera-video me-2"></i> Membuka kamera...
+                    <div id="quagga-loading" style="min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:13px;text-align:center;padding:15px;">
+                        <div class="spinner-border text-primary mb-2" role="status"></div>
+                        <div>Membuka kamera...</div>
                     </div>
                     <!-- Red scan guide line (z-index above canvas) -->
                     <div id="scanLine" style="display:none;position:absolute;top:50%;left:5%;right:5%;height:2px;background:rgba(255,0,0,0.9);box-shadow:0 0 8px red;pointer-events:none;z-index:20;"></div>
@@ -276,9 +294,17 @@
                     <i class="bi bi-info-circle me-1"></i> Inisialisasi scanner...
                 </div>
                 <div id="scanDebug" style="display:none;font-size:11px;color:#475569;margin-top:6px;max-height:70px;overflow:auto;padding:4px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;"></div>
-                <button class="btn btn-outline-secondary btn-sm mt-1" style="font-size:11px;" onclick="toggleDebug()"><i class="bi bi-bug me-1"></i>Debug Log</button>
             </div>
-            <div class="modal-footer py-2 px-3 bg-light">
+            <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
+                <div class="d-flex gap-1">
+                    <input type="file" id="barcodeFileInput" accept="image/*" style="display:none;" onchange="handleFileScan(event)" />
+                    <button type="button" class="btn btn-outline-primary btn-sm" style="font-size:12px;" onclick="document.getElementById('barcodeFileInput').click()">
+                        <i class="bi bi-image me-1"></i> Upload Foto
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" style="font-size:12px;" onclick="toggleDebug()">
+                        <i class="bi bi-bug me-1"></i> Debug
+                    </button>
+                </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="stopCameraModal()"><i class="bi bi-x-lg me-1"></i> Tutup</button>
             </div>
         </div>
@@ -286,235 +312,437 @@
 </div>
 
 @section Scripts {
-    <!-- Quagga2: most reliable 1D barcode scanner for browser webcam -->
+    <!-- Barcode decoders: Quagga2 + Html5Qrcode fallback -->
     <script src="https://cdn.jsdelivr.net/npm/@@ericblade/quagga2/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-    let quaggaRunning = false;
-    let currentFacingMode = "environment"; // prefer back camera; falls back to front on laptop
+    let availableCameraDevices = [];
+    let currentFacingMode = "environment"; // default to back camera
     let currentDeviceId = null;
     let lastScannedCode = null;
     let scanCooldown = false;
     let debugVisible = false;
-    let detectionCount = 0;
-    let nativeScanInterval = null; // BarcodeDetector parallel polling loop
+    var scannerDebounceTimer = null;
+    var isLookupInFlight = false;
+
+    function updateFacingBadge(rawLabel, isUserFacing) {
+        var badge = document.getElementById('cameraFacingBadge');
+        if (!badge) return;
+
+        var lower = (rawLabel || '').toLowerCase();
+        if (isUserFacing || lower.includes('front') || lower.includes('user') || lower.includes('selfie')) {
+            badge.className = "badge bg-info text-dark small";
+            badge.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i> Kamera Depan';
+        } else if (lower.includes('wide') || lower.includes('ultra')) {
+            badge.className = "badge bg-primary small";
+            badge.innerHTML = '<i class="bi bi-camera-fill me-1"></i> Kamera Belakang (Wide)';
+        } else {
+            badge.className = "badge bg-primary small";
+            badge.innerHTML = '<i class="bi bi-camera-fill me-1"></i> Kamera Belakang';
+        }
+    }
+
+    function formatCameraSelectLabel(rawLabel, index, totalCams) {
+        if (!rawLabel) return '📷 Kamera ' + (index + 1);
+        
+        // Remove technical hardware serial numbers e.g. (30c9:0010) or [USB-001]
+        var cleaned = rawLabel.replace(/\s*\([\w:]+\)/gi, '').replace(/\s*\[[\w:]+\]/gi, '').trim();
+        var lower = cleaned.toLowerCase();
+
+        if (lower.includes('back') || lower.includes('rear') || lower.includes('environment') || lower.includes('camera2 0')) {
+            return '📷 Kamera Belakang ' + (totalCams > 2 ? (index + 1) : '') + (index === 0 ? ' (Utama)' : '');
+        }
+        if (lower.includes('front') || lower.includes('user') || lower.includes('facing front') || lower.includes('camera2 1')) {
+            return '👤 Kamera Depan (Selfie)';
+        }
+        return '📷 ' + (cleaned || ('Kamera ' + (index + 1)));
+    }
+
+    function cycleCameraDevice() {
+        if (availableCameraDevices && availableCameraDevices.length > 1) {
+            var activeTrack = cameraStream ? cameraStream.getVideoTracks()[0] : null;
+            var activeSettings = activeTrack && activeTrack.getSettings ? activeTrack.getSettings() : {};
+            var activeId = currentDeviceId || activeSettings.deviceId;
+            
+            var currentIndex = availableCameraDevices.findIndex(function(d) { return d.deviceId === activeId; });
+            var nextIndex = (currentIndex + 1) % availableCameraDevices.length;
+            if (nextIndex < 0) nextIndex = 0;
+            
+            var nextDev = availableCameraDevices[nextIndex];
+            if (nextDev && nextDev.deviceId) {
+                currentDeviceId = nextDev.deviceId;
+                
+                var labelLower = (nextDev.label || '').toLowerCase();
+                if (labelLower.includes('front') || labelLower.includes('user') || labelLower.includes('selfie')) {
+                    currentFacingMode = 'user';
+                } else {
+                    currentFacingMode = 'environment';
+                }
+                
+                switchToCamera(currentDeviceId);
+            }
+        } else {
+            // Fallback toggle for smartphones / devices where enumerateDevices only reported single lens initially
+            currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+            currentDeviceId = null;
+            updateFacingBadge('', currentFacingMode === 'user');
+            startCameraStream(null);
+        }
+    }
+
+    function switchToCamera(deviceId) {
+        if (!deviceId) return;
+        currentDeviceId = deviceId;
+        startCameraStream(deviceId);
+    }
+
+    function handleBarcodeScannerInput(el) {
+        if (isLookupInFlight) {
+            if (el) el.value = "";
+            return;
+        }
+
+        var val = (el ? el.value : '').trim();
+        
+        // Hide search dropdown during barcode scanning
+        var resultsBox = document.getElementById("keluarSearchResults");
+        if (resultsBox) resultsBox.style.display = "none";
+        if (typeof keluarRefTimeout !== 'undefined') clearTimeout(keluarRefTimeout);
+
+        if (val.length >= 3) {
+            clearTimeout(scannerDebounceTimer);
+            // Hands-free rapid scan: auto-lookup after short typing pause or fast scanner input burst
+            scannerDebounceTimer = setTimeout(function() {
+                var currentVal = (el ? el.value : '').trim();
+                if (currentVal.length >= 3) {
+                    lookupBarcode();
+                }
+            }, 120);
+        }
+    }
+
+    function showLookupToast(message, type) {
+        var toast = document.getElementById("lookupStatusToast");
+        if (!toast) return;
+        
+        if (type === "success") {
+            toast.className = "small fw-semibold mt-1 py-1 px-2 rounded-1 bg-success-subtle text-success border border-success-subtle";
+            toast.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> ' + message;
+        } else {
+            toast.className = "small fw-semibold mt-1 py-1 px-2 rounded-1 bg-danger-subtle text-danger border border-danger-subtle";
+            toast.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' + message;
+        }
+        toast.style.display = "block";
+
+        setTimeout(function() {
+            if (toast) toast.style.display = "none";
+        }, 3000);
+    }
 
     function lookupBarcode(overrideQuery) {
-        var query = overrideQuery || document.getElementById("barcodeLookup").value;
+        if (typeof scannerDebounceTimer !== 'undefined') clearTimeout(scannerDebounceTimer);
+        if (typeof keluarRefTimeout !== 'undefined') clearTimeout(keluarRefTimeout);
+
+        var lookupInput = document.getElementById("barcodeLookup");
+        var query = (overrideQuery || (lookupInput ? lookupInput.value : '')).trim();
+
+        // Synchronously clear input & hide dropdown NOW so next scan starts in a clean 0-character input box!
+        if (lookupInput) {
+            lookupInput.value = "";
+            lookupInput.focus();
+        }
+        var resultsBox = document.getElementById("keluarSearchResults");
+        if (resultsBox) resultsBox.style.display = "none";
+
         if (!query) return;
+
+        isLookupInFlight = true;
+
         fetch('/BarangKeluar/LookupBarcode?query=' + encodeURIComponent(query))
             .then(r => r.json())
             .then(data => {
+                isLookupInFlight = false;
                 if (data && data.masterDataId) {
                     document.getElementById("masterDataId").value = data.masterDataId || '';
                     document.getElementById("keluarItemName").value = data.itemName || '';
                     document.getElementById("keluarBin").value = data.bin || '';
+                    
+                    // Add item sequentially to scanned cart
+                    addItemToScannedCart({
+                        masterDataId: data.masterDataId,
+                        id: data.masterDataId,
+                        itemName: data.itemName,
+                        bin: data.bin
+                    });
+                    playScanSuccess();
+                    showLookupToast('<b>' + (data.itemName || query) + '</b> ditambahkan ke list!', 'success');
                 } else {
-                    alert("Barcode / BIN '" + query + "' tidak ditemukan!");
+                    playNotFoundBeep();
+                    showLookupToast('Part / BIN <b>' + query + '</b> tidak ditemukan di database!', 'warning');
+                }
+                if (lookupInput) {
+                    lookupInput.value = "";
+                    lookupInput.focus();
                 }
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                isLookupInFlight = false;
+                console.error("Lookup error:", err);
+                playNotFoundBeep();
+                showLookupToast('Gagal memproses lookup: ' + query, 'warning');
+                if (lookupInput) {
+                    lookupInput.value = "";
+                    lookupInput.focus();
+                }
+            });
     }
+
+    let cameraStream = null;
+    let nativeScanInterval = null;
 
     function openCameraModal() {
-        var modalEl = document.getElementById('cameraScanModal');
-        var bsModal = new bootstrap.Modal(modalEl);
-        bsModal.show();
-        modalEl.addEventListener('shown.bs.modal', function () {
-            initQuagga();
-        }, { once: true });
+        try {
+            var modalEl = document.getElementById('cameraScanModal');
+            if (!modalEl) return;
+
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+
+            var backdrop = document.querySelector('.modal-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
+
+            document.body.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(function() {
+                startCameraStream(currentDeviceId);
+            }, 50);
+        } catch (e) {
+            console.error("openCameraModal error:", e);
+            startCameraStream(currentDeviceId);
+        }
     }
 
-    function initQuagga(deviceId) {
+    function startCameraStream(deviceId) {
         stopQuagga();
-        setStatus('info', '<i class="bi bi-camera-video me-1"></i> Membuka kamera dan memuat scanner...');
 
-        // Show loading
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            setStatus('warning', '<i class="bi bi-shield-lock me-1"></i> <strong>Akses Kamera Dibatasi:</strong> Browser memblokir kamera di jaringan HTTP non-localhost. Gunakan HTTPS atau localhost.');
+        } else {
+            setStatus('info', '<i class="bi bi-camera-video me-1"></i> Membuka kamera...');
+        }
+
         var loadingEl = document.getElementById('quagga-loading');
         if (loadingEl) loadingEl.style.display = 'flex';
 
-        // Build HD camera constraints for maximum barcode line sharpness
-        var videoConstraints = {
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 }
-        };
-        if (deviceId) {
-            videoConstraints.deviceId = { exact: deviceId };
-        } else {
-            videoConstraints.facingMode = currentFacingMode;
-        }
+        var vp = document.getElementById('quagga-viewport');
+        if (!vp) return;
 
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: document.getElementById('quagga-viewport'),
-                constraints: videoConstraints
-            },
-            locator: {
-                patchSize: "small",    // smaller patch size = more detail scanned
-                halfSample: false       // full resolution frame = maximum line sharpness
-            },
-            numOfWorkers: 4,            // 4 Web Workers = ultra-fast parallel frame scanning
-            frequency: 30,              // 30fps maximum rate
-            decoder: {
-                readers: [
-                    "code_128_reader",
-                    "code_39_reader"
-                ]
-            },
-            locate: true
-        }, function(err) {
-            if (err) {
-                console.error("Quagga init error:", err);
-                setStatus('warning', '<i class="bi bi-exclamation-triangle me-1"></i> Gagal buka kamera: ' + (err.message || err));
-                appendDebug('ERROR: ' + (err.message || err));
-                return;
-            }
-            quaggaRunning = true;
-            Quagga.start();
+        // Clean previous video/canvas elements
+        vp.querySelectorAll('video, canvas, #readerTarget').forEach(function(el) { el.remove(); });
 
-            // Enable continuous autofocus if supported by camera hardware
-            try {
-                var vp = document.getElementById('quagga-viewport');
-                var vid = vp ? vp.querySelector('video') : null;
-                if (vid && vid.srcObject) {
-                    var track = vid.srcObject.getVideoTracks()[0];
-                    if (track && track.getCapabilities && track.getCapabilities().focusMode) {
-                        track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }).catch(function(){});
-                    }
+        var videoEl = document.createElement('video');
+        videoEl.id = 'cameraLiveVideo';
+        videoEl.setAttribute('autoplay', '');
+        videoEl.setAttribute('playsinline', '');
+        videoEl.setAttribute('muted', '');
+        videoEl.style.width = '100%';
+        videoEl.style.height = '280px';
+        videoEl.style.objectFit = 'cover';
+        vp.appendChild(videoEl);
+
+        var constraints = deviceId 
+            ? { video: { deviceId: { exact: deviceId } } } 
+            : { video: { facingMode: { ideal: currentFacingMode } } };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                cameraStream = stream;
+                videoEl.srcObject = stream;
+                videoEl.play().catch(function(){});
+
+                if (loadingEl) loadingEl.style.display = 'none';
+                var scanLine = document.getElementById('scanLine');
+                if (scanLine) scanLine.style.display = 'block';
+
+                setStatus('ready', '<i class="bi bi-upc-scan me-1"></i> <strong>Scanner Aktif!</strong> Arahkan barcode ke kamera.');
+
+                // Update badge with clean label (drops raw hardware string like 30c9:0010)
+                var activeTrack = stream.getVideoTracks()[0];
+                var settings = activeTrack && activeTrack.getSettings ? activeTrack.getSettings() : {};
+                var isUser = (settings.facingMode === 'user' || currentFacingMode === 'user');
+                updateFacingBadge(activeTrack ? activeTrack.label : '', isUser);
+
+                // Populate camera select dropdown and update options
+                if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                    navigator.mediaDevices.enumerateDevices().then(function(devices) {
+                        var cams = devices.filter(function(d) { return d.kind === 'videoinput'; });
+                        availableCameraDevices = cams;
+
+                        var sel = document.getElementById('cameraSelect');
+                        var container = document.getElementById('cameraSelectContainer');
+                        if (cams.length > 0 && sel) {
+                            sel.innerHTML = '';
+                            var activeId = deviceId || settings.deviceId;
+
+                            cams.forEach(function(dev, i) {
+                                var opt = document.createElement('option');
+                                opt.value = dev.deviceId;
+                                opt.text = formatCameraSelectLabel(dev.label, i, cams.length);
+
+                                if (dev.deviceId === activeId || (activeId && dev.deviceId === activeId)) {
+                                    opt.selected = true;
+                                }
+                                sel.appendChild(opt);
+                            });
+
+                            if (container) {
+                                container.style.display = (cams.length > 1) ? 'block' : 'none';
+                            }
+                        }
+                    }).catch(function(e){ console.warn("enumerateDevices error", e); });
                 }
-            } catch(e) {}
 
-            // Hide loading, show scan line
-            if (loadingEl) loadingEl.style.display = 'none';
-            var scanLine = document.getElementById('scanLine');
-            if (scanLine) scanLine.style.display = 'block';
+                startScannerEngine(videoEl);
+            })
+            .catch(function(err) {
+                console.warn("getUserMedia fallback to video:true", err);
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        cameraStream = stream;
+                        videoEl.srcObject = stream;
+                        videoEl.play().catch(function(){});
 
-            // Populate camera dropdown
-            navigator.mediaDevices.enumerateDevices().then(function(devices) {
-                var cams = devices.filter(function(d) { return d.kind === 'videoinput'; });
-                var sel = document.getElementById('cameraSelect');
-                if (cams.length > 1 && sel) {
-                    sel.innerHTML = '';
-                    cams.forEach(function(dev, i) {
-                        var opt = document.createElement('option');
-                        opt.value = dev.deviceId;
-                        opt.text = dev.label || ('Kamera ' + (i+1));
-                        if (dev.deviceId === currentDeviceId) opt.selected = true;
-                        sel.appendChild(opt);
+                        if (loadingEl) loadingEl.style.display = 'none';
+                        var scanLine = document.getElementById('scanLine');
+                        if (scanLine) scanLine.style.display = 'block';
+
+                        setStatus('ready', '<i class="bi bi-upc-scan me-1"></i> <strong>Scanner Aktif!</strong> Arahkan barcode ke kamera.');
+                        var track = stream.getVideoTracks()[0];
+                        updateFacingBadge(track ? track.label : '', currentFacingMode === 'user');
+                        startScannerEngine(videoEl);
+                    })
+                    .catch(function(err2) {
+                        console.error("Camera access error:", err2);
+                        if (loadingEl) loadingEl.style.display = 'none';
+                        var msg = (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError')
+                            ? 'Akses Kamera Ditolak! Harap beri izin kamera pada icon gembok di address bar.'
+                            : 'Gagal membuka kamera: ' + (err2.message || err2.name);
+                        setStatus('danger', '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' + msg);
                     });
-                    sel.style.display = 'block';
-                }
             });
+    }
 
-            setStatus('ready', '<i class="bi bi-upc-scan me-1"></i> <strong>Scanner Ultra-Sensitif aktif!</strong> Arahkan barcode ke kamera.');
-            appendDebug('Quagga2 HD 1080p OK. Workers=4, frequency=30');
+    function startScannerEngine(videoEl) {
+        if (nativeScanInterval) clearInterval(nativeScanInterval);
 
-            // ── Engine 2: Native BarcodeDetector (Chrome Hardware-Accelerated) with Contrast Enhancement
-            if ('BarcodeDetector' in window) {
-                BarcodeDetector.getSupportedFormats().then(function(fmts) {
-                    var nativeDetector = new BarcodeDetector({ formats: fmts.filter(f => ['code_128','code_39','qr_code'].includes(f)) });
-                    var rawCanvas = document.createElement('canvas');
-                    var contrastCanvas = document.createElement('canvas');
-                    var vp = document.getElementById('quagga-viewport');
+        var rawCanvas = document.createElement('canvas');
 
-                    nativeScanInterval = setInterval(function() {
-                        if (!quaggaRunning || scanCooldown) return;
-                        var vid = vp ? vp.querySelector('video') : null;
-                        if (!vid || vid.readyState < 2) return;
+        if ('BarcodeDetector' in window) {
+            BarcodeDetector.getSupportedFormats().then(function(fmts) {
+                var nativeDetector = new BarcodeDetector({ formats: fmts.filter(f => ['code_128','code_39','qr_code','ean_13','upc_a'].includes(f)) });
 
-                        var w = vid.videoWidth;
-                        var h = vid.videoHeight;
-                        if (!w || !h) return;
+                nativeScanInterval = setInterval(function() {
+                    if (scanCooldown || !videoEl || videoEl.readyState < 2) return;
+                    var w = videoEl.videoWidth || 640;
+                    var h = videoEl.videoHeight || 480;
+                    if (!w || !h) return;
 
-                        rawCanvas.width = contrastCanvas.width = w;
-                        rawCanvas.height = contrastCanvas.height = h;
+                    rawCanvas.width = w;
+                    rawCanvas.height = h;
+                    var ctx = rawCanvas.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(videoEl, 0, 0, w, h);
 
-                        var ctxRaw = rawCanvas.getContext('2d', { willReadFrequently: true });
-                        ctxRaw.drawImage(vid, 0, 0, w, h);
-
-                        // Pass 1: Try raw HD frame
-                        nativeDetector.detect(rawCanvas).then(function(results) {
-                            if (results && results.length > 0 && !scanCooldown) {
-                                var code = results[0].rawValue;
-                                if (code && code !== lastScannedCode) {
-                                    appendDebug('[NativeDetector HD] ' + code);
-                                    lastScannedCode = code;
-                                    scanCooldown = true;
-                                    onBarcodeDetected(code);
-                                    return;
-                                }
+                    nativeDetector.detect(rawCanvas).then(function(results) {
+                        if (results && results.length > 0 && !scanCooldown) {
+                            var code = results[0].rawValue;
+                            if (code && code !== lastScannedCode) {
+                                lastScannedCode = code;
+                                scanCooldown = true;
+                                onBarcodeDetected(code);
                             }
+                        }
+                    }).catch(function(){});
+                }, 50);
+            }).catch(function() {
+                startQuaggaFallback(videoEl);
+            });
+        } else {
+            startQuaggaFallback(videoEl);
+        }
+    }
 
-                            // Pass 2: Contrast-boosted frame for low-contrast / dim barcodes
-                            var ctxCon = contrastCanvas.getContext('2d', { willReadFrequently: true });
-                            var imgData = ctxRaw.getImageData(0, 0, w, h);
-                            var d = imgData.data;
-                            for (var i = 0; i < d.length; i += 4) {
-                                var v = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
-                                // High-contrast binarization / S-curve contrast boost
-                                v = (v < 128) ? Math.max(0, v * 0.6) : Math.min(255, v * 1.4);
-                                d[i] = d[i+1] = d[i+2] = v;
-                            }
-                            ctxCon.putImageData(imgData, 0, 0);
+    function startQuaggaFallback(videoEl) {
+        if (typeof Quagga !== 'undefined') {
+            try {
+                Quagga.init({
+                    inputStream: { name: "Live", type: "LiveStream", target: videoEl.parentElement },
+                    locator: { patchSize: "medium", halfSample: true },
+                    numOfWorkers: 0,
+                    decoder: { readers: ["code_128_reader", "code_39_reader", "ean_reader"] }
+                }, function(err) {
+                    if (!err) {
+                        quaggaRunning = true;
+                        Quagga.start();
+                    }
+                });
+                Quagga.onDetected(function(result) {
+                    var code = result.codeResult && result.codeResult.code;
+                    if (!code || scanCooldown || code === lastScannedCode) return;
+                    lastScannedCode = code;
+                    scanCooldown = true;
+                    onBarcodeDetected(code);
+                });
+            } catch(e) {}
+        }
+    }
 
-                            nativeDetector.detect(contrastCanvas).then(function(res2) {
-                                if (res2 && res2.length > 0 && !scanCooldown) {
-                                    var code2 = res2[0].rawValue;
-                                    if (code2 && code2 !== lastScannedCode) {
-                                        appendDebug('[NativeDetector ContrastBoost] ' + code2);
-                                        lastScannedCode = code2;
-                                        scanCooldown = true;
-                                        onBarcodeDetected(code2);
-                                    }
+    function handleFileScan(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        setStatus('info', '<i class="bi bi-hourglass-split me-1"></i> Membaca gambar barcode...');
+
+        if (typeof Html5Qrcode !== 'undefined') {
+            var html5QrCode = new Html5Qrcode("quagga-viewport");
+            html5QrCode.scanFile(file, true)
+                .then(decodedText => {
+                    onBarcodeDetected(decodedText);
+                })
+                .catch(err => {
+                    console.error("Html5Qrcode file error:", err);
+                    if (typeof Quagga !== 'undefined') {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            Quagga.decodeSingle({
+                                src: e.target.result,
+                                numOfWorkers: 0,
+                                decoder: { readers: ["code_128_reader", "code_39_reader", "ean_reader"] }
+                            }, function(res) {
+                                if (res && res.codeResult && res.codeResult.code) {
+                                    onBarcodeDetected(res.codeResult.code);
+                                } else {
+                                    setStatus('warning', '<i class="bi bi-exclamation-triangle me-1"></i> Barcode tidak terdeteksi pada gambar ini.');
                                 }
-                            }).catch(function(){});
-                        }).catch(function(){});
-                    }, 35); // 35ms polling loop (~28fps)
-                    appendDebug('BarcodeDetector Dual-Pass HD+ContrastBoost active');
-                }).catch(function(){});
-            }
-        });
-
-        // Debug logging
-        Quagga.onProcessed(function(result) {
-            if (!debugVisible || !result) return;
-            detectionCount++;
-            if (result.codeResult && result.codeResult.code) {
-                appendDebug('[' + detectionCount + '] Partial: ' + result.codeResult.code);
-            }
-        });
-
-        // High tolerance Quagga detection
-        Quagga.onDetected(function(result) {
-            var code = result.codeResult && result.codeResult.code;
-            if (!code || scanCooldown) return;
-            if (code === lastScannedCode) return;
-
-            var errors = result.codeResult.decodedCodes
-                ? result.codeResult.decodedCodes.filter(function(x) { return x.error !== undefined; })
-                : [];
-            var avgError = errors.length
-                ? errors.reduce(function(s, x) { return s + x.error; }, 0) / errors.length
-                : 0;
-
-            appendDebug('Quagga DETECTED: ' + code + ' err=' + avgError.toFixed(3));
-
-            // Accept any read with avgError < 0.35 (ultra permissive for blurry/distant tags)
-            if (avgError < 0.35 || errors.length === 0) {
-                lastScannedCode = code;
-                scanCooldown = true;
-                onBarcodeDetected(code);
-            } else {
-                appendDebug('  → skip (err too high: ' + avgError.toFixed(3) + ')');
-            }
-        });
+                            });
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        setStatus('warning', '<i class="bi bi-exclamation-triangle me-1"></i> Barcode tidak terdeteksi pada gambar ini.');
+                    }
+                });
+        }
     }
 
     function onBarcodeDetected(code) {
         // Show "detected" status first, then lookup in DB
         setStatus('info', '<i class="bi bi-hourglass-split me-1"></i> Barcode: <strong>' + code + '</strong> — memeriksa database...');
-        appendDebug('Lookup: ' + code);
 
         fetch('/BarangKeluar/LookupBarcode?query=' + encodeURIComponent(code))
             .then(function(r) { return r.json(); })
@@ -522,7 +750,6 @@
                 if (data && data.masterDataId) {
                     playScanSuccess();
                     setStatus('success', '<i class="bi bi-check-circle-fill me-1"></i> <strong>✓ Ditemukan &amp; Ditambahkan!</strong> ' + data.itemName + ' [' + code + ']');
-                    appendDebug('FOUND & ADDED: ' + data.itemName);
                     
                     addItemToScannedCart({
                         masterDataId: data.masterDataId,
@@ -539,7 +766,6 @@
                 } else {
                     playNotFoundBeep();
                     setStatus('warning', '<i class="bi bi-exclamation-triangle me-1"></i> Kode <strong>' + code + '</strong> tidak ada di database. Arahkan ke barcode <u>UPF-XXXXX</u>.');
-                    appendDebug('NOT FOUND: ' + code);
                     setTimeout(function() {
                         scanCooldown = false;
                         lastScannedCode = null;
@@ -556,28 +782,46 @@
 
     function stopQuagga() {
         if (nativeScanInterval) { clearInterval(nativeScanInterval); nativeScanInterval = null; }
-        if (quaggaRunning) {
-            try { Quagga.stop(); } catch(e) {}
-            quaggaRunning = false;
+        if (cameraStream) {
+            try { cameraStream.getTracks().forEach(function(track) { track.stop(); }); } catch(e) {}
+            cameraStream = null;
         }
+        if (typeof Quagga !== 'undefined') {
+            try { Quagga.stop(); } catch(e) {}
+        }
+        quaggaRunning = false;
         var scanLine = document.getElementById('scanLine');
         if (scanLine) scanLine.style.display = 'none';
         var loadingEl = document.getElementById('quagga-loading');
         if (loadingEl) loadingEl.style.display = 'flex';
         lastScannedCode = null;
         scanCooldown = false;
-        detectionCount = 0;
         var vp = document.getElementById('quagga-viewport');
         if (vp) {
-            vp.querySelectorAll('video, canvas').forEach(function(el) { el.remove(); });
+            vp.querySelectorAll('video, canvas, #readerTarget').forEach(function(el) { el.remove(); });
         }
     }
 
     function stopCameraModal() {
-        stopQuagga();
-        var modalEl = document.getElementById('cameraScanModal');
-        var bsModal = bootstrap.Modal.getInstance(modalEl);
-        if (bsModal) bsModal.hide();
+        try {
+            stopQuagga();
+            var modalEl = document.getElementById('cameraScanModal');
+            if (!modalEl) return;
+
+            modalEl.classList.remove('show');
+            modalEl.style.display = 'none';
+            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
+
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(function(b) { b.remove(); });
+
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        } catch(e) {
+            console.error("stopCameraModal error:", e);
+        }
     }
 
     function toggleFacingMode() {
@@ -867,6 +1111,7 @@
 
         var payload = scannedCart.map(x => ({
             MasterDataId: x.masterDataId,
+            PartNumber: x.partNumber || x.masterDataId,
             Bin: x.bin,
             ItemName: x.itemName,
             Qty: x.qty,
@@ -905,12 +1150,17 @@
     function onKeluarSearchInput(val) {
         clearTimeout(keluarRefTimeout);
         var resultsBox = document.getElementById("keluarSearchResults");
-        if (!val || val.trim().length < 2) {
+        if (!resultsBox) return;
+
+        if (!val || val.trim().length < 2 || isLookupInFlight) {
             resultsBox.style.display = "none";
             return;
         }
 
         keluarRefTimeout = setTimeout(function() {
+            var lookupVal = document.getElementById("barcodeLookup") ? document.getElementById("barcodeLookup").value.trim() : '';
+            if (!lookupVal || lookupVal !== val.trim()) return;
+
             fetch('/BarangKeluar/SearchMasterData?query=' + encodeURIComponent(val.trim()))
                 .then(res => res.json())
                 .then(data => {
@@ -929,17 +1179,27 @@
                         });
                         resultsBox.style.display = "block";
                     } else {
-                        resultsBox.innerHTML = '<div class="p-2 small text-muted text-center italic">Tidak ada hasil ditemukan</div>';
-                        resultsBox.style.display = "block";
+                        resultsBox.style.display = "none";
                     }
                 })
                 .catch(err => console.error(err));
-        }, 250);
+        }, 350);
     }
 
     function selectKeluarMasterItem(item) {
-        addItemToScannedCart(item);
-        document.getElementById("barcodeLookup").value = "";
+        addItemToScannedCart({
+            masterDataId: item.id || item.masterDataId,
+            id: item.id || item.masterDataId,
+            itemName: item.item || item.itemName,
+            bin: item.bin
+        });
+        var input = document.getElementById("barcodeLookup");
+        if (input) {
+            input.value = "";
+            input.focus();
+        }
+        var resultsBox = document.getElementById("keluarSearchResults");
+        if (resultsBox) resultsBox.style.display = "none";
     }
 
     function onKeluarBinInput(val) {
@@ -978,7 +1238,7 @@
     function onLineChange(line, selectMachineId) {
         var machineSel = document.getElementById("machineSelect");
         if (!machineSel) return;
-        machineSel.innerHTML = '<option value="">-- Pilih Mesin --</option>';
+        machineSel.innerHTML = '<option value="">Pilih Mesin</option>';
         if (!line) {
             machineSel.disabled = true;
             syncFormToActiveCart();
@@ -1022,7 +1282,7 @@
         if (statusEl) statusEl.innerText = "";
         var machineSel = document.getElementById("machineSelect");
         if (machineSel) {
-            machineSel.innerHTML = '<option value="">-- Pilih Mesin --</option>';
+            machineSel.innerHTML = '<option value="">Pilih Mesin</option>';
             machineSel.disabled = true;
         }
     }
@@ -1032,6 +1292,21 @@
         var search = document.getElementById("barcodeLookup");
         if (box && search && !box.contains(e.target) && !search.contains(e.target)) {
             box.style.display = "none";
+        }
+    });
+
+    // Global auto-refocus for hands-free scanning mobility:
+    // If technician scans without focused input, automatically redirect focus to barcodeLookup
+    document.addEventListener("keydown", function(e) {
+        var active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT")) {
+            return;
+        }
+        if (e.key && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            var lookupInput = document.getElementById("barcodeLookup");
+            if (lookupInput) {
+                lookupInput.focus();
+            }
         }
     });
     </script>

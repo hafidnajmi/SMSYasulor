@@ -70,14 +70,14 @@ namespace UPMS.Web.Models.Entities
         [Column("can_line_compatibility")]
         public int CanLineMapping { get; set; } = 0;
 
-        [Column("can_master_machine")]
-        public int CanMasterMachine { get; set; } = 0;
-
-        [NotMapped]
-        public int CanSparepartMachine { get => CanMasterMachine; set => CanMasterMachine = value; }
-
         [Column("can_cost_intelligence")]
         public int CanCostIntelligence { get; set; } = 0;
+
+        [Column("can_manage_pm")]
+        public int CanManagePm { get; set; } = 1;
+
+        [Column("can_manage_pm_edit")]
+        public int CanManagePmEdit { get; set; } = 1;
 
         [Column("require_approval_keluar")]
         public bool RequireApprovalKeluar { get; set; } = false;

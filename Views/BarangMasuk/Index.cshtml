@@ -36,7 +36,7 @@
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-secondary mb-1">PIC</label>
                     <select name="Pic" class="form-select form-select-sm">
-                        <option value="">-- Pilih PIC --</option>
+                        <option value="">Pilih PIC</option>
                         @foreach (var pic in pics)
                         {
                             <option value="@pic" selected="@(User.Identity?.Name?.Equals(pic, StringComparison.OrdinalIgnoreCase) == true ? "selected" : null)">@pic</option>
@@ -51,7 +51,7 @@
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white"><i class="bi bi-building text-primary"></i></span>
                         <select name="Supplier" id="supplierSelect" class="form-select form-select-sm">
-                            <option value="">Pilih Supplier...</option>
+                            <option value="">Pilih Supplier</option>
                             @foreach (var sup in suppliers)
                             {
                                 <option value="@sup">@sup</option>
@@ -162,7 +162,6 @@
                         <th>PIC</th>
                         <th>SUPPLIER</th>
                         <th>PO NUMBER</th>
-                        <th>ACTION</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -181,19 +180,13 @@
                                 <td class="small">@(item.Pic ?? "-")</td>
                                 <td class="small text-secondary">@(item.Supplier ?? "-")</td>
                                 <td class="small">@(item.PoNumber ?? "-")</td>
-                                <td>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'transaksi masuk #@item.Id');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete"><i class="bi bi-trash"></i></button>
-                                    </form>
-                                </td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="10" class="text-center text-muted py-4">Belum ada riwayat transaksi barang masuk.</td>
+                            <td colspan="9" class="text-center text-muted py-4">Belum ada riwayat transaksi barang masuk.</td>
                         </tr>
                     }
                 </tbody>

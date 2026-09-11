@@ -29,13 +29,21 @@ namespace UPMS.Web.Services
         public decimal TopCostSparepartAmount { get; set; }
     }
 
+    public class RecentActivityDto
+    {
+        public string ActivityType { get; set; } = string.Empty;
+        public string SparepartName { get; set; } = string.Empty;
+        public string Pic { get; set; } = string.Empty;
+        public System.DateTime Timestamp { get; set; }
+    }
+
     public interface IDashboardService
     {
         Task<KpiSummary> GetKpiSummaryAsync(int? year = null, int? month = null);
         Task<Dictionary<string, int>> GetStockStatusDistributionAsync();
         Task<List<ChartDataPoint>> GetCostPerLineAsync(int? year = null, int? month = null);
         Task<List<MasterData>> GetTopLowStockAsync(int count = 5);
-        Task<List<AuditLog>> GetRecentActivitiesAsync(int count = 5);
+        Task<List<RecentActivityDto>> GetRecentActivitiesAsync(int count = 5);
         Task<CostInsights> GetCostInsightsAsync(int? year = null, int? month = null);
     }
 }

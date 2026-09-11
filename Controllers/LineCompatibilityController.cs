@@ -46,16 +46,24 @@ namespace UPMS.Web.Controllers
             string? selectedLine = null,
             string? selectedPartId = null,
             string? lineSearch = null,
+            string? areaFilter = null,
             string? spSearch = null,
             string? detailSearch = null,
             string lineSort = "line_code",
             int partsPage = 1,
             string kpiTab = "parts")
         {
+            if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanLineMapping))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Line Compatibility.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
             var vm = new LineCompatibilityViewModel
             {
                 SubTab = string.IsNullOrWhiteSpace(subTab) ? "line" : subTab.ToLower(),
                 LineSearch = lineSearch ?? "",
+                AreaFilter = areaFilter ?? "",
                 SpSearch = spSearch ?? "",
                 DetailSearch = detailSearch ?? "",
                 LineSort = lineSort,
@@ -85,8 +93,14 @@ namespace UPMS.Web.Controllers
             var lineHealthList = new List<LineHealthDto>();
             foreach (var line in allLines)
             {
+                var area = GetLineArea(line);
+
                 // filter by lineSearch
                 if (!string.IsNullOrEmpty(vm.LineSearch) && !line.ToLower().Contains(vm.LineSearch.ToLower()))
+                    continue;
+
+                // filter by areaFilter
+                if (!string.IsNullOrEmpty(vm.AreaFilter) && !area.Equals(vm.AreaFilter, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var partIdsFromMapping = lineMappings.Where(m => IsLineMatch(m.MappingSource, line) && m.IsActive == 1).Select(m => m.SparepartId);
@@ -95,7 +109,6 @@ namespace UPMS.Web.Controllers
 
                 var pendingReview    = lineMappings.Count(m => IsLineMatch(m.MappingSource, line) && m.Approved == 0);
                 var totalMachines    = allMachines.Count(m => IsLineMatch(m.Line, line));
-                var area             = GetLineArea(line);
 
                 // Health status calculation
                 string healthStatus = "Healthy";
@@ -124,6 +137,20 @@ namespace UPMS.Web.Controllers
             };
 
             vm.LinesHealth = lineHealthList;
+
+            // ── Calculate total monetary value (Rp) of spareparts for defined lines ──
+            var filteredLineCodes = lineHealthList.Select(l => l.LineCode).ToList();
+            var mappedPartIdsInFilteredLines = lineMappings
+                .Where(m => m.IsActive == 1 && filteredLineCodes.Any(l => IsLineMatch(m.MappingSource, l)))
+                .Select(m => m.SparepartId)
+                .Concat(allMasterParts.Where(m => filteredLineCodes.Any(l => IsLineMatch(m.Line, l))).Select(m => m.Id))
+                .Distinct()
+                .ToList();
+
+            var mappedPartsInFilteredLines = allMasterParts.Where(m => mappedPartIdsInFilteredLines.Contains(m.Id)).ToList();
+            vm.TotalMappedValue = mappedPartsInFilteredLines.Sum(p => (decimal)(p.CurrentStock ?? 0) * (p.CurrentUnitPrice ?? 0m));
+            vm.TotalMappedPartsCount = mappedPartsInFilteredLines.Count;
+            vm.TotalMappedStockQty = mappedPartsInFilteredLines.Sum(p => p.CurrentStock ?? 0);
 
             // ── Default selected line ──────────────────────────────────────────────
             if (string.IsNullOrEmpty(selectedLine) && lineHealthList.Any())
@@ -290,6 +317,11 @@ namespace UPMS.Web.Controllers
             return View(vm);
         }
 
+        private bool IsAjaxRequest()
+        {
+            return Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+        }
+
         // ── Add Line Mapping ──────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -297,7 +329,9 @@ namespace UPMS.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(sparepartId) || string.IsNullOrWhiteSpace(lineName))
             {
-                TempData["Error"] = "Part Number and Production Line are required.";
+                string errMsg = "Part Number and Production Line are required.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["Error"] = errMsg;
                 return RedirectToAction("Index", new { subTab = "line" });
             }
 
@@ -305,7 +339,9 @@ namespace UPMS.Web.Controllers
             var exists = await _db.SparepartLineMappings.AnyAsync(m => m.SparepartId == sparepartId && m.MappingSource == lineName && m.IsActive == 1);
             if (exists)
             {
-                TempData["Error"] = $"Mapping for {sparepartId} on line {lineName} already exists.";
+                string errMsg = $"Mapping for {sparepartId} on line {lineName} already exists.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["Error"] = errMsg;
                 return RedirectToAction("Index", new { subTab = "line", selectedLine = lineName });
             }
 
@@ -319,7 +355,9 @@ namespace UPMS.Web.Controllers
             };
             _db.SparepartLineMappings.Add(mapping);
             await _db.SaveChangesAsync();
-            TempData["Success"] = $"✓ Registered compatibility: Part {sparepartId} → Line {lineName}";
+            string msg = $"✓ Registered compatibility: Part {sparepartId} → Line {lineName}";
+            if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = lineName });
+            TempData["Success"] = msg;
             return RedirectToAction("Index", new { subTab = "line", selectedLine = lineName });
         }
 
@@ -333,7 +371,13 @@ namespace UPMS.Web.Controllers
             {
                 _db.SparepartLineMappings.Remove(map);
                 await _db.SaveChangesAsync();
-                TempData["Success"] = $"Line mapping #{id} removed.";
+                string msg = $"Line mapping #{id} removed.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = returnLine });
+                TempData["Success"] = msg;
+            }
+            else
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Mapping not found." });
             }
             return RedirectToAction("Index", new { subTab = "line", selectedLine = returnLine });
         }
@@ -344,7 +388,18 @@ namespace UPMS.Web.Controllers
         public async Task<IActionResult> ApprovePending(int id)
         {
             var map = await _db.SparepartLineMappings.FindAsync(id);
-            if (map != null) { map.Approved = 1; await _db.SaveChangesAsync(); TempData["Success"] = "Compatibility approved."; }
+            if (map != null)
+            {
+                map.Approved = 1;
+                await _db.SaveChangesAsync();
+                string msg = "Compatibility approved.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = msg });
+                TempData["Success"] = msg;
+            }
+            else
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Mapping not found." });
+            }
             return RedirectToAction("Index", new { subTab = "pending" });
         }
 
@@ -353,8 +408,139 @@ namespace UPMS.Web.Controllers
         public async Task<IActionResult> RejectPending(int id)
         {
             var map = await _db.SparepartLineMappings.FindAsync(id);
-            if (map != null) { _db.SparepartLineMappings.Remove(map); await _db.SaveChangesAsync(); TempData["Success"] = "Compatibility rejected and removed."; }
+            if (map != null)
+            {
+                _db.SparepartLineMappings.Remove(map);
+                await _db.SaveChangesAsync();
+                string msg = "Compatibility rejected and removed.";
+                if (IsAjaxRequest()) return Json(new { success = true, message = msg });
+                TempData["Success"] = msg;
+            }
+            else
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Mapping not found." });
+            }
             return RedirectToAction("Index", new { subTab = "pending" });
+        }
+
+        // ── Machine CRUD Actions (Consolidated from MasterMachine) ────────────────
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateMachine(MachineMaster machine)
+        {
+            if (string.IsNullOrWhiteSpace(machine.MachineCode))
+            {
+                string errMsg = "Machine Code is required.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["Error"] = errMsg;
+                return RedirectToAction("Index", new { subTab = "line", selectedLine = machine.Line, kpiTab = "machines" });
+            }
+
+            string code = machine.MachineCode.Trim().ToUpper();
+            bool exists = await _db.MachineMasters.AnyAsync(m => m.MachineCode.ToUpper() == code);
+            if (exists)
+            {
+                string errMsg = $"Machine Code '{code}' already exists.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["Error"] = errMsg;
+                return RedirectToAction("Index", new { subTab = "line", selectedLine = machine.Line, kpiTab = "machines" });
+            }
+
+            machine.MachineCode = code;
+            machine.MachineName = string.IsNullOrWhiteSpace(machine.MachineName) ? $"Machine {code}" : machine.MachineName.Trim();
+            machine.Status = string.IsNullOrWhiteSpace(machine.Status) ? "active" : machine.Status.ToLower();
+            machine.CreatedAt = DateTime.Now;
+
+            _db.MachineMasters.Add(machine);
+            await _db.SaveChangesAsync();
+
+            string msg = $"Machine '{code}' created successfully in line {machine.Line}.";
+            if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = machine.Line, kpiTab = "machines" });
+            TempData["Success"] = msg;
+            return RedirectToAction("Index", new { subTab = "line", selectedLine = machine.Line, kpiTab = "machines" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditMachine(MachineMaster machine)
+        {
+            var existing = await _db.MachineMasters.FindAsync(machine.Id);
+            if (existing == null)
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Machine not found." });
+                return NotFound();
+            }
+
+            string code = machine.MachineCode.Trim().ToUpper();
+            bool exists = await _db.MachineMasters.AnyAsync(m => m.MachineCode.ToUpper() == code && m.Id != machine.Id);
+            if (exists)
+            {
+                string errMsg = $"Machine Code '{code}' already exists.";
+                if (IsAjaxRequest()) return Json(new { success = false, message = errMsg });
+                TempData["Error"] = errMsg;
+                return RedirectToAction("Index", new { subTab = "line", selectedLine = existing.Line, kpiTab = "machines" });
+            }
+
+            existing.MachineCode = code;
+            existing.MachineName = string.IsNullOrWhiteSpace(machine.MachineName) ? existing.MachineName : machine.MachineName.Trim();
+            existing.Line = machine.Line;
+            existing.Area = machine.Area;
+            existing.MachineType = machine.MachineType;
+            existing.Manufacturer = machine.Manufacturer;
+            existing.Model = machine.Model;
+            existing.Status = string.IsNullOrWhiteSpace(machine.Status) ? "active" : machine.Status.ToLower();
+            existing.UpdatedAt = DateTime.Now;
+
+            await _db.SaveChangesAsync();
+            string msg = $"Machine '{code}' updated successfully.";
+            if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = existing.Line, kpiTab = "machines" });
+            TempData["Success"] = msg;
+            return RedirectToAction("Index", new { subTab = "line", selectedLine = existing.Line, kpiTab = "machines" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleMachineStatus(int id, string? selectedLine)
+        {
+            var machine = await _db.MachineMasters.FindAsync(id);
+            if (machine == null)
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Machine not found." });
+                return NotFound();
+            }
+
+            string current = (machine.Status ?? "active").ToLower();
+            machine.Status = current == "active" ? "inactive" : "active";
+            machine.UpdatedAt = DateTime.Now;
+
+            await _db.SaveChangesAsync();
+            string msg = $"Machine '{machine.MachineCode}' status changed to {machine.Status}.";
+            if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = selectedLine ?? machine.Line, kpiTab = "machines" });
+            TempData["Success"] = msg;
+            return RedirectToAction("Index", new { subTab = "line", selectedLine = selectedLine ?? machine.Line, kpiTab = "machines" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMachine(int id, string? selectedLine)
+        {
+            var machine = await _db.MachineMasters.FindAsync(id);
+            if (machine == null)
+            {
+                if (IsAjaxRequest()) return Json(new { success = false, message = "Machine not found." });
+                return NotFound();
+            }
+
+            string code = machine.MachineCode;
+            string targetLine = selectedLine ?? machine.Line ?? "";
+            _db.MachineMasters.Remove(machine);
+            await _db.SaveChangesAsync();
+
+            string msg = $"Machine '{code}' deleted successfully.";
+            if (IsAjaxRequest()) return Json(new { success = true, message = msg, selectedLine = targetLine, kpiTab = "machines" });
+            TempData["Success"] = msg;
+            return RedirectToAction("Index", new { subTab = "line", selectedLine = targetLine, kpiTab = "machines" });
         }
     }
 }

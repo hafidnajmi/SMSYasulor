@@ -59,6 +59,9 @@ namespace UPMS.Web.Controllers
         public bool HasRecentSpike { get; set; }
         public string SpikeAlertMessage { get; set; } = "";
 
+        public int? SelectedYear { get; set; }
+        public List<int> AvailableYears { get; set; } = new();
+
         public List<string> AvailableLines { get; set; } = new();
         public List<MonthlyTrendDto> MonthlyTrends { get; set; } = new();
         public List<LineCostDto> LineCosts { get; set; } = new();
@@ -83,16 +86,45 @@ namespace UPMS.Web.Controllers
             return parts.Any(p => p.Trim().Equals(selectedLine.Trim(), StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<IActionResult> Index(string? startDate, string? endDate, string? line, string tab = "line")
+        public async Task<IActionResult> Index(string? startDate, string? endDate, string? line, int? year, string tab = "line")
         {
+            if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanCostIntelligence))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Cost Intelligence.";
+                return RedirectToAction("Index", "Dashboard");
+            }
             var vm = new CostIntelligenceViewModel();
 
+            // Query available years from database
+            var bkYears = await _db.BarangKeluars
+                .Select(b => b.Tanggal.Year)
+                .Distinct()
+                .ToListAsync();
+
+            var currentYear = DateTime.Today.Year;
+            vm.AvailableYears = bkYears.Concat(new[] { currentYear, currentYear - 1 })
+                .Where(y => y > 2000)
+                .Distinct()
+                .OrderByDescending(y => y)
+                .ToList();
+
+            vm.SelectedYear = (year.HasValue && year.Value > 0) ? year.Value : (int?)null;
+
             DateTime start = DateTime.Today.AddDays(-30);
+            if (vm.SelectedYear.HasValue)
+            {
+                start = new DateTime(vm.SelectedYear.Value, 1, 1);
+            }
             if (!string.IsNullOrWhiteSpace(startDate) && DateTime.TryParse(startDate, out var parsedStart))
             {
                 start = parsedStart.Date;
             }
+
             DateTime end = DateTime.Today;
+            if (vm.SelectedYear.HasValue)
+            {
+                end = new DateTime(vm.SelectedYear.Value, 12, 31);
+            }
             if (!string.IsNullOrWhiteSpace(endDate) && DateTime.TryParse(endDate, out var parsedEnd))
             {
                 end = parsedEnd.Date;
@@ -142,40 +174,79 @@ namespace UPMS.Web.Controllers
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Count();
 
-            // 12-Month Historical Monthly Expenditure Trend & Spike Detection
-            var start12M = DateTime.Today.AddMonths(-11).Date;
-            start12M = new DateTime(start12M.Year, start12M.Month, 1);
-
-            var trendBkList = await _db.BarangKeluars
-                .Where(b => b.Tanggal >= start12M && (b.ApprovalStatus == null || b.ApprovalStatus.ToLower() == "approved"))
-                .AsNoTracking()
-                .ToListAsync();
-
-            if (vm.SelectedLine != "All")
-            {
-                trendBkList = trendBkList.Where(b => IsLineMatch(b.Line, vm.SelectedLine)).ToList();
-            }
-
+            // Historical Monthly Expenditure Trend & Spike Detection
             var monthlyTrends = new List<MonthlyTrendDto>();
-            for (int i = 11; i >= 0; i--)
+
+            if (vm.SelectedYear.HasValue)
             {
-                var mDate = DateTime.Today.AddMonths(-i);
-                int yr = mDate.Year;
-                int mo = mDate.Month;
+                int yr = vm.SelectedYear.Value;
+                var startOfYear = new DateTime(yr, 1, 1);
+                var endOfYear = new DateTime(yr, 12, 31, 23, 59, 59);
 
-                var mItems = trendBkList.Where(b => b.Tanggal.Year == yr && b.Tanggal.Month == mo).ToList();
-                decimal costSum = mItems.Sum(b => b.TotalCost ?? (decimal)(b.Qty * (double)(b.UnitPrice ?? 0m)));
-                double qtySum = mItems.Sum(b => b.Qty);
-                int txCount = mItems.Count();
+                var trendBkList = await _db.BarangKeluars
+                    .Where(b => b.Tanggal >= startOfYear && b.Tanggal <= endOfYear && (b.ApprovalStatus == null || b.ApprovalStatus.ToLower() == "approved"))
+                    .AsNoTracking()
+                    .ToListAsync();
 
-                monthlyTrends.Add(new MonthlyTrendDto
+                if (vm.SelectedLine != "All")
                 {
-                    YearMonth = $"{yr}-{mo:D2}",
-                    MonthLabel = mDate.ToString("MMM yyyy"),
-                    TotalCost = costSum,
-                    TotalQty = qtySum,
-                    TransactionCount = txCount
-                });
+                    trendBkList = trendBkList.Where(b => IsLineMatch(b.Line, vm.SelectedLine)).ToList();
+                }
+
+                for (int mo = 1; mo <= 12; mo++)
+                {
+                    var mDate = new DateTime(yr, mo, 1);
+                    var mItems = trendBkList.Where(b => b.Tanggal.Month == mo).ToList();
+                    decimal costSum = mItems.Sum(b => b.TotalCost ?? (decimal)(b.Qty * (double)(b.UnitPrice ?? 0m)));
+                    double qtySum = mItems.Sum(b => b.Qty);
+                    int txCount = mItems.Count();
+
+                    monthlyTrends.Add(new MonthlyTrendDto
+                    {
+                        YearMonth = $"{yr}-{mo:D2}",
+                        MonthLabel = mDate.ToString("MMM yyyy"),
+                        TotalCost = costSum,
+                        TotalQty = qtySum,
+                        TransactionCount = txCount
+                    });
+                }
+            }
+            else
+            {
+                // Default 12-Month Rolling Trend
+                var start12M = DateTime.Today.AddMonths(-11).Date;
+                start12M = new DateTime(start12M.Year, start12M.Month, 1);
+
+                var trendBkList = await _db.BarangKeluars
+                    .Where(b => b.Tanggal >= start12M && (b.ApprovalStatus == null || b.ApprovalStatus.ToLower() == "approved"))
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                if (vm.SelectedLine != "All")
+                {
+                    trendBkList = trendBkList.Where(b => IsLineMatch(b.Line, vm.SelectedLine)).ToList();
+                }
+
+                for (int i = 11; i >= 0; i--)
+                {
+                    var mDate = DateTime.Today.AddMonths(-i);
+                    int yr = mDate.Year;
+                    int mo = mDate.Month;
+
+                    var mItems = trendBkList.Where(b => b.Tanggal.Year == yr && b.Tanggal.Month == mo).ToList();
+                    decimal costSum = mItems.Sum(b => b.TotalCost ?? (decimal)(b.Qty * (double)(b.UnitPrice ?? 0m)));
+                    double qtySum = mItems.Sum(b => b.Qty);
+                    int txCount = mItems.Count();
+
+                    monthlyTrends.Add(new MonthlyTrendDto
+                    {
+                        YearMonth = $"{yr}-{mo:D2}",
+                        MonthLabel = mDate.ToString("MMM yyyy"),
+                        TotalCost = costSum,
+                        TotalQty = qtySum,
+                        TransactionCount = txCount
+                    });
+                }
             }
 
             // Calculate MoM Growth & Spike Detection (> 20% Increase with >= Rp 1.000.000 jump)
@@ -409,15 +480,25 @@ namespace UPMS.Web.Controllers
                 .AsNoTracking()
                 .ToListAsync();
 
+            var machineMasters = await _db.MachineMasters.AsNoTracking().ToDictionaryAsync(m => m.Id);
+
             var sb = new StringBuilder();
-            sb.AppendLine("LINE,MACHINE CODE,MACHINE NAME,ITEM NAME,PART ID,QTY,UNIT PRICE,TOTAL COST,DATE");
+            sb.AppendLine("LINE,MACHINE CODE,MACHINE NAME,BIN,ITEM NAME,PART ID,QTY,UNIT PRICE,TOTAL COST,PIC,MAINTENANCE TYPE,DATE");
 
             foreach (var b in bkList)
             {
                 if (selLine != "All" && !IsLineMatch(b.Line, selLine)) continue;
 
+                string mCode = "-";
+                string mName = "-";
+                if (b.MachineId.HasValue && machineMasters.TryGetValue(b.MachineId.Value, out var mObj))
+                {
+                    mCode = mObj.MachineCode;
+                    mName = mObj.MachineName;
+                }
+
                 decimal cost = b.TotalCost ?? (decimal)(b.Qty * (double)(b.UnitPrice ?? 0m));
-                sb.AppendLine($"\"{b.Line ?? ""}\",\"{b.Bin ?? ""}\",\"{b.RemName ?? ""}\",\"{b.ItemName ?? ""}\",\"{b.MasterDataId ?? ""}\",{b.Qty},{b.UnitPrice ?? 0m},{cost:F2},\"{b.Tanggal:yyyy-MM-dd}\"");
+                sb.AppendLine($"\"{b.Line ?? ""}\",\"{mCode}\",\"{mName}\",\"{b.Bin ?? ""}\",\"{b.ItemName ?? ""}\",\"{b.MasterDataId ?? ""}\",{b.Qty},{b.UnitPrice ?? 0m},{cost:F2},\"{b.Pic ?? ""}\",\"{b.MaintenanceType ?? ""}\",\"{b.Tanggal:yyyy-MM-dd HH:mm}\"");
             }
 
             byte[] buffer = Encoding.UTF8.GetBytes(sb.ToString());

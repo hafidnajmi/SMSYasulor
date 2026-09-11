@@ -1,11 +1,15 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using UPMS.Web.Models.Entities;
 using UPMS.Web.Services;
+
+using UPMS.Web.Data;
+using UPMS.Web.Helpers;
 
 namespace UPMS.Web.Controllers
 {
@@ -14,15 +18,22 @@ namespace UPMS.Web.Controllers
     {
         private readonly ISparepartService _sparepartService;
         private readonly IExcelExportService _excelService;
+        private readonly UpmsDbContext _db;
 
-        public MasterDataController(ISparepartService sparepartService, IExcelExportService excelService)
+        public MasterDataController(ISparepartService sparepartService, IExcelExportService excelService, UpmsDbContext db)
         {
             _sparepartService = sparepartService;
             _excelService = excelService;
+            _db = db;
         }
 
         public async Task<IActionResult> Index(string? search, string? upArea, string? category, string? frequency, string? line, string? stockStatus, int page = 1)
         {
+            if (!await RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanMasterData))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Catalog Sparepart.";
+                return RedirectToAction("Index", "Dashboard");
+            }
             var pagedResult = await _sparepartService.GetPagedAsync(search, upArea, category, frequency, line, null, stockStatus, page, 50);
 
             ViewBag.Categories = await _sparepartService.GetCategoriesAsync();
@@ -73,9 +84,16 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(MasterData model, IFormFile? imageFile, decimal? ltMonths, string? search, string? upAreaFilter, string? categoryFilter, string? frequencyFilter, string? lineFilter, string? stockStatusFilter, int page = 1)
         {
+            if (string.IsNullOrWhiteSpace(model.Id))
+            {
+                ModelState.Remove("Id");
+                model.Id = null;
+            }
+
             if (!ModelState.IsValid)
             {
-                TempData["Error"] = "Invalid master data submission.";
+                var errors = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(e => !string.IsNullOrEmpty(e)));
+                TempData["Error"] = string.IsNullOrEmpty(errors) ? "Invalid master data submission." : $"Validation Error: {errors}";
                 return RedirectToAction("Index", new { search, upArea = upAreaFilter, category = categoryFilter, frequency = frequencyFilter, line = lineFilter, stockStatus = stockStatusFilter, page });
             }
 
@@ -93,8 +111,16 @@ namespace UPMS.Web.Controllers
                 model.Image = await SaveUploadedImageAsync(imageFile);
             }
 
-            string newId = await _sparepartService.CreateAsync(model, User.Identity?.Name ?? "system");
-            TempData["Success"] = $"Sparepart created successfully with ID: {newId}";
+            try
+            {
+                string newId = await _sparepartService.CreateAsync(model, User.Identity?.Name ?? "system");
+                TempData["Success"] = $"Sparepart created successfully with ID: {newId}";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
             return RedirectToAction("Index", new { search, upArea = upAreaFilter, category = categoryFilter, frequency = frequencyFilter, line = lineFilter, stockStatus = stockStatusFilter, page });
         }
 

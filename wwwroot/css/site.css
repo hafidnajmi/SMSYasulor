@@ -99,7 +99,7 @@ body {
 .ems-logo-subtitle {
     font-size: 11px;
     color: var(--color-text-muted);
-    font-weight: 600;
+    font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }

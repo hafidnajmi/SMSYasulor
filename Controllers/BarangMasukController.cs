@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,11 +29,16 @@ namespace UPMS.Web.Controllers
 
         public async Task<IActionResult> Index(int? year, string? search, int page = 1)
         {
+            if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanBarangMasuk))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Barang Masuk.";
+                return RedirectToAction("Index", "Dashboard");
+            }
             var history = await _inventoryService.GetBarangMasukHistoryAsync(year, search, page, 50);
             ViewBag.Year = year;
             ViewBag.Search = search;
 
-            ViewBag.Pics = new List<string> { "Raisa", "Priyanto", "Rohmadi", "Yully", "Hussein", "Slamet", "Andra" };
+            ViewBag.Pics = await UPMS.Web.Helpers.PicHelper.GetPicsBarangMasukAsync(_db);
             ViewBag.Suppliers = await _db.Suppliers.AsNoTracking().OrderBy(s => s.Name).Select(s => s.Name).ToListAsync();
 
             return View(history);
@@ -102,6 +108,13 @@ namespace UPMS.Web.Controllers
                     model.Tanggal = DateTime.Today.Add(DateTime.Now.TimeOfDay);
                 }
 
+                int userId = 0;
+                int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+                if (userId > 0)
+                {
+                    model.UserId = userId;
+                }
+
                 int newId = await _inventoryService.CreateBarangMasukAsync(model, User.Identity?.Name ?? "system");
                 TempData["Success"] = $"Incoming goods recorded successfully with ID #{newId}";
             }
@@ -124,6 +137,16 @@ namespace UPMS.Web.Controllers
 
             try
             {
+                int userId = 0;
+                int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+                if (userId > 0)
+                {
+                    foreach (var item in items)
+                    {
+                        item.UserId = userId;
+                    }
+                }
+
                 int count = await _inventoryService.CreateBarangMasukBatchAsync(items, User.Identity?.Name ?? "system");
                 return Json(new { success = true, message = $"{count} items submitted and stock updated successfully." });
             }

@@ -295,7 +295,10 @@
     <script>
         async function openEditSupplierModal(id) {
             const modalElem = document.getElementById('editSupplierModal');
-            const bsModal = new bootstrap.Modal(modalElem);
+            let bsModal = bootstrap.Modal.getInstance(modalElem);
+            if (!bsModal) {
+                bsModal = new bootstrap.Modal(modalElem);
+            }
 
             document.getElementById('editSupplierSpinner').style.display = 'block';
             document.getElementById('editSupplierFormBody').style.display = 'none';

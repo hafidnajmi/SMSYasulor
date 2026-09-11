@@ -70,6 +70,8 @@ namespace UPMS.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> DetailsJson(int id)
         {
+            if (!await HasSupplierPermissionAsync()) return Forbid();
+
             var supplier = await _db.Suppliers.FindAsync(id);
             if (supplier == null) return NotFound();
             return Json(supplier);
@@ -79,9 +81,28 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Supplier model, string? search)
         {
+            if (!await HasSupplierPermissionAsync())
+            {
+                TempData["Error"] = "Akses ditolak (RBAC): Anda tidak memiliki izin untuk menambah Supplier Data.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            model.Name = model.Name?.Trim() ?? string.Empty;
+            model.Pic = model.Pic?.Trim();
+            model.Email = model.Email?.Trim();
+            model.Phone = model.Phone?.Trim();
+            model.Address = model.Address?.Trim();
+
             if (string.IsNullOrWhiteSpace(model.Name))
             {
                 TempData["Error"] = "Supplier Name is required.";
+                return RedirectToAction(nameof(Index), new { search });
+            }
+
+            bool exists = await _db.Suppliers.AnyAsync(s => s.Name.ToLower() == model.Name.ToLower());
+            if (exists)
+            {
+                TempData["Error"] = $"Supplier '{model.Name}' already exists in database.";
                 return RedirectToAction(nameof(Index), new { search });
             }
 
@@ -96,6 +117,12 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Supplier model, string? search)
         {
+            if (!await HasSupplierPermissionAsync())
+            {
+                TempData["Error"] = "Akses ditolak (RBAC): Anda tidak memiliki izin untuk mengedit Supplier Data.";
+                return RedirectToAction("Index", "Home");
+            }
+
             var supplier = await _db.Suppliers.FindAsync(model.Id);
             if (supplier == null)
             {
@@ -103,17 +130,25 @@ namespace UPMS.Web.Controllers
                 return RedirectToAction(nameof(Index), new { search });
             }
 
+            model.Name = model.Name?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(model.Name))
             {
                 TempData["Error"] = "Supplier Name is required.";
                 return RedirectToAction(nameof(Index), new { search });
             }
 
+            bool duplicate = await _db.Suppliers.AnyAsync(s => s.Id != model.Id && s.Name.ToLower() == model.Name.ToLower());
+            if (duplicate)
+            {
+                TempData["Error"] = $"Another supplier named '{model.Name}' already exists.";
+                return RedirectToAction(nameof(Index), new { search });
+            }
+
             supplier.Name = model.Name;
-            supplier.Pic = model.Pic;
-            supplier.Email = model.Email;
-            supplier.Phone = model.Phone;
-            supplier.Address = model.Address;
+            supplier.Pic = model.Pic?.Trim();
+            supplier.Email = model.Email?.Trim();
+            supplier.Phone = model.Phone?.Trim();
+            supplier.Address = model.Address?.Trim();
 
             _db.Suppliers.Update(supplier);
             await _db.SaveChangesAsync();
@@ -126,6 +161,12 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, string? search)
         {
+            if (!await HasSupplierPermissionAsync())
+            {
+                TempData["Error"] = "Akses ditolak (RBAC): Anda tidak memiliki izin untuk menghapus Supplier Data.";
+                return RedirectToAction("Index", "Home");
+            }
+
             var supplier = await _db.Suppliers.FindAsync(id);
             if (supplier != null)
             {

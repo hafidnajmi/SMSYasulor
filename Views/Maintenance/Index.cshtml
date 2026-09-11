@@ -4,8 +4,13 @@
     ViewData["Title"] = "Manage PM (Preventive Maintenance)";
     int selectedYear = ViewBag.SelectedYear ?? DateTime.Now.Year;
     int selectedMonth = ViewBag.SelectedMonth ?? DateTime.Now.Month;
+    var allLines = ViewBag.AllLines as List<string> ?? new List<string>();
     var machines = ViewBag.Machines as List<UPMS.Web.Models.Entities.MachineMaster> ?? new List<UPMS.Web.Models.Entities.MachineMaster>();
+    var technicians = ViewBag.Technicians as List<string> ?? new List<string>();
     var monthEvents = ViewBag.MonthEvents as List<UPMS.Web.Models.Entities.PmSchedule> ?? new List<UPMS.Web.Models.Entities.PmSchedule>();
+    var selectedLines = ViewBag.SelectedLines as List<string> ?? new List<string>();
+    var selectedMachineNames = ViewBag.SelectedMachines as List<string> ?? new List<string>();
+    var selectedTechnicians = ViewBag.SelectedTechnicians as List<string> ?? new List<string>();
 
     DateTime firstDayOfMonth = new DateTime(selectedYear, selectedMonth, 1);
     int daysInMonth = DateTime.DaysInMonth(selectedYear, selectedMonth);
@@ -14,6 +19,8 @@
     string monthName = firstDayOfMonth.ToString("MMMM yyyy", new System.Globalization.CultureInfo("id-ID"));
     DateTime prevMonthDate = firstDayOfMonth.AddMonths(-1);
     DateTime nextMonthDate = firstDayOfMonth.AddMonths(1);
+
+    bool canEditPm = ViewBag.CanEditPm != null ? (bool)ViewBag.CanEditPm : true;
 }
 
 <style>
@@ -90,404 +97,382 @@
         font-size: 11px;
     }
     .pm-add-btn {
-        opacity: 0;
-        font-size: 12px;
+        opacity: 0.7;
+        font-size: 13px;
         color: #0F4C81;
         cursor: pointer;
         padding: 0 4px;
-        transition: opacity 0.15s ease;
+        border-radius: 3px;
+        transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
     }
-    .pm-day-cell:hover .pm-add-btn {
+    .pm-add-btn:hover {
         opacity: 1;
+        transform: scale(1.15);
+        color: #0353E9;
     }
     
-    /* Exact PM Status Tags per Specification:
-       P (Planning) : Light grey bg (#E5E7EB), dark text (#1F2937)
-       E (Execute)  : Light grey bg (#E5E7EB), green text (#10B981)
-       R (Revision) : Light grey bg (#E5E7EB), blue text (#06B6D4)
-       M (Missed)   : Yellow bg (#FACC15), black text (#000000)
-    */
+    /* PM Event Status Tags */
     .pm-tag {
         display: flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 2px 6px;
-        margin-bottom: 3px;
+        gap: 0.4rem;
+        padding: 3px 8px;
+        margin-bottom: 4px;
         font-size: 11px;
-        font-weight: 600;
-        border-radius: 2px !important;
+        font-weight: 700;
+        border-radius: 3px !important;
         cursor: pointer;
-        border: 1px solid rgba(0,0,0,0.08);
+        color: #000000 !important;
+        border: 1px solid rgba(0, 0, 0, 0.12);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        transition: transform 0.1s ease, box-shadow 0.1s ease;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .pm-tag:hover {
         transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        color: #000000 !important;
     }
     
     .pm-tag-p {
-        background-color: #E5E7EB !important;
-        color: #1F2937 !important;
-    }
-    .pm-tag-p .pm-letter {
-        color: #1F2937;
-        font-weight: 900;
+        background-color: #E2E8F0 !important; /* Soft Slate Grey Card */
+        border-color: #CBD5E1 !important;
+        color: #000000 !important;
     }
     
     .pm-tag-e {
-        background-color: #E5E7EB !important;
-        color: #10B981 !important;
-    }
-    .pm-tag-e .pm-letter {
-        color: #10B981;
-        font-weight: 900;
+        background-color: #86EFAC !important; /* Soft Green Card */
+        border-color: #4ADE80 !important;
+        color: #000000 !important;
     }
 
     .pm-tag-r {
-        background-color: #E5E7EB !important;
-        color: #06B6D4 !important;
-    }
-    .pm-tag-r .pm-letter {
-        color: #06B6D4;
-        font-weight: 900;
+        background-color: #7DD3FC !important; /* Soft Cyan/Blue Card */
+        border-color: #38BDF8 !important;
+        color: #000000 !important;
     }
 
     .pm-tag-m {
-        background-color: #FACC15 !important;
+        background-color: #FF9800 !important; /* Vibrant Orange Card */
+        border-color: #F57C00 !important;
         color: #000000 !important;
     }
-    .pm-tag-m .pm-letter {
-        color: #000000;
-        font-weight: 900;
+
+    /* KPI Cards Styling */
+    .pm-kpi-card {
+        padding: 0.75rem 1.1rem;
+        border-radius: 0px !important;
+        border: none !important;
+        border-left: 4px solid transparent !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: #ffffff !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .pm-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        color: #ffffff !important;
+        filter: brightness(1.1);
     }
 
-    .pm-legend-badge {
-        display: inline-flex;
+    .pm-kpi-card-p {
+        background: linear-gradient(135deg, #475569 0%, #64748B 100%) !important;
+        border-left-color: #CBD5E1 !important;
+    }
+    .pm-kpi-card-e {
+        background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+        border-left-color: #A7F3D0 !important;
+    }
+    .pm-kpi-card-r {
+        background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+        border-left-color: #BFDBFE !important;
+    }
+    .pm-kpi-card-m {
+        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%) !important;
+        border-left-color: #FECACA !important;
+    }
+
+    .pm-kpi-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.8);
+        margin-left: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .pm-kpi-count {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    /* Multi-select dropdown styles */
+    .multiselect-dropdown {
+        position: relative;
+        width: 100%;
+    }
+    .multiselect-button {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px !important;
+        padding: 0.35rem 0.65rem;
+        font-size: 12px;
+        color: #1e293b;
+        width: 100%;
+        text-align: left;
+        display: flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 4px 10px;
-        font-size: 11px;
-        font-weight: 700;
-        border-radius: 2px !important;
-        border: 1px solid rgba(0,0,0,0.1);
+        justify-content: space-between;
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .multiselect-button:hover, .multiselect-button:focus {
+        border-color: #0f4c81;
+        outline: none;
+    }
+    .multiselect-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #ffffff;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        z-index: 99999 !important;
+        min-width: 220px;
+        margin-top: 4px;
+    }
+    .multiselect-menu.show {
+        display: block !important;
+    }
+    .options-list {
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+    .options-list::-webkit-scrollbar {
+        width: 5px;
+    }
+    .options-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    .options-list::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .multiselect-option {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 5px 8px;
+        margin: 1px 0;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.12s ease;
+    }
+    .multiselect-option:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+    }
+    .multiselect-option .form-check-input {
+        width: 15px;
+        height: 15px;
+        margin: 0 !important;
+        cursor: pointer;
+        flex-shrink: 0;
+        border-color: #94a3b8;
+    }
+    .multiselect-option .form-check-label {
+        margin: 0 !important;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        color: inherit;
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .btn-xs {
+        font-size: 10px;
+        padding: 1px 5px;
+    }
+
+    /* Drag & Drop Visual Styles */
+    .pm-tag[draggable="true"] {
+        cursor: grab;
+        user-select: none;
+    }
+    .pm-tag[draggable="true"]:active {
+        cursor: grabbing;
+        opacity: 0.6;
+    }
+    .pm-day-cell.drag-over {
+        background-color: #EFF6FF !important;
+        border: 2px dashed #0F4C81 !important;
+        box-shadow: inset 0 0 10px rgba(15, 76, 129, 0.2);
+    }
+
+    /* Mobile Responsive Optimizations */
+    @@media (max-width: 768px) {
+        .pm-header-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.75rem;
+        }
+        .pm-header-actions {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .pm-header-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        .pm-kpi-card {
+            padding: 0.5rem 0.65rem !important;
+        }
+        .pm-kpi-title {
+            font-size: 11px !important;
+            margin-left: 0.2rem !important;
+        }
+        .pm-kpi-count {
+            font-size: 1.1rem !important;
+        }
+        .pm-calendar-header {
+            flex-direction: column;
+            gap: 0.6rem;
+            align-items: center;
+            text-align: center;
+            padding: 0.65rem 0.75rem !important;
+        }
+        .pm-calendar-header h5 {
+            font-size: 1rem !important;
+        }
+        .pm-calendar-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-right: 1px solid var(--color-border);
+        }
+        .pm-calendar-grid {
+            min-width: 680px;
+        }
+        .pm-day-cell {
+            min-height: 90px;
+            padding: 0.25rem;
+        }
+        .pm-tag {
+            font-size: 10px !important;
+            padding: 2px 4px !important;
+        }
+        .multiselect-menu {
+            position: fixed !important;
+            top: 20% !important;
+            left: 4% !important;
+            right: 4% !important;
+            width: 92% !important;
+            max-height: 300px !important;
+            z-index: 100000 !important;
+        }
+        .modal-dialog {
+            margin: 0.5rem !important;
+        }
     }
 </style>
 
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-3 pm-header-flex">
     <div>
         <h4 class="page-title mb-0"><i class="bi bi-calendar-check text-primary me-2"></i>Manage PM (Preventive Maintenance)</h4>
-        <p class="text-muted small mb-0">Jadwal pemeliharaan berkala mesin & fasilitas produksi</p>
+        <p class="text-muted small mb-0">Jadwal pemeliharaan berkala mesin & fasilitas produksi per Line</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-ems-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addPmModal">
-            <i class="bi bi-plus-circle me-1"></i>Tambah Jadwal PM
-        </button>
-        <a asp-action="ExportExcel" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" class="btn btn-outline-success btn-sm px-3">
-            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+    <div class="d-flex align-items-center gap-2 pm-header-actions">
+        @if (canEditPm)
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="confirmCopyMonthPlan(@selectedYear, @selectedMonth)" title="Salin semua jadwal PM bulan ini ke bulan depan">
+                <i class="bi bi-copy me-1"></i>Copy Plan Ke Bulan Depan
+            </button>
+            <button type="button" class="btn btn-ems-primary btn-sm px-3" onclick="openAddModalForDate(new Date().toISOString().split('T')[0])">
+                <i class="bi bi-plus-circle me-1"></i>Tambah PM
+            </button>
+        }
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportExcel", new { year = selectedYear, month = selectedMonth, status = ViewBag.SelectedStatus, technician = (selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : ""), search = ViewBag.SearchQuery })', 'Preventive Maintenance');" class="btn btn-outline-success btn-sm px-3">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export
         </a>
     </div>
 </div>
 
-<!-- Status Summary KPI Cards -->
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="card p-2 pm-legend-badge pm-tag-p w-100 justify-content-between shadow-sm">
-            <div>
-                <span class="fs-5 pm-letter">P</span>
-                <span class="ms-2 fw-bold text-dark">Planning</span>
-            </div>
-            <span class="fs-5 fw-bold text-dark">@ViewBag.PlanningCount</span>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-2 pm-legend-badge pm-tag-e w-100 justify-content-between shadow-sm">
-            <div>
-                <span class="fs-5 pm-letter">E</span>
-                <span class="ms-2 fw-bold" style="color:#10B981;">Execute</span>
-            </div>
-            <span class="fs-5 fw-bold" style="color:#10B981;">@ViewBag.ExecuteCount</span>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-2 pm-legend-badge pm-tag-r w-100 justify-content-between shadow-sm">
-            <div>
-                <span class="fs-5 pm-letter">R</span>
-                <span class="ms-2 fw-bold" style="color:#06B6D4;">Revision</span>
-            </div>
-            <span class="fs-5 fw-bold" style="color:#06B6D4;">@ViewBag.RevisionCount</span>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card p-2 pm-legend-badge pm-tag-m w-100 justify-content-between shadow-sm">
-            <div>
-                <span class="fs-5 pm-letter">M</span>
-                <span class="ms-2 fw-bold text-dark">Missed</span>
-            </div>
-            <span class="fs-5 fw-bold text-dark">@ViewBag.MissedCount</span>
-        </div>
-    </div>
-</div>
-
-<!-- Filter Bar & Navigation -->
-<div class="card p-3 mb-3" style="border-radius:0;">
-    <form method="get" asp-action="Index" class="row g-2 align-items-center">
-        <div class="col-md-2 col-6">
-            <label class="form-label small text-muted mb-1">Bulan</label>
-            <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
-                @for (int m = 1; m <= 12; m++)
-                {
-                    var mDate = new DateTime(2026, m, 1);
-                    <option value="@m" selected="@(m == selectedMonth)">@mDate.ToString("MMMM", new System.Globalization.CultureInfo("id-ID"))</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2 col-6">
-            <label class="form-label small text-muted mb-1">Tahun</label>
-            <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
-                @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 3; y++)
-                {
-                    <option value="@y" selected="@(y == selectedYear)">@y</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-3 col-6">
-            <label class="form-label small text-muted mb-1">Mesin / Line</label>
-            <select name="machine" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- Semua Mesin --</option>
-                @foreach (var mc in machines)
-                {
-                    <option value="@mc.MachineName" selected="@(ViewBag.SelectedMachine == mc.MachineName)">@mc.MachineName (@mc.Line)</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-2 col-6">
-            <label class="form-label small text-muted mb-1">Status</label>
-            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">-- Semua Status --</option>
-                <option value="P" selected="@(ViewBag.SelectedStatus == "P")">P - Planning</option>
-                <option value="E" selected="@(ViewBag.SelectedStatus == "E")">E - Execute</option>
-                <option value="R" selected="@(ViewBag.SelectedStatus == "R")">R - Revision</option>
-                <option value="M" selected="@(ViewBag.SelectedStatus == "M")">M - Missed</option>
-            </select>
-        </div>
-        <div class="col-md-3 col-12 d-flex align-items-end gap-2 mt-md-4">
-            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari kegiatan/teknisi..." value="@ViewBag.SearchQuery" />
-            <button type="submit" class="btn btn-secondary btn-sm px-3"><i class="bi bi-search"></i></button>
-        </div>
-    </form>
-</div>
-
-<!-- View Mode Switch Tabs -->
-<ul class="nav nav-tabs mb-3" id="pmViewTab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar-view" type="button" role="tab">
-            <i class="bi bi-calendar3 me-1"></i>Tampilan Kalender
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-view" type="button" role="tab">
-            <i class="bi bi-list-task me-1"></i>Tampilan List Tabel (@Model.Count())
-        </button>
-    </li>
-</ul>
-
-<div class="tab-content" id="pmViewTabContent">
-    <!-- CALENDAR VIEW TAB -->
-    <div class="tab-pane fade show active" id="calendar-view" role="tabpanel">
-        <div class="pm-calendar-card">
-            <!-- Navigation Month Bar -->
-            <div class="pm-calendar-header">
-                <div class="d-flex align-items-center gap-2">
-                    <a asp-action="Index" asp-route-year="@prevMonthDate.Year" asp-route-month="@prevMonthDate.Month" class="btn btn-outline-secondary btn-sm px-2 py-1">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                    <h5 class="mb-0 fw-bold text-dark me-2">@monthName</h5>
-                    <a asp-action="Index" asp-route-year="@nextMonthDate.Year" asp-route-month="@nextMonthDate.Month" class="btn btn-outline-secondary btn-sm px-2 py-1">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <a asp-action="Index" asp-route-year="@DateTime.Now.Year" asp-route-month="@DateTime.Now.Month" class="btn btn-outline-primary btn-sm px-3">
-                        <i class="bi bi-clock me-1"></i>Bulan Ini
-                    </a>
-                </div>
-            </div>
-
-            <!-- Calendar Grid -->
-            <div class="pm-calendar-grid">
-                <!-- Day Headers (Sun-Sat) -->
-                <div class="pm-day-header text-danger">Minggu</div>
-                <div class="pm-day-header">Senin</div>
-                <div class="pm-day-header">Selasa</div>
-                <div class="pm-day-header">Rabu</div>
-                <div class="pm-day-header">Kamis</div>
-                <div class="pm-day-header">Jumat</div>
-                <div class="pm-day-header text-primary">Sabtu</div>
-
-                <!-- Padding empty cells before 1st of month -->
-                @for (int p = 0; p < startDayOfWeek; p++)
-                {
-                    <div class="pm-day-cell other-month"></div>
-                }
-
-                <!-- Days 1..daysInMonth -->
-                @for (int day = 1; day <= daysInMonth; day++)
-                {
-                    DateTime currentDate = new DateTime(selectedYear, selectedMonth, day);
-                    bool isToday = currentDate.Date == DateTime.Now.Date;
-                    var dayEvents = monthEvents.Where(e => e.ScheduledDate.Date == currentDate.Date).ToList();
-
-                    <div class="pm-day-cell @(isToday ? "is-today" : "")">
-                        <div class="pm-day-number">
-                            <span class="@(isToday ? "pm-day-number-badge" : "")">@day</span>
-                            <span class="pm-add-btn" title="Tambah Jadwal PM Tanggal Ini" onclick="openAddModalForDate('@currentDate.ToString("yyyy-MM-dd")')">
-                                <i class="bi bi-plus-circle-fill"></i>
-                            </span>
-                        </div>
-
-                        <!-- Render PM Tags on Date -->
-                        @foreach (var pm in dayEvents)
-                        {
-                            string statusClass = pm.Status.ToUpper() switch
-                            {
-                                "P" => "pm-tag-p",
-                                "E" => "pm-tag-e",
-                                "R" => "pm-tag-r",
-                                "M" => "pm-tag-m",
-                                _ => "pm-tag-p"
-                            };
-
-                            <div class="pm-tag @statusClass" 
-                                 onclick="openEditModal(@pm.Id, '@JavaScriptEncoder.Default.Encode(pm.Title)', '@pm.ScheduledDate.ToString("yyyy-MM-dd")', '@pm.Status', '@pm.MachineId', '@JavaScriptEncoder.Default.Encode(pm.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Notes ?? "")')"
-                                 title="@pm.Title - @pm.MachineName (Status: @pm.Status)">
-                                <span class="pm-letter">@pm.Status.ToUpper()</span>
-                                <span>@pm.Title</span>
-                            </div>
-                        }
-                    </div>
-                }
-
-                <!-- Remaining grid padding cells for 35 or 42 total slots -->
-                @{
-                    int totalCellsUsed = startDayOfWeek + daysInMonth;
-                    int remainingCells = (totalCellsUsed <= 35) ? 35 - totalCellsUsed : 42 - totalCellsUsed;
-                }
-                @for (int r = 0; r < remainingCells; r++)
-                {
-                    <div class="pm-day-cell other-month"></div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <!-- TABLE LIST VIEW TAB -->
-    <div class="tab-pane fade" id="list-view" role="tabpanel">
-        <div class="card p-0" style="border-radius:0;">
-            <div class="table-responsive">
-                <table class="table table-hover table-ems align-middle mb-0" style="font-size:12px;">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40">No</th>
-                            <th width="110">Tanggal</th>
-                            <th>Judul Kegiatan PM</th>
-                            <th>Mesin / Line</th>
-                            <th width="120" class="text-center">Status</th>
-                            <th>Teknisi / PIC</th>
-                            <th>Catatan</th>
-                            <th width="120" class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!Model.Any())
-                        {
-                            <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
-                                    <i class="bi bi-info-circle fs-4 d-block mb-1"></i>
-                                    Tidak ada jadwal PM ditemukan untuk filter ini.
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            int no = 1;
-                            foreach (var item in Model)
-                            {
-                                string statusBadgeClass = item.Status.ToUpper() switch
-                                {
-                                    "P" => "pm-tag-p",
-                                    "E" => "pm-tag-e",
-                                    "R" => "pm-tag-r",
-                                    "M" => "pm-tag-m",
-                                    _ => "pm-tag-p"
-                                };
-
-                                <tr>
-                                    <td>@(no++)</td>
-                                    <td class="fw-bold">@item.ScheduledDate.ToString("yyyy-MM-dd")</td>
-                                    <td class="fw-bold text-primary">@item.Title</td>
-                                    <td>@(item.MachineName ?? "-")</td>
-                                    <td class="text-center">
-                                        <span class="pm-legend-badge @statusBadgeClass px-3 py-1">
-                                            <span class="pm-letter">@item.Status.ToUpper()</span>
-                                            <span>
-                                                @(item.Status.ToUpper() switch {
-                                                    "P" => "Planning",
-                                                    "E" => "Execute",
-                                                    "R" => "Revision",
-                                                    "M" => "Missed",
-                                                    _ => item.Status
-                                                })
-                                            </span>
-                                        </span>
-                                    </td>
-                                    <td>@(item.Technician ?? "-")</td>
-                                    <td>@(item.Notes ?? "-")</td>
-                                    <td class="text-center">
-                                        <button class="btn btn-outline-primary btn-sm p-1 px-2" title="Edit"
-                                                onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")')">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger btn-sm p-1 px-2 ms-1" title="Hapus"
-                                                onclick="triggerDelete(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+<div id="pmDynamicContent">
+    @await Html.PartialAsync("_PmContentPartial", Model)
 </div>
 
 <!-- Modal Tambah Jadwal PM -->
 <div class="modal fade" id="addPmModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:0;">
+        <div class="modal-content" style="border-radius:0; overflow: visible;">
             <div class="modal-header bg-primary text-white py-2 px-3">
                 <h6 class="modal-title mb-0"><i class="bi bi-plus-circle me-2"></i>Tambah Jadwal PM Baru</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" onclick="closeModal('addPmModal')" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="Create" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-body p-3">
+                <div class="modal-body p-3" style="overflow: visible;">
+                    
+                    <!-- UP Area Dropdown Select -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Judul / Kegiatan PM <span class="text-danger">*</span></label>
-                        <input type="text" name="Title" class="form-control form-control-sm" placeholder="Contoh: Maintenance Cleaning & Lubrication" required />
+                        <label class="form-label small fw-bold">UP Area <span class="text-danger">*</span></label>
+                        <select id="addUpArea" name="UpArea" class="form-select form-select-sm" onchange="onAddUpAreaChanged()" required>
+                            <option value="UP1" selected>UP 1</option>
+                            <option value="UP2">UP 2</option>
+                        </select>
+                    </div>
+
+                    <!-- Line PM Multi-Select -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Line PM <span class="text-danger">*</span></label>
+                        <div class="dropdown multiselect-dropdown">
+                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="addLineBtn">
+                                <span id="addLineLabel" class="text-truncate">Pilih Line PM</span>
+                            </button>
+                            <div class="multiselect-menu p-2" style="width:100%;">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari line..." onkeyup="filterMultiSelectOptions(this)" />
+                                    <div class="btn-group btn-group-sm flex-shrink-0">
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
+                                    </div>
+                                </div>
+                                <div class="options-list">
+                                    @foreach (var l in allLines)
+                                    {
+                                        var lArea = UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(l);
+                                        <div class="multiselect-option option-item add-line-item" data-up-area="@lArea">
+                                            <input class="form-check-input add-line-check" type="checkbox" name="selectedLines" value="@l" id="add_line_@l" onchange="onAddLineChanged()" />
+                                            <label class="form-check-label" for="add_line_@l">@l</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-bold">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
-                            <input type="date" id="addScheduledDate" name="ScheduledDate" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            <input type="date" id="addScheduledDate" name="ScheduledDate" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")" required onchange="onAddScheduledDateChanged()" />
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-bold">Status Awal <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-bold">Status PM <span class="text-danger">*</span></label>
                             <select name="Status" class="form-select form-select-sm" required>
                                 <option value="P">P - Planning</option>
                                 <option value="E">E - Execute</option>
@@ -497,29 +482,104 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Mesin / Line</label>
-                        <select name="MachineId" class="form-select form-select-sm">
-                            <option value="">-- Pilih Mesin --</option>
-                            @foreach (var mc in machines)
-                            {
-                                <option value="@mc.Id">@mc.MachineName (@mc.Line)</option>
-                            }
-                        </select>
-                    </div>
 
+
+                    <!-- Teknisi / PIC Multi-Select Dropdown -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Teknisi / Penanggung Jawab (PIC)</label>
-                        <input type="text" name="Technician" class="form-control form-control-sm" placeholder="Nama teknisi / tim maintenance" />
+                        <div class="dropdown multiselect-dropdown">
+                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="addTechBtn">
+                                <span id="addTechLabel" class="text-truncate">Pilih Teknisi</span>
+                            </button>
+                            <div class="multiselect-menu p-2" style="width:100%;">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari teknisi..." onkeyup="filterMultiSelectOptions(this)" />
+                                    <div class="btn-group btn-group-sm flex-shrink-0">
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
+                                    </div>
+                                </div>
+                                <div class="options-list">
+                                    @foreach (var tech in technicians)
+                                    {
+                                        var safeAddTechId = tech.Replace(" ", "_").Replace(".", "_");
+                                        <div class="multiselect-option option-item">
+                                            <input class="form-check-input add-tech-check" type="checkbox" name="selectedTechnicians" value="@tech" id="add_tech_@safeAddTechId" onchange="updateAddTechLabel()" />
+                                            <label class="form-check-label" for="add_tech_@safeAddTechId">@tech</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Catatan / Deskripsi Detail</label>
+                        <label class="form-label small fw-bold">Catatan / Detail Progress</label>
                         <textarea name="Notes" class="form-control form-control-sm" rows="2" placeholder="Catatan spesifik tentang pemeliharaan ini..."></textarea>
+                    </div>
+
+                    <!-- Kebutuhan Sparepart PM Section -->
+                    <div class="mb-3 border-top pt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label small fw-bold mb-0">
+                                <i class="bi bi-box-seam me-1 text-primary"></i>Kebutuhan Sparepart PM
+                            </label>
+                            <a href="/Maintenance/PmPlan" class="btn btn-xs btn-outline-secondary py-0" style="font-size: 11px;" title="Kelola sparepart template di PM Plan">
+                                <i class="bi bi-pencil me-1"></i>Kelola di PM Plan
+                            </a>
+                        </div>
+                        <div class="table-responsive border rounded-1 p-0" style="max-height: 180px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 11px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="130">Part Number</th>
+                                        <th>Item Name</th>
+                                        <th width="90">BIN</th>
+                                        <th width="70" class="text-center">QTY</th>
+                                        <th width="110" class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="addSparepartTableBody">
+                                    <!-- Read-only sparepart rows loaded from PM Plan template -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-text small text-muted" style="font-size:10px;">
+                            * Daftar sparepart ini otomatis dimuat dari Preventive Maintenance Plan berdasarkan Line, Mesin & Bulan.
+                        </div>
+                    </div>
+
+                    <!-- Actual Pemakaian Sparepart (Barang Keluar) Section -->
+                    <div class="mb-3 border-top pt-3">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-0 text-success">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Actual Pemakaian Sparepart (Barang Keluar)
+                            </label>
+                        </div>
+                        <div class="table-responsive border rounded-1 p-0" style="max-height: 180px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 11px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="120">Part Number</th>
+                                        <th>Item Name</th>
+                                        <th width="80">BIN</th>
+                                        <th width="50" class="text-center">QTY</th>
+                                        <th width="100">PIC / Teknisi</th>
+                                        <th width="110" class="text-center">Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="addActualSparepartTableBody">
+                                    <tr><td colspan="6" class="text-center text-muted small py-2">Pilih Line & Tanggal Pelaksanaan untuk melihat actual pemakaian sparepart.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-text small text-muted" style="font-size:10px;">
+                            * Otomatis memuat data transaksi Barang Keluar dengan <strong>Maintenance Type: PM</strong> yang cocok dengan Line & Tanggal pelaksanaan.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer py-2 px-3 bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('addPmModal')" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-check-circle me-1"></i>Simpan Jadwal</button>
                 </div>
             </form>
@@ -530,24 +590,60 @@
 <!-- Modal Edit Jadwal PM -->
 <div class="modal fade" id="editPmModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:0;">
+        <div class="modal-content" style="border-radius:0; overflow: visible;">
             <div class="modal-header bg-dark text-white py-2 px-3">
                 <h6 class="modal-title mb-0"><i class="bi bi-pencil-square me-2"></i>Edit & Update Status PM</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" onclick="closeModal('editPmModal')" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="Edit" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="editId" name="Id" />
-                <div class="modal-body p-3">
+                <input type="hidden" id="editTitleFallback" name="Title" />
+                <input type="hidden" id="editMachineNameFallback" name="MachineName" />
+                <div class="modal-body p-3" style="overflow: visible;">
+                    
+                    <!-- UP Area Dropdown Select -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Judul / Kegiatan PM <span class="text-danger">*</span></label>
-                        <input type="text" id="editTitle" name="Title" class="form-control form-control-sm" required />
+                        <label class="form-label small fw-bold">UP Area <span class="text-danger">*</span></label>
+                        <select id="editUpArea" name="UpArea" class="form-select form-select-sm" onchange="onEditUpAreaChanged()" required>
+                            <option value="UP1">UP 1</option>
+                            <option value="UP2">UP 2</option>
+                        </select>
+                    </div>
+
+                    <!-- Line PM Multi-Select -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Line PM <span class="text-danger">*</span></label>
+                        <div class="dropdown multiselect-dropdown">
+                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="editLineBtn">
+                                <span id="editLineLabel" class="text-truncate">Pilih Line PM</span>
+                            </button>
+                            <div class="multiselect-menu p-2" style="width:100%;">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari line..." onkeyup="filterMultiSelectOptions(this)" />
+                                    <div class="btn-group btn-group-sm flex-shrink-0">
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
+                                    </div>
+                                </div>
+                                <div class="options-list">
+                                    @foreach (var l in allLines)
+                                    {
+                                        var lArea = UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(l);
+                                        <div class="multiselect-option option-item edit-line-item" data-up-area="@lArea">
+                                            <input class="form-check-input edit-line-check" type="checkbox" name="selectedLines" value="@l" id="edit_line_@l" onchange="onEditLineChanged()" />
+                                            <label class="form-check-label" for="edit_line_@l">@l</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label small fw-bold">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
-                            <input type="date" id="editScheduledDate" name="ScheduledDate" class="form-control form-control-sm" required />
+                            <input type="date" id="editScheduledDate" name="ScheduledDate" class="form-control form-control-sm" required onchange="onEditScheduledDateChanged()" />
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-bold">Status PM <span class="text-danger">*</span></label>
@@ -560,37 +656,340 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Mesin / Line</label>
-                        <select id="editMachineId" name="MachineId" class="form-select form-select-sm">
-                            <option value="">-- Pilih Mesin --</option>
-                            @foreach (var mc in machines)
-                            {
-                                <option value="@mc.Id">@mc.MachineName (@mc.Line)</option>
-                            }
-                        </select>
-                    </div>
 
+
+                    <!-- Teknisi / PIC Multi-Select Dropdown -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Teknisi / Penanggung Jawab (PIC)</label>
-                        <input type="text" id="editTechnician" name="Technician" class="form-control form-control-sm" />
+                        <div class="dropdown multiselect-dropdown">
+                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="editTechBtn">
+                                <span id="editTechLabel" class="text-truncate">Pilih Teknisi</span>
+                            </button>
+                            <div class="multiselect-menu p-2" style="width:100%;">
+                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari teknisi..." onkeyup="filterMultiSelectOptions(this)" />
+                                    <div class="btn-group btn-group-sm flex-shrink-0">
+                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
+                                    </div>
+                                </div>
+                                <div class="options-list">
+                                    @foreach (var tech in technicians)
+                                    {
+                                        var safeEditTechId = tech.Replace(" ", "_").Replace(".", "_");
+                                        <div class="multiselect-option option-item">
+                                            <input class="form-check-input edit-tech-check" type="checkbox" name="selectedTechnicians" value="@tech" id="edit_tech_@safeEditTechId" onchange="updateEditTechLabel()" />
+                                            <label class="form-check-label" for="edit_tech_@safeEditTechId">@tech</label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Catatan / Detail Progress</label>
                         <textarea id="editNotes" name="Notes" class="form-control form-control-sm" rows="2"></textarea>
                     </div>
+
+                    <!-- Kebutuhan Sparepart PM Section -->
+                    <div class="mb-3 border-top pt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label small fw-bold mb-0">
+                                <i class="bi bi-box-seam me-1 text-primary"></i>Kebutuhan Sparepart PM
+                            </label>
+                            <a href="/Maintenance/PmPlan" id="editPmPlanLink" class="btn btn-xs btn-outline-secondary py-0" style="font-size: 11px;" title="Kelola sparepart template di PM Plan">
+                                <i class="bi bi-pencil me-1"></i>Kelola di PM Plan
+                            </a>
+                        </div>
+                        <div class="table-responsive border rounded-1 p-0" style="max-height: 180px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 11px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="130">Part Number</th>
+                                        <th>Item Name</th>
+                                        <th width="90">BIN</th>
+                                        <th width="70" class="text-center">QTY</th>
+                                        <th width="110" class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editSparepartTableBody">
+                                    <!-- Read-only sparepart rows loaded from PM Plan template -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-text small text-muted" style="font-size:10px;">
+                            * Daftar sparepart ini otomatis dimuat dari Preventive Maintenance Plan berdasarkan Line, Mesin & Bulan.
+                        </div>
+                    </div>
+
+                    <!-- Actual Pemakaian Sparepart (Barang Keluar) Section -->
+                    <div class="mb-3 border-top pt-3">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-0 text-success">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Actual Pemakaian Sparepart (Barang Keluar)
+                            </label>
+                        </div>
+                        <div class="table-responsive border rounded-1 p-0" style="max-height: 180px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 11px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="120">Part Number</th>
+                                        <th>Item Name</th>
+                                        <th width="80">BIN</th>
+                                        <th width="50" class="text-center">QTY</th>
+                                        <th width="100">PIC / Teknisi</th>
+                                        <th width="110" class="text-center">Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editActualSparepartTableBody">
+                                    <tr><td colspan="6" class="text-center text-muted small py-2">Pilih Line & Tanggal Pelaksanaan untuk melihat actual pemakaian sparepart.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-text small text-muted" style="font-size:10px;">
+                            * Otomatis memuat data transaksi Barang Keluar dengan <strong>Maintenance Type: PM</strong> yang cocok dengan Line & Tanggal pelaksanaan.
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteFromEditModal()">
-                        <i class="bi bi-trash me-1"></i>Hapus
-                    </button>
+                <div class="modal-footer py-2 px-3 bg-light d-flex justify-content-between align-items-center">
+                    <button type="button" id="editPmDeleteBtn" class="btn btn-outline-danger btn-sm" onclick="confirmDeleteFromEditModal()"><i class="bi bi-trash me-1"></i>Drop / Hapus PM</button>
                     <div>
-                        <button type="button" class="btn btn-secondary btn-sm me-1" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-save me-1"></i>Update PM</button>
+                        <button type="button" id="editPmCloseBtn" class="btn btn-secondary btn-sm me-1" onclick="closeModal('editPmModal')" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" id="editPmSubmitBtn" class="btn btn-primary btn-sm px-4"><i class="bi bi-save me-1"></i>Update PM</button>
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Choice Drag & Drop (Move vs Duplicate) -->
+<div class="modal fade" id="dragDropChoiceModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header bg-primary text-white py-2 px-3">
+                <h6 class="modal-title mb-0"><i class="bi bi-arrows-move me-2"></i>Pilihan Aksi PM</h6>
+                <button type="button" class="btn-close btn-close-white" onclick="closeModal('dragDropChoiceModal')" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 text-center">
+                <div class="mb-2 fs-6 fw-bold text-dark" id="dragDropPmTitle">Line PM</div>
+                <p class="small text-muted mb-3">
+                    Seret ke tanggal <strong id="dragDropTargetDate" class="text-primary">2026-09-12</strong>.<br />Pilih aksi yang ingin Anda lakukan:
+                </p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary btn-sm py-2" onclick="confirmDragAction('move')">
+                        <i class="bi bi-arrows-move me-1"></i>Pindahkan Tanggal
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm py-2" onclick="confirmDragAction('duplicate')">
+                        <i class="bi bi-copy me-1"></i>Duplikasi Jadwal (Copy)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeModal('dragDropChoiceModal')" data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Master Template Standard Sparepart PM -->
+<div class="modal fade" id="masterTemplateModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header bg-dark text-white py-2 px-3">
+                <h6 class="modal-title mb-0"><i class="bi bi-list-task me-2"></i>Preventive Maintenance Plan (Standard Part per Line)</h6>
+                <button type="button" class="btn-close btn-close-white" onclick="closeModal('masterTemplateModal')" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="alert alert-light border py-2 px-3 mb-3 small text-muted">
+                    <i class="bi bi-info-circle text-primary me-1"></i>
+                    Konfigurasi sparepart standar yang otomatis muncul di kalender PM saat memilih Line atau Mesin.
+                </div>
+
+                <!-- Line & Machine Selector -->
+                <div class="row g-2 mb-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Pilih Line PM <span class="text-danger">*</span></label>
+                        <select id="tplLineSelect" class="form-select form-select-sm" onchange="loadMasterTemplateParts()">
+                            <option value="">Pilih Line PM</option>
+                            @foreach (var l in allLines)
+                            {
+                                <option value="@l">@l</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Pilih Mesin (Opsional)</label>
+                        <select id="tplMachineSelect" class="form-select form-select-sm" onchange="loadMasterTemplateParts()">
+                            <option value="">Semua Mesin di Line</option>
+                            @foreach (var mc in machines)
+                            {
+                                <option value="@mc.MachineName">@mc.MachineName (@mc.Line)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-primary btn-sm w-100" onclick="showAddTemplatePartForm()">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah Part
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template Items Table -->
+                <div class="table-responsive border rounded-1 p-0 mb-3" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 11px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="35">No</th>
+                                <th>Line</th>
+                                <th>Mesin</th>
+                                <th>Kode Sparepart</th>
+                                <th>Nama Sparepart</th>
+                                <th width="80">BIN</th>
+                                <th width="60" class="text-center">Qty</th>
+                                <th width="60" class="text-center">Satuan</th>
+                                <th width="90" class="text-center">Frekuensi</th>
+                                <th width="70" class="text-center">Durasi (min)</th>
+                                <th>Bulan Aktif</th>
+                                <th>Catatan</th>
+                                <th width="50" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="masterTemplateTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center py-3 text-muted">
+                                    Pilih Line untuk menampilkan template sparepart standar.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Add Standard Part Form Inline Collapse -->
+                <div id="addTplFormContainer" class="border p-2 bg-light rounded-1" style="display:none;">
+                    <h6 class="fw-bold mb-2 text-dark small" id="tplFormHeaderTitle"><i class="bi bi-plus-circle me-1"></i>Tambah Template Sparepart Standar Baru</h6>
+                    <form id="saveStandardPartForm" onsubmit="submitSaveStandardPart(event)">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="tplId" name="Id" value="0" />
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Line <span class="text-danger">*</span></label>
+                                <input type="text" id="tplFormLine" name="Line" class="form-control form-control-sm" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Mesin PM</label>
+                                <input type="text" id="tplFormMachine" name="MachineName" class="form-control form-control-sm" placeholder="Opsional nama mesin..." />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">Sparepart (dari Catalog) <span class="text-danger">*</span></label>
+                                <div class="dropdown multiselect-dropdown" id="tplSparepartDropdown" style="position: relative;">
+                                    <button class="multiselect-button dropdown-toggle py-1 px-2 border w-100 text-start d-flex align-items-center justify-content-between" type="button" onclick="toggleMultiselectMenu(this, event)">
+                                        <span id="tplSparepartLabel" class="text-truncate small">-- Pilih / Cari Sparepart --</span>
+                                    </button>
+                                    <div class="multiselect-menu p-2" style="width: 100%; min-width: 320px; left: 0; right: 0;">
+                                        <div class="mb-2 pb-1 border-bottom">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text bg-light py-0"><i class="bi bi-search" style="font-size: 11px;"></i></span>
+                                                <input type="text" class="form-control form-control-sm multiselect-search py-0" placeholder="Cari kode/nama/bin sparepart..." onkeyup="filterMultiSelectOptions(this)" />
+                                            </div>
+                                        </div>
+                                         <div class="options-list" style="max-height: 220px; overflow-y: auto;">
+                                             <div class="multiselect-option option-item py-1 px-2 text-muted border-bottom" onclick="selectSingleSparepart('', '', '-- Pilih / Cari Sparepart --', 'tplFormSparepartId', 'tplFormSparepartName', 'tplSparepartLabel', this)">
+                                                 <em>-- Pilih Sparepart --</em>
+                                             </div>
+                                             @if (ViewBag.MasterSparepartList != null)
+                                             {
+                                                 foreach (dynamic sp in ViewBag.MasterSparepartList)
+                                                 {
+                                                     var binDisp = (!string.IsNullOrEmpty(sp.bin) && sp.bin != "-") ? sp.bin : "";
+                                                     var lbl = $"[{sp.id}] {sp.item}" + (binDisp.Length > 0 ? " - Bin: " + binDisp : "");
+                                                     var aId = System.Web.HttpUtility.HtmlAttributeEncode(sp.id ?? "");
+                                                     var aNm = System.Web.HttpUtility.HtmlAttributeEncode(sp.item ?? "");
+                                                     var aLbl = System.Web.HttpUtility.HtmlAttributeEncode(lbl);
+                                                     var aBn = System.Web.HttpUtility.HtmlAttributeEncode(binDisp);
+                                                     <div class="multiselect-option option-item tpl-sp-option py-1 px-2 d-flex align-items-center justify-content-between gap-2 border-bottom-subtle" 
+                                                          data-sp-id="@aId" 
+                                                          data-sp-name="@aNm"
+                                                          data-sp-display="@aLbl">
+                                                         <div class="text-truncate flex-grow-1" style="font-size: 12px;">
+                                                             <span class="fw-bold text-primary me-1">[@aId]</span>
+                                                             <span class="fw-semibold text-dark">@aNm</span>
+                                                         </div>
+                                                         @if (!string.IsNullOrEmpty(binDisp))
+                                                         {
+                                                             <span class="badge bg-light text-dark border font-monospace flex-shrink-0" style="font-size: 10px;">Bin: @aBn</span>
+                                                         }
+                                                     </div>
+                                                 }
+                                             }
+                                         </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="tplFormSparepartId" name="SparepartId" required />
+                                <input type="hidden" id="tplFormSparepartName" name="SparepartName" />
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Default Qty</label>
+                                <input type="number" id="tplFormQty" name="DefaultQuantity" class="form-control form-control-sm" value="1" min="0.1" step="0.1" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Satuan</label>
+                                <select id="tplFormUnit" name="Unit" class="form-select form-select-sm">
+                                    <option value="Pcs">Pcs</option>
+                                    <option value="Set">Set</option>
+                                    <option value="Roll">Roll</option>
+                                    <option value="Box">Box</option>
+                                    <option value="Meter">Meter</option>
+                                    <option value="Ltr">Ltr</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Frekuensi</label>
+                                <select id="tplFormFrequency" name="Frequency" class="form-select form-select-sm" onchange="onTplFrequencyChanged()">
+                                    <option value="Monthly">Monthly (Setiap Bulan)</option>
+                                    <option value="Quarterly">Quarterly (3 Bulanan)</option>
+                                    <option value="6 Months">6 Months (6 Bulanan)</option>
+                                    <option value="Yearly">Yearly (Tahunan)</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold">Durasi (menit)</label>
+                                <input type="number" id="tplFormDuration" name="DurationMin" class="form-control form-control-sm" value="30" min="1" step="1" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Catatan</label>
+                                <input type="text" id="tplFormNotes" name="Notes" class="form-control form-control-sm" placeholder="Catatan pemeliharaan standar..." />
+                            </div>
+                        </div>
+                        <!-- Month checkboxes -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold d-block mb-1">Bulan Aktif (centang bulan yang wajib dikerjakan):</label>
+                            <input type="hidden" id="tplFormTargetMonths" name="TargetMonths" value="1,2,3,4,5,6,7,8,9,10,11,12" />
+                            <div class="d-flex flex-wrap gap-1" id="tplMonthCheckboxes">
+                                @{ var monthAbbrevs = new[] { "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des" }; }
+                                @for (int mi = 1; mi <= 12; mi++)
+                                {
+                                    <div class="form-check form-check-inline me-0">
+                                        <input class="form-check-input tpl-month-check" type="checkbox" id="tplMonth_@mi" value="@mi" checked onchange="syncTplMonthsHidden()" />
+                                        <label class="form-check-label small" for="tplMonth_@mi" style="font-size:11px;">@monthAbbrevs[mi-1]</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-1">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="hideAddTemplatePartForm()">Batal</button>
+                            <button type="submit" class="btn btn-success btn-sm px-3"><i class="bi bi-check-circle me-1"></i>Simpan Template</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer py-2 px-3 bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('masterTemplateModal')" data-bs-dismiss="modal">Selesai</button>
+            </div>
         </div>
     </div>
 </div>
@@ -599,43 +998,1355 @@
 <form id="deletePmForm" asp-action="Delete" method="post" style="display:none;">
     @Html.AntiForgeryToken()
     <input type="hidden" id="deleteId" name="id" />
+    <input type="hidden" id="deleteViewInput" name="view" value="" />
 </form>
 
 @section Scripts {
     <script>
-        function openAddModalForDate(dateStr) {
-            document.getElementById('addScheduledDate').value = dateStr;
-            var addModal = new bootstrap.Modal(document.getElementById('addPmModal'));
-            addModal.show();
-        }
-
-        function openEditModal(id, title, dateStr, status, machineId, machineName, technician, notes) {
-            document.getElementById('editId').value = id;
-            document.getElementById('editTitle').value = title;
-            document.getElementById('editScheduledDate').value = dateStr;
-            document.getElementById('editStatus').value = status;
-            document.getElementById('editMachineId').value = machineId || '';
-            document.getElementById('editTechnician').value = technician;
-            document.getElementById('editNotes').value = notes;
-
-            var editModal = new bootstrap.Modal(document.getElementById('editPmModal'));
-            editModal.show();
-        }
-
-        function triggerDelete(id, title) {
-            if (confirm("Apakah Anda yakin ingin menghapus jadwal PM: '" + title + "'?")) {
-                document.getElementById('deleteId').value = id;
-                document.getElementById('deletePmForm').submit();
+        var activeDragData = null;
+        var masterSpOptionsDropdownHtml = ``;
+        @if (ViewBag.MasterSparepartList != null)
+        {
+            foreach (dynamic sp in ViewBag.MasterSparepartList)
+            {
+                var binDisplay = (!string.IsNullOrEmpty(sp.bin) && sp.bin != "-") ? sp.bin : "";
+                var displayLabel = $"[{sp.id}] {sp.item}" + (binDisplay.Length > 0 ? " - Bin: " + binDisplay : "");
+                var safeId = System.Web.HttpUtility.JavaScriptStringEncode(sp.id);
+                var safeName = System.Web.HttpUtility.JavaScriptStringEncode(sp.item);
+                var safeDisplay = System.Web.HttpUtility.JavaScriptStringEncode(displayLabel);
+                var attrId = System.Web.HttpUtility.HtmlAttributeEncode(sp.id);
+                var attrName = System.Web.HttpUtility.HtmlAttributeEncode(sp.item ?? "");
+                var attrDisplay = System.Web.HttpUtility.HtmlAttributeEncode(displayLabel);
+                var attrBin = System.Web.HttpUtility.HtmlAttributeEncode(binDisplay);
+                <text>masterSpOptionsDropdownHtml += `<div class="multiselect-option option-item row-sp-option py-1 px-2 border-bottom-subtle" data-sp-id="@attrId" data-sp-name="@attrName" data-sp-display="@attrDisplay"><div class="d-flex align-items-center justify-content-between"><span class="fw-bold text-primary small">[@attrId]</span><span class="text-dark small ms-1 flex-grow-1">@attrName</span>@if(!string.IsNullOrEmpty(binDisplay)){<span class="badge bg-light text-dark border font-monospace ms-1" style="font-size:10px;">Bin: @attrBin</span>}</div></div>`;
+                </text>
             }
+        }
+
+        function onPmDragStart(evt, id, title, origDate) {
+            activeDragData = { id: id, title: title, origDate: origDate };
+            evt.dataTransfer.setData('text/plain', JSON.stringify(activeDragData));
+            evt.dataTransfer.effectAllowed = 'copyMove';
+        }
+
+        function onPmDragOver(evt) {
+            evt.preventDefault();
+            evt.dataTransfer.dropEffect = 'move';
+        }
+
+        function onPmDragEnter(evt) {
+            evt.preventDefault();
+            var cell = evt.currentTarget;
+            if (cell && cell.classList.contains('pm-day-cell') && !cell.classList.contains('other-month')) {
+                cell.classList.add('drag-over');
+            }
+        }
+
+        function onPmDragLeave(evt) {
+            var cell = evt.currentTarget;
+            if (cell) cell.classList.remove('drag-over');
+        }
+
+        function onPmDrop(evt, targetDateStr) {
+            evt.preventDefault();
+            var cell = evt.currentTarget;
+            if (cell) cell.classList.remove('drag-over');
+
+            if (!activeDragData || !activeDragData.id) return;
+            if (activeDragData.origDate === targetDateStr) {
+                activeDragData = null;
+                return;
+            }
+
+            activeDragData.targetDate = targetDateStr;
+
+            var titleEl = document.getElementById('dragDropPmTitle');
+            var dateEl = document.getElementById('dragDropTargetDate');
+            if (titleEl) titleEl.textContent = 'Line: ' + activeDragData.title;
+            if (dateEl) dateEl.textContent = targetDateStr;
+
+            var modalEl = document.getElementById('dragDropChoiceModal');
+            if (modalEl) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                } else if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $(modalEl).modal('show');
+                } else {
+                    modalEl.style.display = 'block';
+                    modalEl.classList.add('show');
+                }
+            }
+        }
+
+        function confirmDragAction(actionType) {
+            if (!activeDragData || !activeDragData.id || !activeDragData.targetDate) return;
+
+            var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            var token = tokenInput ? tokenInput.value : '';
+
+            var url = actionType === 'move' ? '/Maintenance/UpdateDate' : '/Maintenance/DuplicateDate';
+            var formData = new FormData();
+            formData.append('id', activeDragData.id);
+            formData.append('newDate', activeDragData.targetDate);
+            formData.append('__RequestVerificationToken', token);
+
+            closeModal('dragDropChoiceModal');
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loadPmContent(window.location.href, false);
+                } else {
+                    alert(data.message || 'Gagal memproses aksi drag & drop.');
+                }
+            })
+            .catch(err => {
+                console.error('Drag & Drop Error:', err);
+                alert('Terjadi kesalahan koneksi server.');
+            })
+            .finally(() => {
+                activeDragData = null;
+            });
+        }
+
+        // --- SPA Dynamic AJAX Content Loading & Smooth Navigation ---
+        function loadPmContent(url, pushState = true) {
+            var container = document.getElementById('pmDynamicContent');
+            
+            // Capture active view tab (list vs calendar) before reload
+            var listPane = document.getElementById('list-view');
+            var activeViewInput = document.getElementById('activeViewInput');
+            var isListActive = (listPane && (listPane.classList.contains('active') || listPane.style.display !== 'none')) ||
+                              (activeViewInput && activeViewInput.value === 'list') ||
+                              url.includes('view=list');
+            var currentTabMode = isListActive ? 'list-view' : 'calendar-view';
+
+            if (container) {
+                container.style.opacity = '0.5';
+                container.style.pointerEvents = 'none';
+            }
+
+            var fetchUrl;
+            try {
+                fetchUrl = new URL(url, window.location.origin);
+            } catch(e) {
+                fetchUrl = new URL(url, window.location.href);
+            }
+            
+            fetchUrl.searchParams.set('view', isListActive ? 'list' : 'calendar');
+            fetchUrl.searchParams.set('ajax', 'true');
+
+            fetch(fetchUrl.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(html => {
+                if (container) {
+                    container.innerHTML = html;
+                    var scripts = container.querySelectorAll('script');
+                    scripts.forEach(function(oldScript) {
+                        var newScript = document.createElement('script');
+                        Array.from(oldScript.attributes).forEach(function(attr) { newScript.setAttribute(attr.name, attr.value); });
+                        newScript.text = oldScript.text || oldScript.textContent;
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    });
+                    container.style.opacity = '1';
+                    container.style.pointerEvents = 'auto';
+                }
+
+                // Strictly re-enforce the active view tab mode (prevent resetting to calendar view)
+                if (typeof switchPmTab === 'function') {
+                    switchPmTab(currentTabMode);
+                }
+
+                if (pushState) {
+                    var pushUrl = new URL(url, window.location.origin);
+                    pushUrl.searchParams.set('view', isListActive ? 'list' : 'calendar');
+                    window.history.pushState({ url: pushUrl.toString() }, '', pushUrl.toString());
+                }
+                if (typeof onFilterLineChanged === 'function') onFilterLineChanged();
+                if (typeof updateFilterMachineLabel === 'function') updateFilterMachineLabel();
+                if (typeof updateFilterTechLabel === 'function') updateFilterTechLabel();
+            })
+            .catch(err => {
+                console.error('Error loading PM content:', err);
+                if (container) {
+                    container.style.opacity = '1';
+                    container.style.pointerEvents = 'auto';
+                }
+                window.location.href = url;
+            });
+        }
+
+        function submitPmFilterForm() {
+            var form = document.getElementById('pmFilterForm');
+            if (!form) return;
+            var formData = new FormData(form);
+            var searchParams = new URLSearchParams();
+            for (var pair of formData.entries()) {
+                if (pair[1]) {
+                    searchParams.append(pair[0], pair[1]);
+                }
+            }
+            var actionUrl = form.getAttribute('action') || window.location.pathname;
+            var targetUrl = actionUrl + '?' + searchParams.toString();
+            loadPmContent(targetUrl);
+        }
+
+        document.addEventListener('click', function (e) {
+            var link = e.target.closest('#pmDynamicContent a[href]');
+            if (link) {
+                var href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.includes('ExportExcel')) {
+                    return;
+                }
+                e.preventDefault();
+                loadPmContent(link.href);
+            }
+        });
+
+        function submitFormViaAjax(form, modalIdToClose, onSuccessCallback) {
+            if (!form) return;
+            var formData = new FormData(form);
+            var actionUrl = form.getAttribute('action') || window.location.pathname;
+
+            fetch(actionUrl, {
+                method: form.getAttribute('method') || 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP error ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    if (modalIdToClose) closeModal(modalIdToClose);
+                    closeModal('addPmModal');
+                    closeModal('editPmModal');
+                    closeModal('dragDropChoiceModal');
+                    if (typeof onSuccessCallback === 'function') {
+                        onSuccessCallback(data);
+                    }
+                    if (typeof submitPmFilterForm === 'function') {
+                        submitPmFilterForm();
+                    } else {
+                        loadPmContent(window.location.href, false);
+                    }
+                } else {
+                    alert(data.message || 'Gagal memproses data PM.');
+                }
+            })
+            .catch(err => {
+                console.error('AJAX Form submit error:', err);
+                alert('Terjadi kesalahan saat memproses data.');
+            });
+        }
+
+        document.addEventListener('submit', function (e) {
+            if (!e.target) return;
+            if (e.target.id === 'pmFilterForm') {
+                e.preventDefault();
+                submitPmFilterForm();
+                return;
+            }
+
+            var modalContainer = e.target.closest('#addPmModal, #editPmModal, #deletePmForm');
+            var formAction = (e.target.getAttribute('action') || '').toLowerCase();
+            if (modalContainer || formAction.includes('create') || formAction.includes('edit') || formAction.includes('delete')) {
+                e.preventDefault();
+                var modalId = modalContainer ? modalContainer.id : null;
+                submitFormViaAjax(e.target, modalId);
+            }
+        });
+
+        window.addEventListener('popstate', function (e) {
+            loadPmContent(window.location.href, false);
+        });
+
+        function toggleMultiselectMenu(btnEl, evt) {
+            if (evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
+            var parent = btnEl.closest('.multiselect-dropdown') || btnEl.parentElement;
+            if (!parent) return;
+            var menu = parent.querySelector('.multiselect-menu');
+            if (!menu) return;
+
+            var isShown = menu.classList.contains('show');
+
+            document.querySelectorAll('.multiselect-menu.show').forEach(function(m) {
+                m.classList.remove('show');
+                m.style.display = 'none';
+            });
+
+            if (!isShown) {
+                menu.classList.add('show');
+                menu.style.display = 'block';
+                menu.style.position = 'absolute';
+                menu.style.zIndex = '99999';
+            } else {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.multiselect-dropdown')) {
+                document.querySelectorAll('.multiselect-menu.show').forEach(function(m) {
+                    m.classList.remove('show');
+                    m.style.display = 'none';
+                });
+            }
+        });
+
+        function filterMultiSelectOptions(inputEl) {
+            var filter = (inputEl.value || '').toLowerCase().trim();
+            var menu = inputEl.closest('.multiselect-menu');
+            if (!menu) return;
+            var items = menu.querySelectorAll('.option-item');
+            items.forEach(function(item) {
+                if (!filter) {
+                    item.style.display = '';
+                    return;
+                }
+                // Search across textContent AND data attributes for comprehensive match
+                var text = item.textContent.toLowerCase();
+                var dataId = (item.getAttribute('data-sp-id') || '').toLowerCase();
+                var dataName = (item.getAttribute('data-sp-name') || '').toLowerCase();
+                var dataDisplay = (item.getAttribute('data-sp-display') || '').toLowerCase();
+                var match = text.indexOf(filter) > -1
+                    || dataId.indexOf(filter) > -1
+                    || dataName.indexOf(filter) > -1
+                    || dataDisplay.indexOf(filter) > -1;
+                item.style.display = match ? '' : 'none';
+            });
+        }
+
+        function selectAllInMenu(btnEl, selectAll) {
+            var menu = btnEl.closest('.multiselect-menu');
+            if (!menu) return;
+            var items = menu.querySelectorAll('.option-item');
+            items.forEach(function(item) {
+                if (item.style.display !== 'none') {
+                    var chk = item.querySelector('input[type="checkbox"]');
+                    if (chk) {
+                        chk.checked = selectAll;
+                        chk.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        }
+
+        // Filter Bar Line -> Machine Dynamic Filtering
+        function onFilterLineChanged() {
+            var checkedLines = Array.from(document.querySelectorAll('.line-filter-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('filterLineLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checkedLines.length > 0 ? checkedLines.join(', ') : 'Semua Line';
+            }
+
+            var machineItems = document.querySelectorAll('.filter-machine-item');
+            machineItems.forEach(function(item) {
+                var itemLine = item.getAttribute('data-line') || '';
+                if (checkedLines.length === 0) {
+                    item.style.display = 'flex';
+                } else {
+                    var match = checkedLines.some(function(l) {
+                        return itemLine.toLowerCase().indexOf(l.toLowerCase()) > -1;
+                    });
+                    if (match) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                        var chk = item.querySelector('input[type="checkbox"]');
+                        if (chk) chk.checked = false;
+                    }
+                }
+            });
+            updateFilterMachineLabel();
+        }
+
+        function updateFilterMachineLabel() {
+            var checked = Array.from(document.querySelectorAll('.machine-filter-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('filterMachineLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checked.length > 0 ? checked.join(', ') : 'Semua Mesin';
+            }
+        }
+
+        function updateFilterTechLabel() {
+            var checked = Array.from(document.querySelectorAll('.tech-filter-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('filterTechLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checked.length > 0 ? checked.join(', ') : 'Semua Teknisi';
+            }
+        }
+
+        const up1LinesSet = new Set(["B5", "B10", "B15", "B16", "J3", "J4", "J5", "T1", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T12", "GENERAL", "VACANT", "WASHER"]);
+
+        function getAreaFromTitle(lineStr) {
+            if (!lineStr) return "UP1";
+            var parts = lineStr.split(/[,;\/\n\r]+/);
+            for (var i = 0; i < parts.length; i++) {
+                var trimmed = parts[i].trim().toUpperCase();
+                if (up1LinesSet.has(trimmed)) return "UP1";
+            }
+            for (var i = 0; i < parts.length; i++) {
+                var trimmed = parts[i].trim().toUpperCase();
+                if (trimmed.startsWith("J") || trimmed.startsWith("T")) return "UP1";
+            }
+            return "UP2";
+        }
+
+        function onAddUpAreaChanged() {
+            var upSelect = document.getElementById('addUpArea');
+            var selArea = upSelect ? upSelect.value : 'UP1';
+            var items = document.querySelectorAll('.add-line-item');
+            items.forEach(function(item) {
+                var area = item.getAttribute('data-up-area') || 'UP1';
+                if (area.toUpperCase() === selArea.toUpperCase()) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                    var chk = item.querySelector('input[type="checkbox"]');
+                    if (chk) chk.checked = false;
+                }
+            });
+            onAddLineChanged();
+        }
+
+        function onEditUpAreaChanged() {
+            var upSelect = document.getElementById('editUpArea');
+            var selArea = upSelect ? upSelect.value : 'UP1';
+            var items = document.querySelectorAll('.edit-line-item');
+            items.forEach(function(item) {
+                var area = item.getAttribute('data-up-area') || 'UP1';
+                if (area.toUpperCase() === selArea.toUpperCase()) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                    var chk = item.querySelector('input[type="checkbox"]');
+                    if (chk) chk.checked = false;
+                }
+            });
+            onEditLineChanged();
+        }
+
+        // Add Modal Line -> Machine Dynamic Filtering
+        function onAddLineChanged() {
+            var checkedLines = Array.from(document.querySelectorAll('.add-line-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('addLineLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checkedLines.length > 0 ? checkedLines.join(', ') : 'Pilih Line PM';
+            }
+
+            var machineItems = document.querySelectorAll('.add-machine-item');
+            machineItems.forEach(function(item) {
+                var itemLine = item.getAttribute('data-line') || '';
+                if (checkedLines.length === 0) {
+                    item.style.display = 'flex';
+                } else {
+                    var match = checkedLines.some(function(l) {
+                        return itemLine.toLowerCase().indexOf(l.toLowerCase()) > -1;
+                    });
+                    if (match) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                        var chk = item.querySelector('input[type="checkbox"]');
+                        if (chk) chk.checked = false;
+                    }
+                }
+            });
+            updateAddMachineLabel(false);
+            if (checkedLines.length > 0) {
+                autoSuggestSpareparts('add', false);
+            } else {
+                var tbody = document.getElementById('addSparepartTableBody');
+                if (tbody) tbody.innerHTML = '';
+            }
+        }
+
+        function updateAddMachineLabel(triggerAutoSuggest = true) {
+            var checked = Array.from(document.querySelectorAll('.add-machine-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('addMachineLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checked.length > 0 ? checked.join(', ') : 'Pilih Mesin';
+            }
+            if (triggerAutoSuggest) {
+                autoSuggestSpareparts('add', false);
+            }
+        }
+
+        function updateAddTechLabel() {
+            var checked = Array.from(document.querySelectorAll('.add-tech-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('addTechLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checked.length > 0 ? checked.join(', ') : 'Pilih Teknisi';
+            }
+        }
+
+        // Edit Modal Line -> Machine Dynamic Filtering
+        function onEditLineChanged() {
+            var checkedLines = Array.from(document.querySelectorAll('.edit-line-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('editLineLabel');
+            var fallback = document.getElementById('editTitleFallback');
+            var lineStr = checkedLines.join(', ');
+            if (labelSpan) labelSpan.textContent = checkedLines.length > 0 ? lineStr : 'Pilih Line PM';
+            if (fallback) fallback.value = lineStr;
+
+            var machineItems = document.querySelectorAll('.edit-machine-item');
+            machineItems.forEach(function(item) {
+                var itemLine = item.getAttribute('data-line') || '';
+                if (checkedLines.length === 0) {
+                    item.style.display = 'flex';
+                } else {
+                    var match = checkedLines.some(function(l) {
+                        return itemLine.toLowerCase().indexOf(l.toLowerCase()) > -1;
+                    });
+                    if (match) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                        var chk = item.querySelector('input[type="checkbox"]');
+                        if (chk) chk.checked = false;
+                    }
+                }
+            });
+            updateEditMachineLabel(false);
+            if (checkedLines.length > 0) {
+                autoSuggestSpareparts('edit', false);
+            }
+        }
+
+        function updateEditMachineLabel(triggerAutoSuggest = true) {
+            var checked = Array.from(document.querySelectorAll('.edit-machine-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('editMachineLabel');
+            var fallback = document.getElementById('editMachineNameFallback');
+            var mcStr = checked.join(', ');
+            if (labelSpan) labelSpan.textContent = checked.length > 0 ? mcStr : 'Pilih Mesin';
+            if (fallback) fallback.value = mcStr;
+            if (triggerAutoSuggest) {
+                autoSuggestSpareparts('edit', false);
+            }
+        }
+
+        function onEditScheduledDateChanged() {
+            autoSuggestSpareparts('edit', false);
+        }
+
+        function updateEditTechLabel() {
+            var checked = Array.from(document.querySelectorAll('.edit-tech-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('editTechLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checked.length > 0 ? checked.join(', ') : 'Pilih Teknisi';
+            }
+        }
+
+        function switchPmTab(targetId) {
+            var activeViewInput = document.getElementById('activeViewInput');
+            var calendarPane = document.getElementById('calendar-view');
+            var listPane = document.getElementById('list-view');
+            var calendarTabBtn = document.getElementById('calendar-tab');
+            var listTabBtn = document.getElementById('list-tab');
+
+            var viewMode = (targetId === 'list-view' ? 'list' : 'calendar');
+            if (activeViewInput) activeViewInput.value = viewMode;
+
+            if (targetId === 'list-view') {
+                if (calendarPane) {
+                    calendarPane.classList.remove('show', 'active');
+                    calendarPane.style.display = 'none';
+                }
+                if (listPane) {
+                    listPane.classList.add('show', 'active');
+                    listPane.style.display = 'block';
+                }
+                if (calendarTabBtn) calendarTabBtn.classList.remove('active');
+                if (listTabBtn) listTabBtn.classList.add('active');
+            } else {
+                if (listPane) {
+                    listPane.classList.remove('show', 'active');
+                    listPane.style.display = 'none';
+                }
+                if (calendarPane) {
+                    calendarPane.classList.add('show', 'active');
+                    calendarPane.style.display = 'block';
+                }
+                if (listTabBtn) listTabBtn.classList.remove('active');
+                if (calendarTabBtn) calendarTabBtn.classList.add('active');
+            }
+
+            try {
+                var currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('view', viewMode);
+                window.history.replaceState({ url: currentUrl.toString() }, '', currentUrl.toString());
+            } catch(e) {}
+        }
+
+        function closeModal(modalId) {
+            var el = document.getElementById(modalId);
+            if (!el) return;
+
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var modalInstance = bootstrap.Modal.getInstance(el) || bootstrap.Modal.getOrCreateInstance(el);
+                    if (modalInstance) modalInstance.hide();
+                } else if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $(el).modal('hide');
+                }
+            } catch (err) {
+                console.warn("Bootstrap modal hide warning:", err);
+            }
+
+            el.style.display = 'none';
+            el.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(function(b) { b.remove(); });
+        }
+
+        // Sparepart Checklist Dynamic Table Helpers
+        // --- Event delegation for .row-sp-option (row sparepart picker) ---
+        document.addEventListener('click', function(e) {
+            var optionEl = e.target.closest('.row-sp-option');
+            if (!optionEl) return;
+            var id = optionEl.getAttribute('data-sp-id') || '';
+            var name = optionEl.getAttribute('data-sp-name') || '';
+            var bin = optionEl.getAttribute('data-sp-bin') || '';
+            var tr = optionEl.closest('tr');
+            if (!tr) return;
+            var idInput = tr.querySelector('.sp-id-input');
+            var nameInput = tr.querySelector('.sp-name-input');
+            var binInput = tr.querySelector('.sp-bin-input');
+            var labelEl = tr.querySelector('.multiselect-button span');
+            if (idInput) idInput.value = id;
+            if (nameInput) nameInput.value = name || id;
+            if (binInput && bin) binInput.value = bin;
+            if (labelEl) labelEl.textContent = id || name || '-- Pilih --';
+            var menu = optionEl.closest('.multiselect-menu');
+            if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+        });
+
+        // --- Event delegation for .tpl-sp-option (master template sparepart picker) ---
+        document.addEventListener('click', function(e) {
+            var optionEl = e.target.closest('.tpl-sp-option');
+            if (!optionEl) return;
+            var id = optionEl.getAttribute('data-sp-id') || '';
+            var name = optionEl.getAttribute('data-sp-name') || '';
+            var displayText = optionEl.getAttribute('data-sp-display') || name || id;
+            var idInput = document.getElementById('tplFormSparepartId');
+            var nameInput = document.getElementById('tplFormSparepartName');
+            var labelEl = document.getElementById('tplSparepartLabel');
+            if (idInput) idInput.value = id;
+            if (nameInput) nameInput.value = name || id;
+            if (labelEl) labelEl.textContent = displayText || '-- Pilih / Cari Sparepart --';
+            var menu = optionEl.closest('.multiselect-menu');
+            if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+        });
+
+        function selectSingleSparepart(id, name, displayText, idInputId, nameInputId, labelId, itemEl) {
+            if (idInputId) {
+                var idInput = document.getElementById(idInputId);
+                if (idInput) idInput.value = id;
+            }
+            if (nameInputId) {
+                var nameInput = document.getElementById(nameInputId);
+                if (nameInput) nameInput.value = name || id;
+            }
+            if (labelId) {
+                var labelEl = document.getElementById(labelId);
+                if (labelEl) labelEl.textContent = displayText || name || id || '-- Pilih / Cari Sparepart --';
+            }
+            var menu = itemEl ? itemEl.closest('.multiselect-menu') : null;
+            if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+        }
+
+        function selectRowSparepart(id, name, displayText, itemEl) {
+            var tr = itemEl ? itemEl.closest('tr') : null;
+            if (!tr) return;
+            var idInput = tr.querySelector('.sp-id-input');
+            var nameInput = tr.querySelector('.sp-name-input');
+            var binInput = tr.querySelector('.sp-bin-input');
+            var labelEl = tr.querySelector('.multiselect-button span');
+            if (id === 'CUSTOM') {
+                if (idInput) idInput.value = '';
+                if (nameInput) { nameInput.value = ''; nameInput.focus(); }
+                if (labelEl) labelEl.textContent = '-- Tulis Manual --';
+            } else {
+                if (idInput) idInput.value = id;
+                if (nameInput) nameInput.value = name || id;
+                if (labelEl) labelEl.textContent = id || name || '-- Pilih --';
+            }
+            var menu = itemEl ? itemEl.closest('.multiselect-menu') : null;
+            if (menu) { menu.classList.remove('show'); menu.style.display = 'none'; }
+        }
+
+        function addSparepartRow(modalPrefix, itemData) {
+            var tbody = document.getElementById(modalPrefix + 'SparepartTableBody');
+            if (!tbody) return;
+
+            itemData = itemData || { sparepartId: '', sparepartName: '', quantity: 1, unit: 'Pcs', notes: '', bin: '-', status: 'Pending', isCompleted: false };
+
+            var rawNotes = itemData.notes || '';
+            var binText = (itemData.bin && itemData.bin !== '-')
+                ? itemData.bin
+                : rawNotes.replace(/^\[(CEK|GANTI)\]\s*/i, '').replace(/^Bin:\s*/i, '').trim();
+
+            var initialPartNo = itemData.sparepartId || (itemData.sparepartName ? itemData.sparepartName : '-');
+            var initialItemName = itemData.sparepartName || itemData.sparepartId || '-';
+            var qtyDisplay = (itemData.quantity || 1) + ' ' + (itemData.unit || 'Pcs');
+
+            var isCompleted = itemData.isCompleted || itemData.status === 'Completed' || itemData.status === 'Sudah Diganti';
+            var statusBadge = isCompleted
+                ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 10px;" title="Telah dikeluarkan di Barang Keluar (PM)"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>`
+                : `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 10px;" title="Belum ada transaksi di Barang Keluar (PM)"><i class="bi bi-clock me-1"></i>Pending</span>`;
+
+            var tr = document.createElement('tr');
+            tr.className = 'sparepart-row align-middle';
+            tr.innerHTML = `
+                <td width="130" class="px-2 py-1">
+                    <span class="fw-bold text-primary" style="font-size: 11px;">${escapeHtml(initialPartNo)}</span>
+                    <input type="hidden" name="itemSparepartIds" class="sp-id-input" value="${escapeHtml(itemData.sparepartId || itemData.sparepartName)}" />
+                </td>
+                <td class="px-2 py-1">
+                    <span class="fw-semibold text-dark" style="font-size: 11px;">${escapeHtml(initialItemName)}</span>
+                    <input type="hidden" name="itemSparepartNames" class="sp-name-input" value="${escapeHtml(initialItemName)}" />
+                </td>
+                <td width="90" class="px-2 py-1">
+                    <span class="text-muted fw-semibold" style="font-size: 11px;">${escapeHtml(binText || '-')}</span>
+                    <input type="hidden" name="itemNotes" class="sp-bin-input" value="${escapeHtml(binText)}" />
+                </td>
+                <td width="70" class="px-2 py-1 text-center">
+                    <span class="fw-bold text-dark" style="font-size: 11px;">${escapeHtml(qtyDisplay)}</span>
+                    <input type="hidden" name="itemQuantities" value="${itemData.quantity || 1}" />
+                    <input type="hidden" name="itemUnits" value="${escapeHtml(itemData.unit || 'Pcs')}" />
+                </td>
+                <td width="110" class="px-2 py-1 text-center">
+                    ${statusBadge}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function syncRowNotes(element) {
+            var tr = element.closest('tr');
+            if (!tr) return;
+            var actionSel = tr.querySelector('.sp-action-type');
+            var textInput = tr.querySelector('.sp-notes-text');
+            var hiddenNotes = tr.querySelector('.sp-notes-hidden');
+            if (!hiddenNotes) return;
+
+            var action = actionSel ? actionSel.value : '[CEK]';
+            if (actionSel) {
+                if (action === '[GANTI]') {
+                    actionSel.className = 'form-select form-select-sm py-0 px-1 sp-action-type fw-bold text-danger';
+                } else {
+                    actionSel.className = 'form-select form-select-sm py-0 px-1 sp-action-type fw-bold text-primary';
+                }
+            }
+            var text = textInput ? textInput.value.replace(/^\[(CEK|GANTI)\]\s*/i, '').trim() : '';
+            hiddenNotes.value = action + (text ? ' ' + text : '');
+        }
+
+        function removeSparepartRow(btn) {
+            var row = btn.closest('tr');
+            if (row) row.remove();
+        }
+
+        function getSelectedScheduleMonth(modalPrefix) {
+            var dateInputId = modalPrefix === 'add' ? 'addScheduledDate' : 'editScheduledDate';
+            var dateInput = document.getElementById(dateInputId);
+            if (dateInput && dateInput.value) {
+                var parts = dateInput.value.split('-');
+                if (parts.length >= 2) {
+                    return parseInt(parts[1], 10);
+                }
+            }
+            return null;
+        }
+
+        function onAddScheduledDateChanged() {
+            var checkedLines = Array.from(document.querySelectorAll('.add-line-check:checked')).map(c => c.value);
+            if (checkedLines.length > 0) {
+                autoSuggestSpareparts('add', false);
+            }
+            fetchActualPmUsage('add');
+        }
+
+        function fetchActualPmUsage(modalPrefix) {
+            var checkedLines = Array.from(document.querySelectorAll('.' + modalPrefix + '-line-check:checked')).map(c => c.value);
+            var dateInputId = modalPrefix === 'add' ? 'addScheduledDate' : 'editScheduledDate';
+            var dateInput = document.getElementById(dateInputId);
+            var dateVal = dateInput ? dateInput.value : '';
+
+            var tbody = document.getElementById(modalPrefix + 'ActualSparepartTableBody');
+            if (!tbody) return;
+
+            if (checkedLines.length === 0 || !dateVal) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-2">Pilih Line & Tanggal Pelaksanaan untuk melihat actual pemakaian sparepart.</td></tr>';
+                return;
+            }
+
+            var lineStr = checkedLines.join(',');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-2"><div class="spinner-border spinner-border-sm me-1" role="status"></div>Memuat data actual pemakaian...</td></tr>';
+
+            fetch(`/Maintenance/GetActualSparepartsByLineAndDate?line=${encodeURIComponent(lineStr)}&date=${encodeURIComponent(dateVal)}`)
+                .then(res => res.json())
+                .then(data => {
+                    tbody.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            var tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="font-monospace text-primary fw-medium">${escapeHtml(item.partNumber)}</td>
+                                <td><div class="text-truncate" style="max-width: 170px;">${escapeHtml(item.itemName)}</div></td>
+                                <td class="font-monospace">${escapeHtml(item.bin)}</td>
+                                <td class="text-center fw-bold text-success">${item.qty}</td>
+                                <td>${escapeHtml(item.pic)}</td>
+                                <td class="text-center text-muted font-monospace" style="font-size: 10px;">${escapeHtml(item.tanggal)}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-2">Belum ada transaksi Barang Keluar (Maintenance Type: PM) untuk Line & Tanggal ini.</td></tr>';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching actual PM usage:', err);
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted small py-2">Gagal memuat data actual pemakaian sparepart.</td></tr>';
+                });
+        }
+
+        function autoSuggestSpareparts(modalPrefix, isManualClick = false) {
+            fetchActualPmUsage(modalPrefix);
+            var checkedLines = Array.from(document.querySelectorAll('.' + modalPrefix + '-line-check:checked')).map(c => c.value);
+            var checkedMachines = Array.from(document.querySelectorAll('.' + modalPrefix + '-machine-check:checked')).map(c => c.value);
+
+            var lineStr = checkedLines.join(',');
+            var machineStr = checkedMachines.join(',');
+
+            var tbody = document.getElementById(modalPrefix + 'SparepartTableBody');
+            if (!tbody) return;
+
+            if (checkedLines.length === 0 && checkedMachines.length === 0) {
+                tbody.innerHTML = '';
+                return;
+            }
+
+            // Get month from the scheduled date input
+            var selectedMonth = getSelectedScheduleMonth(modalPrefix);
+            var monthParam = selectedMonth ? '&month=' + selectedMonth : '';
+
+            fetch(`/Maintenance/GetSparepartsByLineAndMachine?line=${encodeURIComponent(lineStr)}&machine=${encodeURIComponent(machineStr)}${monthParam}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        tbody.innerHTML = '';
+                        data.forEach(sp => {
+                            addSparepartRow(modalPrefix, {
+                                sparepartId: sp.id,
+                                sparepartName: sp.item,
+                                bin: sp.bin,
+                                quantity: sp.quantity || 1,
+                                unit: sp.unit || 'Pcs',
+                                notes: sp.notes || (sp.bin && sp.bin !== '-' ? 'Bin: ' + sp.bin : ''),
+                                status: sp.status || (sp.isCompleted ? 'Completed' : 'Pending'),
+                                isCompleted: sp.isCompleted || sp.status === 'Completed'
+                            });
+                        });
+                        if (isManualClick && selectedMonth) {
+                            var monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            console.log('Auto-suggest: ' + data.length + ' part(s) aktif di bulan ' + monthNames[selectedMonth]);
+                        }
+                    } else {
+                        if (isManualClick) {
+                            var monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            var monthInfo = selectedMonth ? ' untuk bulan ' + monthNames[selectedMonth] : '';
+                            alert('Tidak ditemukan sparepart yang dijadwalkan' + monthInfo + ' pada Line/Mesin yang dipilih.');
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted small py-2">Belum ada template part standar' + (selectedMonth ? ' yang aktif di bulan ini' : '') + ' untuk Line ini.</td></tr>';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Error auto-suggesting spareparts:', err);
+                });
+        }
+
+        // Master Template PM Modal Functions
+        function openMasterTemplateModal() {
+            var el = document.getElementById('masterTemplateModal');
+            if (!el) return;
+
+            hideAddTemplatePartForm();
+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                var modal = bootstrap.Modal.getOrCreateInstance(el);
+                modal.show();
+            } else if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                $(el).modal('show');
+            } else {
+                el.style.display = 'block';
+                el.classList.add('show');
+            }
+
+            loadMasterTemplateParts();
+        }
+
+        function loadMasterTemplateParts() {
+            var lineSelect = document.getElementById('tplLineSelect');
+            var machineSelect = document.getElementById('tplMachineSelect');
+            var line = lineSelect ? lineSelect.value : '';
+            var machine = machineSelect ? machineSelect.value : '';
+            var tbody = document.getElementById('masterTemplateTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="13" class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat template sparepart...</td></tr>';
+
+            fetch(`/Maintenance/GetStandardTemplateParts?line=${encodeURIComponent(line)}&machine=${encodeURIComponent(machine)}`)
+                .then(res => res.json())
+                .then(items => {
+                    if (!items || items.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="13" class="text-center py-3 text-muted">Belum ada template sparepart standar untuk Line/Mesin yang dipilih. Klik "Tambah Part" untuk menambahkan.</td></tr>`;
+                        return;
+                    }
+
+                    var monthAbbrevs = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+
+                    var html = '';
+                    items.forEach((item, idx) => {
+                        // Build month badges
+                        var targetMonths = (item.targetMonths || '1,2,3,4,5,6,7,8,9,10,11,12').split(',').map(m => m.trim());
+                        var monthBadges = monthAbbrevs.map((abbr, i) => {
+                            var mNum = (i + 1).toString();
+                            var isActive = targetMonths.includes(mNum);
+                            return `<span class="badge ${isActive ? 'bg-success' : 'bg-light text-muted border'}" style="font-size:9px;padding:2px 4px;">${abbr}</span>`;
+                        }).join(' ');
+
+                        var freqBadgeClass = {
+                            'Monthly': 'bg-primary',
+                            'Quarterly': 'bg-info',
+                            '6 Months': 'bg-warning text-dark',
+                            'Yearly': 'bg-danger'
+                        }[item.frequency] || 'bg-secondary';
+
+                        html += `
+                            <tr>
+                                <td class="text-center">${idx + 1}</td>
+                                <td><span class="badge bg-secondary">${escapeHtml(item.line)}</span></td>
+                                <td>${escapeHtml(item.machineName || '-')}</td>
+                                <td class="fw-bold">${escapeHtml(item.sparepartId)}</td>
+                                <td>${escapeHtml(item.sparepartName)}</td>
+                                <td><span class="badge bg-light text-dark border" style="font-size:11px;">${escapeHtml(item.bin || '-')}</span></td>
+                                <td class="text-center fw-bold">${item.defaultQuantity || 1}</td>
+                                <td class="text-center">${escapeHtml(item.unit || 'Pcs')}</td>
+                                <td class="text-center"><span class="badge ${freqBadgeClass}" style="font-size:10px;">${escapeHtml(item.frequency || 'Monthly')}</span></td>
+                                <td class="text-center">${item.durationMin || 30} min</td>
+                                <td><div class="d-flex flex-wrap gap-1">${monthBadges}</div></td>
+                                <td>${escapeHtml(item.notes || '-')}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1" onclick="deleteStandardPart(${item.id})" title="Hapus Template Part">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error('Error loading master template parts:', err);
+                    tbody.innerHTML = '<tr><td colspan="13" class="text-center py-3 text-danger">Gagal memuat data template.</td></tr>';
+                });
+        }
+
+        function showAddTemplatePartForm() {
+            var selectedLine = document.getElementById('tplLineSelect')?.value || '';
+            var selectedMachine = document.getElementById('tplMachineSelect')?.value || '';
+
+            document.getElementById('tplId').value = '0';
+            document.getElementById('tplFormLine').value = selectedLine;
+            document.getElementById('tplFormMachine').value = selectedMachine;
+            document.getElementById('tplFormSparepartId').value = '';
+            document.getElementById('tplFormSparepartName').value = '';
+            var labelEl = document.getElementById('tplSparepartLabel');
+            if (labelEl) labelEl.textContent = '-- Pilih / Cari Sparepart --';
+            document.getElementById('tplFormQty').value = '1';
+            document.getElementById('tplFormUnit').value = 'Pcs';
+            document.getElementById('tplFormFrequency').value = 'Monthly';
+            document.getElementById('tplFormDuration').value = '30';
+            document.getElementById('tplFormNotes').value = '';
+
+            // Default: all months checked
+            document.querySelectorAll('.tpl-month-check').forEach(c => c.checked = true);
+            syncTplMonthsHidden();
+
+            document.getElementById('addTplFormContainer').style.display = 'block';
+        }
+
+        function syncTplMonthsHidden() {
+            var checked = Array.from(document.querySelectorAll('.tpl-month-check:checked')).map(c => c.value);
+            var hiddenInput = document.getElementById('tplFormTargetMonths');
+            if (hiddenInput) hiddenInput.value = checked.join(',') || '1,2,3,4,5,6,7,8,9,10,11,12';
+        }
+
+        function onTplFrequencyChanged() {
+            var freq = document.getElementById('tplFormFrequency')?.value;
+            var monthChecks = document.querySelectorAll('.tpl-month-check');
+            // Auto-set preset months based on frequency
+            if (freq === 'Monthly') {
+                monthChecks.forEach(c => c.checked = true);
+            } else if (freq === 'Quarterly') {
+                // Jan, Apr, Jul, Oct
+                var quarterlyMonths = ['1', '4', '7', '10'];
+                monthChecks.forEach(c => c.checked = quarterlyMonths.includes(c.value));
+            } else if (freq === '6 Months') {
+                // Jan, Jul
+                var halfYearMonths = ['1', '7'];
+                monthChecks.forEach(c => c.checked = halfYearMonths.includes(c.value));
+            } else if (freq === 'Yearly') {
+                // Jan only
+                monthChecks.forEach(c => c.checked = c.value === '1');
+            }
+            // For 'Custom', don't auto-change
+            syncTplMonthsHidden();
+        }
+
+        function hideAddTemplatePartForm() {
+            var container = document.getElementById('addTplFormContainer');
+            if (container) container.style.display = 'none';
+        }
+
+        function onTplSparepartSelectChanged(selectEl) {
+            var opt = selectEl.options[selectEl.selectedIndex];
+            var name = opt ? (opt.getAttribute('data-name') || opt.text) : '';
+            var nameInput = document.getElementById('tplFormSparepartName');
+            if (nameInput) nameInput.value = name;
+        }
+
+        function submitSaveStandardPart(evt) {
+            evt.preventDefault();
+            var form = document.getElementById('saveStandardPartForm');
+            if (!form) return;
+
+            var formData = new FormData(form);
+
+            fetch('/Maintenance/SaveStandardPart', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    hideAddTemplatePartForm();
+                    loadMasterTemplateParts();
+                } else {
+                    alert(data.message || 'Gagal menyimpan template sparepart.');
+                }
+            })
+            .catch(err => {
+                console.error('Error saving template part:', err);
+                alert('Terjadi kesalahan saat menyimpan template sparepart.');
+            });
+        }
+
+        function deleteStandardPart(id) {
+            executeSecureDelete(function() {
+                var form = new FormData();
+                form.append('id', id);
+
+                var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenInput) form.append('__RequestVerificationToken', tokenInput.value);
+
+                fetch('/Maintenance/DeleteStandardPart', {
+                    method: 'POST',
+                    body: form,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        loadMasterTemplateParts();
+                    } else {
+                        alert(data.message || 'Gagal menghapus item template.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error deleting standard part:', err);
+                    alert('Terjadi kesalahan saat menghapus item template.');
+                });
+            }, 'item template sparepart standar ini', true);
+        }
+
+        function confirmCopyMonthPlan(year, month) {
+            var dateObj = new Date(year, month - 1, 1);
+            var monthNameStr = dateObj.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+            if (confirm(`Apakah Anda yakin ingin menyalin seluruh jadwal PM (beserta daftar spareparts) dari bulan ${monthNameStr} ke bulan berikutnya?`)) {
+                var form = new FormData();
+                form.append('sourceYear', year);
+                form.append('sourceMonth', month);
+
+                var tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenEl) form.append('__RequestVerificationToken', tokenEl.value);
+
+                fetch('/Maintenance/CopyMonthPlan', {
+                    method: 'POST',
+                    body: form,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.href = `/Maintenance?year=${data.targetYear}&month=${data.targetMonth}`;
+                    } else {
+                        alert(data.message || 'Gagal menyalin jadwal PM ke bulan depan.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Copy month plan error:', err);
+                    alert('Terjadi kesalahan saat menyalin jadwal PM.');
+                });
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function openAddModalForDate(dateStr) {
+            if (dateStr) {
+                var dateInput = document.getElementById('addScheduledDate');
+                if (dateInput) dateInput.value = dateStr;
+            }
+
+            // Reset add modal UP Area to UP1 by default
+            var addUpSelect = document.getElementById('addUpArea');
+            if (addUpSelect) addUpSelect.value = 'UP1';
+
+            // Reset add modal checkboxes and spareparts
+            document.querySelectorAll('.add-line-check').forEach(c => c.checked = false);
+            document.querySelectorAll('.add-machine-check').forEach(c => c.checked = false);
+            document.querySelectorAll('.add-tech-check').forEach(c => c.checked = false);
+            var tbody = document.getElementById('addSparepartTableBody');
+            if (tbody) tbody.innerHTML = '';
+
+            onAddUpAreaChanged();
+            updateAddTechLabel();
+
+            var el = document.getElementById('addPmModal');
+            if (!el) return;
+
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var modal = bootstrap.Modal.getOrCreateInstance(el);
+                    modal.show();
+                } else if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $(el).modal('show');
+                } else {
+                    el.style.display = 'block';
+                    el.classList.add('show');
+                }
+            } catch (err) {
+                console.error("Error opening add PM modal:", err);
+            }
+        }
+
+        function openEditModal(id, titleLine, dateStr, status, machineId, machineName, technician, notes, upArea) {
+            try {
+                document.getElementById('editId').value = id;
+                document.getElementById('editScheduledDate').value = dateStr;
+                document.getElementById('editStatus').value = status;
+                document.getElementById('editNotes').value = notes || '';
+
+                var areaVal = upArea || getAreaFromTitle(titleLine) || 'UP1';
+                var editUpSelect = document.getElementById('editUpArea');
+                if (editUpSelect) editUpSelect.value = areaVal.toUpperCase();
+
+                // Match Line checkboxes
+                var lineList = (titleLine || '').split(',').map(s => s.trim().toLowerCase());
+                document.querySelectorAll('.edit-line-check').forEach(function(c) {
+                    c.checked = lineList.indexOf(c.value.toLowerCase()) > -1;
+                });
+                
+                onEditUpAreaChanged();
+
+                // Match Machine checkboxes
+                var machineList = (machineName || '').split(',').map(s => s.trim().toLowerCase());
+                document.querySelectorAll('.edit-machine-check').forEach(function(c) {
+                    c.checked = machineList.some(m => m && c.value.toLowerCase().indexOf(m) > -1);
+                });
+                updateEditMachineLabel(false);
+
+                // Match Technician checkboxes
+                var techList = (technician || '').split(',').map(s => s.trim().toLowerCase());
+                document.querySelectorAll('.edit-tech-check').forEach(function(c) {
+                    c.checked = techList.some(t => t && c.value.toLowerCase() === t);
+                });
+                updateEditTechLabel();
+
+                // ── Mode View vs Edit Modal Configuration ──
+                var canEdit = @(canEditPm ? "true" : "false");
+                
+                var titleEl = document.querySelector('#editPmModal .modal-title');
+                if (titleEl) {
+                    titleEl.innerHTML = canEdit 
+                        ? '<i class="bi bi-pencil-square me-2"></i>Edit & Update Status PM'
+                        : '<i class="bi bi-eye me-2"></i>Detail Status PM (View Only)';
+                }
+
+                if (editUpSelect) editUpSelect.disabled = !canEdit;
+                document.getElementById('editScheduledDate').disabled = !canEdit;
+                document.getElementById('editStatus').disabled = !canEdit;
+                var notesEl = document.getElementById('editNotes');
+                if (notesEl) {
+                    notesEl.disabled = !canEdit;
+                    notesEl.readOnly = !canEdit;
+                }
+
+                var lineBtn = document.getElementById('editLineBtn');
+                if (lineBtn) lineBtn.disabled = !canEdit;
+                var techBtn = document.getElementById('editTechBtn');
+                if (techBtn) techBtn.disabled = !canEdit;
+                var machineBtn = document.getElementById('editMachineBtn');
+                if (machineBtn) machineBtn.disabled = !canEdit;
+
+                document.querySelectorAll('.edit-line-check').forEach(c => c.disabled = !canEdit);
+                document.querySelectorAll('.edit-machine-check').forEach(c => c.disabled = !canEdit);
+                document.querySelectorAll('.edit-tech-check').forEach(c => c.disabled = !canEdit);
+
+                var planLink = document.getElementById('editPmPlanLink');
+                if (planLink) planLink.style.display = canEdit ? 'inline-block' : 'none';
+
+                var submitBtn = document.getElementById('editPmSubmitBtn');
+                if (submitBtn) submitBtn.style.display = canEdit ? 'inline-block' : 'none';
+
+                var deleteBtn = document.getElementById('editPmDeleteBtn');
+                if (deleteBtn) deleteBtn.style.display = canEdit ? 'inline-block' : 'none';
+
+                // Load saved spareparts for this PM Schedule
+                var editTbody = document.getElementById('editSparepartTableBody');
+                if (editTbody) {
+                    editTbody.innerHTML = '';
+                    fetch('/Maintenance/GetPmSpareparts?id=' + id)
+                        .then(res => res.json())
+                        .then(items => {
+                            editTbody.innerHTML = '';
+                            if (items && items.length > 0) {
+                                items.forEach(item => {
+                                    addSparepartRow('edit', item);
+                                });
+                            } else {
+                                // Auto load standard template spareparts from Preventive Maintenance Plan!
+                                autoSuggestSpareparts('edit', false);
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Error fetching PM spareparts:", err);
+                            autoSuggestSpareparts('edit', false);
+                        });
+                }
+
+                fetchActualPmUsage('edit');
+
+                var el = document.getElementById('editPmModal');
+                if (!el) return;
+
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var modal = bootstrap.Modal.getOrCreateInstance(el);
+                    modal.show();
+                } else if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+                    $(el).modal('show');
+                } else {
+                    el.style.display = 'block';
+                    el.classList.add('show');
+                }
+            } catch (err) {
+                console.error("Error opening edit PM modal:", err);
+            }
+        }
+
+        function triggerDelete(id, title, btnEl) {
+            executeSecureDelete(function() {
+                var tr = btnEl ? btnEl.closest('tr') : null;
+                if (tr) {
+                    tr.style.transition = 'all 0.3s ease';
+                    tr.style.opacity = '0.1';
+                    tr.style.transform = 'translateX(20px)';
+                }
+                var activeViewInput = document.getElementById('activeViewInput');
+                var deleteViewInput = document.getElementById('deleteViewInput');
+                if (deleteViewInput) {
+                    deleteViewInput.value = (activeViewInput && activeViewInput.value) ? activeViewInput.value : 'list';
+                }
+                var form = document.getElementById('deletePmForm');
+                document.getElementById('deleteId').value = id;
+                submitFormViaAjax(form, null, function(data) {
+                    if (tr) tr.remove();
+                });
+            }, "jadwal PM Line: '" + title + "'", true);
         }
 
         function confirmDeleteFromEditModal() {
             var id = document.getElementById('editId').value;
-            var title = document.getElementById('editTitle').value;
-            if (confirm("Apakah Anda yakin ingin menghapus jadwal PM: '" + title + "'?")) {
+            var title = document.getElementById('editTitleFallback').value || 'PM';
+            executeSecureDelete(function() {
+                closeModal('editPmModal');
+                var activeViewInput = document.getElementById('activeViewInput');
+                var deleteViewInput = document.getElementById('deleteViewInput');
+                if (deleteViewInput) {
+                    deleteViewInput.value = (activeViewInput && activeViewInput.value) ? activeViewInput.value : 'list';
+                }
+                var form = document.getElementById('deletePmForm');
                 document.getElementById('deleteId').value = id;
-                document.getElementById('deletePmForm').submit();
-            }
+                submitFormViaAjax(form);
+            }, "jadwal PM Line: '" + title + "'", true);
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.initPmPerformanceCharts === 'function') {
+                window.initPmPerformanceCharts();
+            }
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('openPlan') === 'true') {
+                setTimeout(function() {
+                    openMasterTemplateModal();
+                }, 150);
+            }
+        });
     </script>
 }

@@ -75,6 +75,7 @@
                         <tr>
                             <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
                             <th>DATE</th>
+                            <th>PART NUMBER</th>
                             <th>BIN</th>
                             <th>ITEM NAME</th>
                             <th class="text-end">QTY RECEIVED (+)</th>
@@ -91,6 +92,7 @@
                                 <tr>
                                     <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoMasuk++)</td>
                                     <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? "-")</span></td>
                                     <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
                                     <td class="fw-semibold">@item.ItemName</td>
                                     <td class="text-end text-success fw-bold">+@item.Qty</td>
@@ -102,7 +104,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">No incoming transaction records found.</td>
+                                <td colspan="8" class="text-center text-muted py-4">No incoming transaction records found.</td>
                             </tr>
                         }
                     </tbody>
@@ -115,6 +117,7 @@
                         <tr>
                             <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
                             <th>DATE</th>
+                            <th>PART NUMBER</th>
                             <th>BIN</th>
                             <th>ITEM NAME</th>
                             <th class="text-end">QTY ISSUED (-)</th>
@@ -133,6 +136,7 @@
                                 <tr>
                                     <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoKeluar++)</td>
                                     <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? item.MasterDataId ?? "-")</span></td>
                                     <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
                                     <td class="fw-semibold">@item.ItemName</td>
                                     <td class="text-end text-danger fw-bold">-@item.Qty</td>
@@ -155,7 +159,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">No outgoing transaction records found.</td>
+                                <td colspan="10" class="text-center text-muted py-4">No outgoing transaction records found.</td>
                             </tr>
                         }
                     </tbody>

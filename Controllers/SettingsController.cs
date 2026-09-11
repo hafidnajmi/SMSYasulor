@@ -46,6 +46,10 @@ namespace UPMS.Web.Controllers
                 .FirstOrDefaultAsync(s => s.SettingKey == "delete_protection_password");
 
             ViewBag.DeleteProtectionPassword = deleteSetting?.SettingValue ?? "123456";
+            ViewBag.PicListMasuk = string.Join(", ", await UPMS.Web.Helpers.PicHelper.GetPicsBarangMasukAsync(_db));
+            ViewBag.PicListKeluar = string.Join(", ", await UPMS.Web.Helpers.PicHelper.GetPicsBarangKeluarAsync(_db));
+            ViewBag.TechUser = users.FirstOrDefault(u => u.Username.ToLower() == "technician") 
+                               ?? users.FirstOrDefault(u => u.Role?.ToLower() == "technician");
 
             return View(users);
         }
@@ -93,9 +97,9 @@ namespace UPMS.Web.Controllers
                 model.CanEmailSettings = 1;
                 model.CanBarangKeluar = 1;
                 model.CanLineMapping = 1;
-                model.CanMasterMachine = 1;
-                model.CanSparepartMachine = 1;
                 model.CanCostIntelligence = 1;
+                model.CanManagePm = 1;
+                model.CanManagePmEdit = 1;
                 model.RequireApprovalKeluar = false;
             }
 
@@ -138,9 +142,9 @@ namespace UPMS.Web.Controllers
                 existing.CanEmailSettings = 1;
                 existing.CanBarangKeluar = 1;
                 existing.CanLineMapping = 1;
-                existing.CanMasterMachine = 1;
-                existing.CanSparepartMachine = 1;
                 existing.CanCostIntelligence = 1;
+                existing.CanManagePm = 1;
+                existing.CanManagePmEdit = 1;
                 existing.RequireApprovalKeluar = false;
             }
             else
@@ -155,8 +159,9 @@ namespace UPMS.Web.Controllers
                 existing.CanEmailSettings = Request.Form.ContainsKey("CanEmailSettings") ? 1 : 0;
                 existing.CanBarangKeluar = Request.Form.ContainsKey("CanBarangKeluar") ? 1 : 0;
                 existing.CanLineMapping = Request.Form.ContainsKey("CanLineMapping") ? 1 : 0;
-                existing.CanMasterMachine = Request.Form.ContainsKey("CanMasterMachine") ? 1 : 0;
                 existing.CanCostIntelligence = Request.Form.ContainsKey("CanCostIntelligence") ? 1 : 0;
+                existing.CanManagePm = Request.Form.ContainsKey("CanManagePm") ? 1 : 0;
+                existing.CanManagePmEdit = Request.Form.ContainsKey("CanManagePmEdit") ? 1 : 0;
                 existing.RequireApprovalKeluar = Request.Form.ContainsKey("RequireApprovalKeluar");
             }
 
@@ -242,6 +247,106 @@ namespace UPMS.Web.Controllers
 
             await _db.SaveChangesAsync();
             TempData["Success"] = "Password proteksi hapus data berhasil disimpan.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveTechnicianPermissions()
+        {
+            var techUser = await _db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "technician")
+                           ?? await _db.Users.FirstOrDefaultAsync(u => u.Role != null && u.Role.ToLower() == "technician");
+
+            if (techUser == null)
+            {
+                // Repair Postgres Users sequence to prevent duplicate key constraint 23505
+                try
+                {
+                    await _db.Database.ExecuteSqlRawAsync(@"
+                        DO $$
+                        DECLARE
+                            max_user_id INT;
+                        BEGIN
+                            SELECT COALESCE(MAX(id), 0) INTO max_user_id FROM ""Users"";
+                            IF max_user_id > 0 THEN
+                                PERFORM setval(pg_get_serial_sequence('""Users""', 'id'), max_user_id);
+                            END IF;
+                        END $$;
+                    ");
+                }
+                catch { }
+
+                string techHash = BCrypt.Net.BCrypt.HashPassword("technician123", workFactor: 12);
+                techUser = new User
+                {
+                    Username = "technician",
+                    PasswordHash = techHash,
+                    FullName = "Technician Field User",
+                    Role = "technician",
+                    IsActive = true
+                };
+                _db.Users.Add(techUser);
+            }
+
+            techUser.CanBarangKeluar = Request.Form.ContainsKey("CanBarangKeluar") ? 1 : 0;
+            techUser.CanBarangMasuk = Request.Form.ContainsKey("CanBarangMasuk") ? 1 : 0;
+            techUser.CanMasterData = Request.Form.ContainsKey("CanMasterData") ? 1 : 0;
+            techUser.CanRiwayat = Request.Form.ContainsKey("CanRiwayat") ? 1 : 0;
+            techUser.CanManagePm = Request.Form.ContainsKey("CanManagePm") ? 1 : 0;
+            techUser.CanManagePmEdit = Request.Form.ContainsKey("CanManagePmEdit") ? 1 : 0;
+            techUser.CanLineMapping = Request.Form.ContainsKey("CanLineMapping") ? 1 : 0;
+            techUser.CanCostIntelligence = Request.Form.ContainsKey("CanCostIntelligence") ? 1 : 0;
+            techUser.CanSupplierData = Request.Form.ContainsKey("CanSupplierData") ? 1 : 0;
+            techUser.CanAdminMgmt = Request.Form.ContainsKey("CanAdminMgmt") ? 1 : 0;
+            techUser.CanSettings = Request.Form.ContainsKey("CanSettings") ? 1 : 0;
+            techUser.CanEmailSettings = Request.Form.ContainsKey("CanEmailSettings") ? 1 : 0;
+            techUser.RequireApprovalKeluar = Request.Form.ContainsKey("RequireApprovalKeluar");
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Hak akses menu untuk login Technician berhasil disimpan!";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SavePicListMasuk(string picList)
+        {
+            if (!await HasSettingsPermissionAsync())
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (string.IsNullOrWhiteSpace(picList))
+            {
+                TempData["Error"] = "Daftar PIC Barang Masuk tidak boleh kosong.";
+                return RedirectToAction("Index");
+            }
+
+            await UPMS.Web.Helpers.PicHelper.SavePicsBarangMasukAsync(_db, picList);
+            TempData["Success"] = "Daftar PIC (Personel Penerima) Barang Masuk berhasil diperbarui.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SavePicListKeluar(string picList)
+        {
+            if (!await HasSettingsPermissionAsync())
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (string.IsNullOrWhiteSpace(picList))
+            {
+                TempData["Error"] = "Daftar PIC / Teknisi Barang Keluar tidak boleh kosong.";
+                return RedirectToAction("Index");
+            }
+
+            await UPMS.Web.Helpers.PicHelper.SavePicsBarangKeluarAsync(_db, picList);
+            TempData["Success"] = "Daftar PIC (Personel Pengambil) Barang Keluar & Maintenance berhasil diperbarui.";
             return RedirectToAction("Index");
         }
 

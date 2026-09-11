@@ -206,3 +206,4 @@ _ = Task.Run(async () =>
 });
 
 app.Run();
+// Trigger full process restart for DbSeeder column drop migration

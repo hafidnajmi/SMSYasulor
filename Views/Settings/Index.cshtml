@@ -2,377 +2,715 @@
 
 @{
     ViewData["Title"] = "Settings & User Management";
+
+    int totalUsers = Model.Count();
+    int activeUsers = Model.Count(u => u.IsActive);
+    int adminCount = Model.Count(u => string.Equals(u.Role, "admin", StringComparison.OrdinalIgnoreCase) || string.Equals(u.Username, "admin", StringComparison.OrdinalIgnoreCase));
+    int managerCount = Model.Count(u => string.Equals(u.Role, "manager", StringComparison.OrdinalIgnoreCase));
+    int supervisorCount = Model.Count(u => string.Equals(u.Role, "supervisor", StringComparison.OrdinalIgnoreCase));
+    int techCount = Model.Count(u => string.Equals(u.Role, "technician", StringComparison.OrdinalIgnoreCase) || string.Equals(u.Username, "technician", StringComparison.OrdinalIgnoreCase));
+    int viewerCount = totalUsers - (adminCount + managerCount + supervisorCount + techCount);
+    if (viewerCount < 0) viewerCount = 0;
+
+    int getActiveScopeCount(UPMS.Web.Models.Entities.User usr)
+    {
+        int cnt = 0;
+        if (usr.CanMasterData == 1) cnt++;
+        if (usr.CanBarangMasuk == 1) cnt++;
+        if (usr.CanBarangKeluar == 1) cnt++;
+        if (usr.CanRiwayat == 1) cnt++;
+        if (usr.CanCostIntelligence == 1) cnt++;
+        if (usr.CanManagePm == 1) cnt++;
+        if (usr.CanManagePmEdit == 1) cnt++;
+        if (usr.CanLineMapping == 1) cnt++;
+        if (usr.CanSupplierData == 1) cnt++;
+        if (usr.CanAdminMgmt == 1) cnt++;
+        if (usr.CanSettings == 1) cnt++;
+        if (usr.CanEmailSettings == 1) cnt++;
+        return cnt;
+    }
+
+    string getAzureRoleName(string role, string username)
+    {
+        if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase)) return "Global Administrator";
+        return (role?.ToLower()) switch
+        {
+            "admin" => "Global Administrator",
+            "manager" => "Procurement Contributor",
+            "supervisor" => "Operations Contributor",
+            "technician" => "Field Operator",
+            _ => "Reader / Viewer"
+        };
+    }
 }
 
+<style>
+    .ms-card {
+        background: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .ms-card-header {
+        background: #ffffff;
+        border-bottom: 1px solid #E2E8F0;
+        padding: 10px 16px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #1E293B;
+        white-space: nowrap;
+    }
+    .ms-badge-neutral {
+        background-color: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1;
+        font-weight: 500;
+        font-size: 11px;
+        border-radius: 3px;
+        padding: 2px 8px;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    .ms-badge-dark {
+        background-color: #1E293B;
+        color: #ffffff;
+        border: 1px solid #1E293B;
+        font-weight: 500;
+        font-size: 11px;
+        border-radius: 3px;
+        padding: 2px 8px;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    .table-ms {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        white-space: nowrap;
+    }
+    .table-ms th {
+        background-color: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 14px;
+        white-space: nowrap !important;
+    }
+    .table-ms td {
+        border-bottom: 1px solid #F1F5F9;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #1E293B;
+        white-space: nowrap !important;
+    }
+    .table-ms tr:hover td {
+        background-color: #F8FAFC;
+    }
+    .form-switch .form-check-input {
+        width: 2em;
+        height: 1.1em;
+        cursor: pointer;
+    }
+    .form-switch .form-check-input:checked {
+        background-color: #0F4C81;
+        border-color: #0F4C81;
+    }
+</style>
+
 <!-- Title Header & Actions -->
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Settings &amp; User Management</h3>
-        <p class="text-muted small mb-0">Pengelolaan pengguna sistem, peranan (role), hak akses menu, dan syarat approval transaksi.</p>
+        <h4 class="fw-semibold mb-1" style="color: #0F172A;">Settings &amp; User Management</h4>
+        <p class="text-secondary small mb-0">Role-Based Access Control (RBAC), user accounts, and system configuration.</p>
     </div>
-    <div class="d-flex gap-2">
-        <button type="button" class="btn btn-ems-primary btn-sm" onclick="openAddUserModal()">
-            <i class="bi bi-person-plus me-1"></i>Tambah User Baru
+    <div>
+        <button type="button" class="btn btn-ems-primary btn-sm px-3" onclick="openAddUserModal()">
+            Tambah User Baru
         </button>
     </div>
 </div>
 
-<!-- 1. User List Card -->
-<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
-    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
-        <i class="bi bi-people-fill me-2"></i>Daftar Pengguna Sistem (@Model.Count() User)
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="ms-card p-3 h-100">
+            <div class="text-secondary small font-monospace fw-semibold text-uppercase" style="font-size: 11px;">Total Registered Users</div>
+            <div class="fs-3 fw-semibold mt-1" style="color: #0F172A;">
+                @totalUsers.ToString("N0") <span class="fs-6 text-muted fw-normal">Accounts</span>
+            </div>
+            <div class="text-secondary small mt-1">@activeUsers of @totalUsers accounts currently active</div>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table-ems mb-0 align-middle">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">ID</th>
-                        <th>USERNAME</th>
-                        <th>NAMA LENGKAP</th>
-                        <th>ROLE</th>
-                        <th class="text-center">STATUS</th>
-                        <th>LAST LOGIN</th>
-                        <th class="text-center" style="width: 140px;">AKSI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model.Any())
-                    {
-                        foreach (var u in Model)
-                        {
-                            bool isRootAdmin = string.Equals(u.Username, "admin", StringComparison.OrdinalIgnoreCase);
-                            string roleBadgeClass = u.Role?.ToLower() switch
-                            {
-                                "admin" => "bg-primary text-white",
-                                "supervisor" => "bg-purple text-white",
-                                "manager" => "bg-info text-dark",
-                                "technician" => "bg-teal text-white",
-                                _ => "bg-secondary text-white"
-                            };
-
-                            <tr class="table-row-hover">
-                                <td class="text-secondary small font-monospace">@u.Id</td>
-                                <td class="fw-bold text-primary font-monospace">
-                                    @u.Username
-                                    @if (isRootAdmin)
-                                    {
-                                        <span class="badge bg-warning text-dark border ms-1" style="font-size: 9px;">ROOT</span>
-                                    }
-                                </td>
-                                <td class="fw-semibold text-dark">@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
-                                <td>
-                                    <span class="badge @roleBadgeClass px-2 py-1" style="font-size: 10px; text-transform: uppercase;">
-                                        @u.Role
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    @if (u.IsActive)
-                                    {
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 10px;">
-                                            <i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Active
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 10px;">
-                                            <i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i>Inactive
-                                        </span>
-                                    }
-                                </td>
-                                <td class="small text-muted font-monospace">
-                                    @(u.LastLogin.HasValue ? u.LastLogin.Value.ToString("dd MMM yyyy HH:mm") : "Never")
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex align-items-center justify-content-center gap-1">
-                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 btn-edit-user"
-                                                style="font-size:11px; height:24px; line-height:22px;"
-                                                data-user='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(u))'
-                                                onclick="handleEditUserClick(this)"
-                                                title="Edit User & Permissions">
-                                            <i class="bi bi-pencil me-1"></i>Edit
-                                        </button>
-
-                                        @if (!isRootAdmin)
-                                        {
-                                            <form asp-action="ToggleStatus" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="userId" value="@u.Id" />
-                                                <button type="submit" class="btn btn-sm @(u.IsActive ? "btn-outline-warning" : "btn-outline-success") py-0 px-2" style="font-size:11px; height:24px; line-height:22px;"
-                                                        title="@(u.IsActive ? "Deactivate User" : "Activate User")">
-                                                    <i class="bi @(u.IsActive ? "bi-person-x" : "bi-person-check")"></i>
-                                                </button>
-                                            </form>
-
-                                            <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'user @u.Username');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="userId" value="@u.Id" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:11px; height:24px; line-height:22px;" title="Delete User">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-5">
-                                Belum ada data pengguna tersimpan.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <div class="col-md-4">
+        <div class="ms-card p-3 h-100">
+            <div class="text-secondary small font-monospace fw-semibold text-uppercase" style="font-size: 11px;">Role Assignments Breakdown</div>
+            <div class="d-flex flex-nowrap gap-1 mt-2 overflow-auto">
+                <span class="ms-badge-dark text-nowrap">Admin: @adminCount</span>
+                <span class="ms-badge-neutral text-nowrap">Manager: @managerCount</span>
+                <span class="ms-badge-neutral text-nowrap">Supervisor: @supervisorCount</span>
+                <span class="ms-badge-neutral text-nowrap">Tech: @techCount</span>
+            </div>
+            <div class="text-secondary small mt-2">Built-in RBAC roles enforced</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ms-card p-3 h-100">
+            <div class="text-secondary small font-monospace fw-semibold text-uppercase" style="font-size: 11px;">Granular Scopes Managed</div>
+            <div class="fs-3 fw-semibold mt-1" style="color: #0F172A;">
+                13 <span class="fs-6 text-muted fw-normal">Module Scopes</span>
+            </div>
+            <div class="text-secondary small mt-1">Fine-grained access switches per user</div>
         </div>
     </div>
 </div>
 
-<!-- 2. Matriks Standar Hak Akses Peranan (Role) Card (Placed Directly Below User List) -->
-<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
-    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
-        <i class="bi bi-grid-3x3-gap me-2"></i>Matriks Standar Hak Akses Peranan (Role)
+<!-- 1. User List Table Card -->
+<div class="ms-card mb-4">
+    <div class="ms-card-header d-flex align-items-center justify-content-between">
+        <span>Daftar Pengguna Sistem (@Model.Count() User)</span>
+        <span class="text-secondary font-monospace" style="font-size:11px; font-weight:normal;">RBAC Security Policy Active</span>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table-ems mb-0 align-middle">
-                <thead>
+    <div class="table-responsive">
+        <table class="table-ms align-middle">
+            <thead>
+                <tr>
+                    <th class="text-nowrap" style="width: 60px;">ID</th>
+                    <th class="text-nowrap">USER IDENTITY</th>
+                    <th class="text-nowrap">NAMA LENGKAP</th>
+                    <th class="text-nowrap">ROLE ASSIGNMENT</th>
+                    <th class="text-nowrap">ASSIGNED SCOPES &amp; ACCESS</th>
+                    <th class="text-center text-nowrap">STATUS</th>
+                    <th class="text-nowrap">LAST LOGIN</th>
+                    <th class="text-center text-nowrap" style="min-width: 180px;">AKSI</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var u in Model)
+                    {
+                        bool isRootAdmin = string.Equals(u.Username, "admin", StringComparison.OrdinalIgnoreCase);
+                        int scopeCount = getActiveScopeCount(u);
+                        string azureRoleName = getAzureRoleName(u.Role, u.Username);
+
+                        <tr>
+                            <td class="text-muted font-monospace small text-nowrap">#@u.Id</td>
+                            <td class="text-nowrap">
+                                <span class="fw-semibold text-dark font-monospace" style="font-size:13px;">@u.Username</span>
+                                @if (isRootAdmin)
+                                {
+                                    <span class="badge bg-light text-secondary border font-monospace ms-1" style="font-size: 9px;">ROOT</span>
+                                }
+                            </td>
+                            <td class="text-secondary text-nowrap">@(string.IsNullOrWhiteSpace(u.FullName) ? "-" : u.FullName)</td>
+                            <td class="text-nowrap">
+                                @if (isRootAdmin || u.Role?.ToLower() == "admin")
+                                {
+                                    <span class="ms-badge-dark text-nowrap">@azureRoleName</span>
+                                }
+                                else
+                                {
+                                    <span class="ms-badge-neutral text-nowrap">@azureRoleName</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @if (isRootAdmin || u.Role?.ToLower() == "admin")
+                                {
+                                    <span class="text-secondary font-monospace text-nowrap" style="font-size:11px;">Full Access (13/13 Scopes)</span>
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center gap-1 flex-nowrap text-nowrap">
+                                        <span class="text-secondary font-monospace me-1 text-nowrap" style="font-size:11px;">@scopeCount/13 Scopes:</span>
+                                        @if (u.CanMasterData == 1) { <span class="badge bg-light text-secondary border px-2 py-1 text-nowrap" style="font-size:10px; font-weight:normal;">Catalog</span> }
+                                        @if (u.CanBarangMasuk == 1 || u.CanBarangKeluar == 1) { <span class="badge bg-light text-secondary border px-2 py-1 text-nowrap" style="font-size:10px; font-weight:normal;">Stock Tx</span> }
+                                        @if (u.CanManagePm == 1) { <span class="badge bg-light text-secondary border px-2 py-1 text-nowrap" style="font-size:10px; font-weight:normal;">PM Maint</span> }
+                                        @if (u.CanAdminMgmt == 1) { <span class="badge bg-light text-secondary border px-2 py-1 text-nowrap" style="font-size:10px; font-weight:normal;">Admin Portal</span> }
+                                        @if (u.RequireApprovalKeluar) { <span class="badge bg-light text-danger border px-2 py-1 text-nowrap" style="font-size:10px; font-weight:normal;">Approval Req</span> }
+                                    </div>
+                                }
+                            </td>
+                            <td class="text-center text-nowrap">
+                                @if (u.IsActive)
+                                {
+                                    <span class="text-success font-monospace text-nowrap" style="font-size: 11px;">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary font-monospace text-nowrap" style="font-size: 11px;">Inactive</span>
+                                }
+                            </td>
+                            <td class="small text-muted font-monospace text-nowrap">
+                                @(u.LastLogin.HasValue ? u.LastLogin.Value.ToString("dd MMM yyyy HH:mm") : "Never")
+                            </td>
+                            <td class="text-center text-nowrap">
+                                <div class="d-flex align-items-center justify-content-center gap-1 text-nowrap">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-edit-user text-nowrap"
+                                            style="font-size:11px; height:24px; line-height:22px;"
+                                            data-user='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(u))'
+                                            onclick="handleEditUserClick(this)">
+                                        RBAC
+                                    </button>
+
+                                    @if (!isRootAdmin)
+                                    {
+                                        <form asp-action="ToggleStatus" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2 text-nowrap" style="font-size:11px; height:24px; line-height:22px;"
+                                                    title="@(u.IsActive ? "Deactivate User" : "Activate User")">
+                                                @(u.IsActive ? "Disable" : "Enable")
+                                            </button>
+                                        </form>
+
+                                        <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return executeSecureDelete(this, 'user @u.Username');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2 text-nowrap" style="font-size:11px; height:24px; line-height:22px;" title="Delete User">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
                     <tr>
-                        <th>ROLE</th>
-                        <th class="text-center">MASTER DATA</th>
-                        <th class="text-center">BARANG MASUK/KELUAR</th>
-                        <th class="text-center">COST INTEL</th>
-                        <th class="text-center">SUPPLIER</th>
-                        <th class="text-center">SETTINGS</th>
-                        <th class="text-center">APPROVAL KELUAR</th>
+                        <td colspan="8" class="text-center text-muted py-4 text-nowrap">
+                            Belum ada data pengguna tersimpan.
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="text-dark font-monospace">ADMIN</td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Full Access</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
-                    </tr>
-                    <tr>
-                        <td class="text-dark font-monospace">SUPERVISOR</td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
-                    </tr>
-                    <tr>
-                        <td class="text-dark font-monospace">MANAGER</td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-check text-success me-2"></i><span class="text-dark">Bebas Approval</span></div></td>
-                    </tr>
-                    <tr>
-                        <td class="text-dark font-monospace">TECHNICIAN</td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-lock text-secondary me-2"></i><span class="text-dark">Wajib Approval</span></div></td>
-                    </tr>
-                    <tr>
-                        <td class="text-dark font-monospace">USER</td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-check-circle-fill text-success me-2"></i><span class="text-dark">Ya</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 100px;"><i class="bi bi-x-circle text-muted me-2"></i><span class="text-dark">Tidak</span></div></td>
-                        <td class="text-center"><div class="d-inline-flex align-items-center justify-content-start" style="width: 130px;"><i class="bi bi-shield-lock text-secondary me-2"></i><span class="text-dark">Wajib Approval</span></div></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 2. Role Matrix Reference Card -->
+<div class="ms-card mb-4">
+    <div class="ms-card-header">
+        Matriks Standar Hak Akses Peranan (Built-In Roles)
+    </div>
+    <div class="table-responsive">
+        <table class="table-ms align-middle">
+            <thead>
+                <tr>
+                    <th class="text-nowrap">Role</th>
+                    <th class="text-center text-nowrap">Master Data &amp; Catalog</th>
+                    <th class="text-center text-nowrap">Stock Transactions</th>
+                    <th class="text-center text-nowrap">Cost Intel &amp; Price</th>
+                    <th class="text-center text-nowrap">Supplier Data</th>
+                    <th class="text-center text-nowrap">System Settings</th>
+                    <th class="text-center text-nowrap">Approval Keluar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-semibold text-dark text-nowrap">Global Administrator (admin)</td>
+                    <td class="text-center text-nowrap"><span class="text-success font-monospace" style="font-size:11px;">Full Control</span></td>
+                    <td class="text-center text-nowrap"><span class="text-success font-monospace" style="font-size:11px;">Full Control</span></td>
+                    <td class="text-center text-nowrap"><span class="text-success font-monospace" style="font-size:11px;">Full Control</span></td>
+                    <td class="text-center text-nowrap"><span class="text-success font-monospace" style="font-size:11px;">Full Control</span></td>
+                    <td class="text-center text-nowrap"><span class="text-success font-monospace" style="font-size:11px;">Full Control</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Bebas Approval</span></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold text-dark text-nowrap">Operations Contributor (supervisor)</td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Bebas Approval</span></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold text-dark text-nowrap">Procurement Contributor (manager)</td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Bebas Approval</span></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold text-dark text-nowrap">Field Operator (technician)</td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-danger font-monospace" style="font-size:11px;">Wajib Approval</span></td>
+                </tr>
+                <tr>
+                    <td class="fw-semibold text-dark text-nowrap">Reader / Viewer (user)</td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-dark font-monospace" style="font-size:11px;">Ya</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-muted font-monospace" style="font-size:11px;">Tidak</span></td>
+                    <td class="text-center text-nowrap"><span class="text-danger font-monospace" style="font-size:11px;">Wajib Approval</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 2B. Pengaturan Hak Akses Technician Card -->
+@{
+    var techUserEntity = ViewBag.TechUser as UPMS.Web.Models.Entities.User;
+}
+<div class="ms-card mb-4">
+    <div class="ms-card-header d-flex justify-content-between align-items-center">
+        <span>Pengaturan Akses Menu "Login as Technician" (Field Operator Scope)</span>
+        <span class="text-secondary font-monospace" style="font-size: 11px;">Account: technician</span>
+    </div>
+    <div class="p-3">
+        <form asp-action="SaveTechnicianPermissions" method="post">
+            @Html.AntiForgeryToken()
+            <p class="text-secondary small mb-3">
+                Tentukan scope dan hak akses modul yang dapat diakses oleh user saat menggunakan fitur <strong>Login as Technician</strong>:
+            </p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanBarangKeluar" value="1" id="techBk" @(techUserEntity?.CanBarangKeluar == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techBk">Barang Keluar</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanBarangMasuk" value="1" id="techBm" @(techUserEntity?.CanBarangMasuk == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techBm">Barang Masuk</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanMasterData" value="1" id="techMd" @(techUserEntity?.CanMasterData == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techMd">Spareparts Catalog</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanRiwayat" value="1" id="techRw" @(techUserEntity?.CanRiwayat == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techRw">Transaction Logs</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanManagePm" value="1" id="techPm" @(techUserEntity?.CanManagePm == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techPm">Manage PM (View)</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanManagePmEdit" value="1" id="techPmEdit" @(techUserEntity?.CanManagePmEdit == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techPmEdit">Manage PM (Edit)</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanLineMapping" value="1" id="techLm" @(techUserEntity?.CanLineMapping == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techLm">Line Compatibility</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanCostIntelligence" value="1" id="techCi" @(techUserEntity?.CanCostIntelligence == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techCi">Cost Intelligence</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanSupplierData" value="1" id="techSup" @(techUserEntity?.CanSupplierData == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techSup">Master Supplier</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanAdminMgmt" value="1" id="techAdm" @(techUserEntity?.CanAdminMgmt == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techAdm">Admin Portal</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanSettings" value="1" id="techSet" @(techUserEntity?.CanSettings == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techSet">Settings &amp; Users</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="CanEmailSettings" value="1" id="techEms" @(techUserEntity?.CanEmailSettings == 1 ? "checked" : "") />
+                        <label class="form-check-label text-dark small fw-semibold text-nowrap" for="techEms">Email Settings</label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-12">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="RequireApprovalKeluar" value="true" id="techApp" @(techUserEntity?.RequireApprovalKeluar == true ? "checked" : "") />
+                        <label class="form-check-label text-danger small fw-semibold text-nowrap" for="techApp">Wajib Approval Admin</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                <div class="text-secondary small">
+                    Hak akses ini berlaku saat pengguna menekan tombol <strong>Login as Technician</strong>.
+                </div>
+                <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap">
+                    Simpan Hak Akses Technician
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <!-- 3. Password Proteksi Hapus Data Card -->
-<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
-    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
-        <i class="bi bi-shield-lock-fill me-2 text-danger"></i>Pengaturan Password Proteksi Hapus Data
+<div class="ms-card mb-4">
+    <div class="ms-card-header">
+        Pengaturan Password Proteksi Hapus Data
     </div>
-    <div class="card-body p-3">
+    <div class="p-3">
         <form asp-action="SaveDeletePassword" method="post" style="max-width: 720px;">
             @Html.AntiForgeryToken()
             <div class="mb-2">
-                <label class="form-label small fw-bold text-secondary mb-1">Password Otorisasi Hapus (Delete Action Security Password)</label>
+                <label class="form-label small fw-semibold text-secondary mb-1">Password Otorisasi Hapus</label>
                 <div class="d-flex align-items-center gap-2">
                     <div class="input-group input-group-sm" style="max-width: 480px;">
-                        <span class="input-group-text bg-light"><i class="bi bi-key-fill text-danger"></i></span>
                         <input type="password" name="deletePassword" id="deleteProtectionPasswordInput" class="form-control"
                                value="@ViewBag.DeleteProtectionPassword" placeholder="Masukkan password proteksi hapus..." required />
-                        <button class="btn btn-outline-secondary" type="button" onclick="toggleDeletePasswordVisibility()" title="Tampilkan/Sembunyikan Password">
-                            <i class="bi bi-eye" id="deletePasswordEyeIcon"></i>
+                        <button class="btn btn-outline-secondary text-nowrap" type="button" onclick="toggleDeletePasswordVisibility()" id="deletePasswordToggleBtn">
+                            Tampilkan
                         </button>
                     </div>
-                    <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap" style="height: 31px; line-height: 1.5;">
-                        <i class="bi bi-shield-check me-1"></i>Simpan Password
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap" style="height: 31px;">
+                        Simpan Password
                     </button>
                 </div>
                 <div class="form-text text-muted mt-1" style="font-size:11px;">
-                    Password ini wajib dimasukkan oleh pengguna non-admin ketika melakukan tindakan <b>Hapus (Delete)</b> data.
+                    Password ini wajib dimasukkan pengguna non-admin ketika menghapus data.
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal: Add / Edit User Form -->
+<!-- 4. Daftar PIC Terpisah Card Row -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="ms-card h-100">
+            <div class="ms-card-header">
+                Daftar PIC Barang Masuk (Penerima Barang)
+            </div>
+            <div class="p-3">
+                <form asp-action="SavePicListMasuk" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Daftar PIC Penerima (Koma / Baris Baru)</label>
+                        <div class="mb-2">
+                            <textarea name="picList" class="form-control form-control-sm font-monospace" rows="4" placeholder="Contoh: Raisa, Priyanto, Rohmadi..." required>@ViewBag.PicListMasuk</textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-text text-muted" style="font-size:11px;">
+                                Pilihan PIC pada menu Barang Masuk.
+                            </div>
+                            <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap" style="height: 31px;">
+                                Simpan PIC Masuk
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="ms-card h-100">
+            <div class="ms-card-header">
+                Daftar PIC Barang Keluar &amp; Teknisi Maintenance
+            </div>
+            <div class="p-3">
+                <form asp-action="SavePicListKeluar" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Daftar PIC / Teknisi (Koma / Baris Baru)</label>
+                        <div class="mb-2">
+                            <textarea name="picList" class="form-control form-control-sm font-monospace" rows="4" placeholder="Contoh: Adit, Agus, Aji, Andra..." required>@ViewBag.PicListKeluar</textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-text text-muted" style="font-size:11px;">
+                                Pilihan PIC pada Barang Keluar &amp; Maintenance.
+                            </div>
+                            <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap" style="height: 31px;">
+                                Simpan PIC Keluar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: RBAC User & Permission Drawer -->
 <div class="modal fade" id="userModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
-                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;" id="userModalTitle"><i class="bi bi-person-gear me-2"></i>Tambah User Baru</h6>
+        <div class="modal-content" style="border-radius:4px; border: 1px solid #CBD5E1;">
+            <div class="modal-header py-2 px-3 bg-dark text-white" style="border-radius:0;">
+                <h6 class="modal-title fw-semibold mb-0" style="font-size:13px;" id="userModalTitle">
+                    Manage User Access &amp; Scope Assignments
+                </h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <form id="userForm" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Id" id="userIdInput" value="0" />
 
-                <div class="modal-body p-3 bg-light" style="max-height: 75vh; overflow-y: auto;">
+                <div class="modal-body p-3 bg-light" style="max-height: 78vh; overflow-y: auto;">
                     <!-- User Info Section -->
                     <div class="bg-white p-3 border mb-3">
-                        <div class="fw-bold small text-primary mb-2 border-bottom pb-1">
-                            <i class="bi bi-person-badge me-1"></i>Informasi Pengguna
+                        <div class="fw-semibold small text-dark mb-2 border-bottom pb-1">
+                            Identity &amp; Role Assignment
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1">Username (Login)</label>
-                                <input type="text" name="Username" id="usernameInput" class="form-control form-control-sm" required />
+                                <label class="form-label small fw-semibold text-secondary mb-1">Username</label>
+                                <input type="text" name="Username" id="usernameInput" class="form-control form-control-sm font-monospace" required />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1">Nama Lengkap</label>
+                                <label class="form-label small fw-semibold text-secondary mb-1">Nama Lengkap</label>
                                 <input type="text" name="FullName" id="fullNameInput" class="form-control form-control-sm" />
                             </div>
                         </div>
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1">Password</label>
+                                <label class="form-label small fw-semibold text-secondary mb-1">Password</label>
                                 <input type="password" name="rawPassword" id="passwordInput" class="form-control form-control-sm" placeholder="Password" />
-                                <span class="form-text text-muted" id="passwordHelp" style="font-size:11px; display:none;">Biarkan kosong jika tidak merubah password.</span>
+                                <span class="form-text text-muted" id="passwordHelp" style="font-size:11px; display:none;">Biarkan kosong jika tidak mengubah password.</span>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1">Peranan (Role)</label>
+                                <label class="form-label small fw-semibold text-secondary mb-1">Role Preset</label>
                                 <select name="Role" id="roleSelect" class="form-select form-select-sm" onchange="onRoleSelectChange(this.value, true)">
-                                    <option value="admin">Admin</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="technician">Technician</option>
-                                    <option value="user" selected>User</option>
+                                    <option value="admin">Global Administrator (Full Access All 12 Scopes)</option>
+                                    <option value="manager">Procurement Contributor (Catalog, Stock, Cost Intel, Supplier)</option>
+                                    <option value="supervisor">Operations Contributor (PM Maint, Line Compatibility, Stock)</option>
+                                    <option value="technician">Field Operator (PM Maintenance, Barang Masuk/Keluar)</option>
+                                    <option value="user" selected>Reader / Viewer (Read-Only Catalog &amp; Transactions)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Admin Mutlak Banner -->
-                    <div id="adminLockBanner" class="alert alert-primary py-2 px-3 mb-3 border-primary shadow-sm" style="border-radius:0; display:none;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-shield-check fs-5"></i>
-                            <div>
-                                <strong class="small d-block">Hak Akses Admin Mutlak (Full Access)</strong>
-                                <span class="small opacity-75" style="font-size:11px;">Pengguna dengan role <b>Admin</b> otomatis memiliki seluruh hak akses modul sistem.</span>
-                            </div>
-                        </div>
+                    <!-- Admin Lock Banner -->
+                    <div id="adminLockBanner" class="alert alert-secondary py-2 px-3 mb-3 border font-monospace small" style="border-radius:0; display:none;">
+                        Peranan <strong>Global Administrator</strong> otomatis mengaktifkan seluruh 12 scope modul tanpa batasan.
                     </div>
 
-                    <!-- Permissions Grid -->
+                    <!-- Scope Matrix -->
                     <div class="bg-white p-3 border">
-                        <div class="fw-bold small text-primary mb-2 border-bottom pb-1 d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-key me-1"></i>Hak Akses Menu &amp; Approval</span>
-                            <span class="text-muted fw-normal" style="font-size:11px;">Checklist menu yang dapat diakses</span>
+                        <div class="fw-semibold small text-dark mb-2 border-bottom pb-1">
+                            Scope Matrix &amp; Permission Switches
                         </div>
 
                         <div class="row g-3">
-                            <!-- Group 1: Master Data -->
+                            <!-- Scope Block 1: Master Data & Catalog -->
                             <div class="col-md-6">
-                                <div class="p-2 border bg-light h-100">
-                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-boxes me-1"></i>Master Data</div>
-                                    <div class="form-check form-check-sm mb-1">
+                                <div class="p-3 border bg-light h-100">
+                                    <div class="fw-semibold text-dark mb-2" style="font-size:12px;">Scope 1: Master Data &amp; Catalog</div>
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanMasterData" value="1" id="cbMaster">
-                                        <label class="form-check-label small" for="cbMaster">Spareparts Catalog</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbMaster">Spareparts Catalog</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Akses katalog barang, stok, dan safety stock.</div>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanLineMapping" value="1" id="cbLineMap">
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbLineMap">Line Compatibility</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Pemetaan kompatibilitas sparepart per line.</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Group 2: Transactions -->
+                            <!-- Scope Block 2: Stock Operations -->
                             <div class="col-md-6">
-                                <div class="p-2 border bg-light h-100">
-                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-arrow-left-right me-1"></i>Transactions</div>
-                                    <div class="form-check form-check-sm mb-1">
+                                <div class="p-3 border bg-light h-100">
+                                    <div class="fw-semibold text-dark mb-2" style="font-size:12px;">Scope 2: Stock Operations</div>
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanBarangMasuk" value="1" id="cbMasuk">
-                                        <label class="form-check-label small" for="cbMasuk">Barang Masuk</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbMasuk">Barang Masuk</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Input transaksi penerimaan barang/stok baru.</div>
                                     </div>
-                                    <div class="form-check form-check-sm mb-1">
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanBarangKeluar" value="1" id="cbKeluar">
-                                        <label class="form-check-label small" for="cbKeluar">Barang Keluar</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbKeluar">Barang Keluar</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Input transaksi pengeluaran barang/sparepart.</div>
                                     </div>
-                                    <div class="form-check form-check-sm mb-2">
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanRiwayat" value="1" id="cbRiwayat">
-                                        <label class="form-check-label small" for="cbRiwayat">Transaction Logs</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbRiwayat">Transaction History</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Melihat log audit &amp; riwayat transaksi.</div>
                                     </div>
-                                    <div class="border-top pt-2">
-                                        <div class="form-check form-check-sm">
-                                            <input class="form-check-input perm-cb text-warning" type="checkbox" name="RequireApprovalKeluar" value="true" id="cbReqApproval">
-                                            <label class="form-check-label small fw-bold text-warning-emphasis" for="cbReqApproval">Barang Keluar Wajib Approval Admin</label>
+                                    <div class="border-top pt-2 mt-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input perm-cb text-danger" type="checkbox" name="RequireApprovalKeluar" value="true" id="cbReqApproval">
+                                            <label class="form-check-label small fw-bold text-danger" for="cbReqApproval">
+                                                Require Admin Approval for Outgoing Goods
+                                            </label>
+                                            <div class="text-muted" style="font-size:10.5px;">Pengeluaran barang wajib disetujui Admin.</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Group 3: Analytics & Mapping -->
+                            <!-- Scope Block 3: Maintenance & Cost Intelligence -->
                             <div class="col-md-6">
-                                <div class="p-2 border bg-light h-100">
-                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-graph-up-arrow me-1"></i>Analytics &amp; Mapping</div>
-                                    <div class="form-check form-check-sm mb-1">
+                                <div class="p-3 border bg-light h-100">
+                                    <div class="fw-semibold text-dark mb-2" style="font-size:12px;">Scope 3: Maintenance &amp; Analytics</div>
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanCostIntelligence" value="1" id="cbCostIntel">
-                                        <label class="form-check-label small" for="cbCostIntel">Cost Intelligence</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbCostIntel">Cost Intelligence</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Analisis biaya &amp; penawaran harga vendor.</div>
                                     </div>
-                                    <div class="form-check form-check-sm mb-1">
-                                        <input class="form-check-input perm-cb" type="checkbox" name="CanMasterMachine" value="1" id="cbMasterMach">
-                                        <label class="form-check-label small" for="cbMasterMach">Master Machine</label>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanManagePm" value="1" id="cbManagePm">
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbManagePm">PM Schedule Viewer</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Melihat jadwal Preventive Maintenance (PM).</div>
                                     </div>
-                                    <div class="form-check form-check-sm mb-1">
-                                        <input class="form-check-input perm-cb" type="checkbox" name="CanLineMapping" value="1" id="cbLineMap">
-                                        <label class="form-check-label small" for="cbLineMap">Line Compatibility</label>
-                                    </div>
-                                    <div class="form-check form-check-sm">
-                                        <input class="form-check-input perm-cb" type="checkbox" name="CanSupplierData" value="1" id="cbSupplier">
-                                        <label class="form-check-label small" for="cbSupplier">Master Supplier</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanManagePmEdit" value="1" id="cbManagePmEdit">
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbManagePmEdit">PM Schedule Editor</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Membuat, mengedit &amp; menghapus jadwal PM.</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Group 4: Administration -->
+                            <!-- Scope Block 4: Administration & Governance -->
                             <div class="col-md-6">
-                                <div class="p-2 border bg-light h-100">
-                                    <div class="fw-bold text-secondary mb-2" style="font-size:11px;"><i class="bi bi-shield-lock me-1"></i>Administration</div>
-                                    <div class="form-check form-check-sm mb-1">
+                                <div class="p-3 border bg-light h-100">
+                                    <div class="fw-semibold text-dark mb-2" style="font-size:12px;">Scope 4: Administration &amp; Governance</div>
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanAdminMgmt" value="1" id="cbAdmin">
-                                        <label class="form-check-label small" for="cbAdmin">Admin Portal</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbAdmin">Admin Management Portal</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Portal perbandingan procurement &amp; persetujuan.</div>
                                     </div>
-                                    <div class="form-check form-check-sm mb-1">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input perm-cb" type="checkbox" name="CanSupplierData" value="1" id="cbSupplier">
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbSupplier">Master Supplier</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Pengelolaan vendor &amp; supplier resmi.</div>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanSettings" value="1" id="cbSettings">
-                                        <label class="form-check-label small" for="cbSettings">Settings &amp; Users</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbSettings">Settings &amp; User Management</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Manajemen akun pengguna &amp; hak akses RBAC.</div>
                                     </div>
-                                    <div class="form-check form-check-sm">
+                                    <div class="form-check form-switch">
                                         <input class="form-check-input perm-cb" type="checkbox" name="CanEmailSettings" value="1" id="cbEmailSettings">
-                                        <label class="form-check-label small" for="cbEmailSettings">Email Settings</label>
+                                        <label class="form-check-label small fw-semibold text-dark" for="cbEmailSettings">Email &amp; Auto-Alert Settings</label>
+                                        <div class="text-muted" style="font-size:10.5px;">Pengaturan SMTP &amp; notifikasi email otomatis.</div>
                                     </div>
                                 </div>
                             </div>
@@ -381,9 +719,9 @@
                 </div>
 
                 <div class="modal-footer py-2 px-3 bg-light">
-                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-ems-primary btn-sm px-3">
-                        <i class="bi bi-save me-1"></i>Simpan User
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-3 text-nowrap">
+                        Simpan Perubahan RBAC
                     </button>
                 </div>
             </form>
@@ -395,18 +733,18 @@
     <script>
         function toggleDeletePasswordVisibility() {
             const input = document.getElementById('deleteProtectionPasswordInput');
-            const icon = document.getElementById('deletePasswordEyeIcon');
+            const btn = document.getElementById('deletePasswordToggleBtn');
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.className = 'bi bi-eye-slash';
+                btn.textContent = 'Sembunyikan';
             } else {
                 input.type = 'password';
-                icon.className = 'bi bi-eye';
+                btn.textContent = 'Tampilkan';
             }
         }
 
         function openAddUserModal() {
-            document.getElementById('userModalTitle').innerHTML = '<i class="bi bi-person-plus me-2"></i>Tambah User Baru';
+            document.getElementById('userModalTitle').textContent = 'Tambah User Baru — RBAC Access';
             document.getElementById('userForm').action = '/Settings/CreateUser';
             document.getElementById('userIdInput').value = 0;
             document.getElementById('usernameInput').value = '';
@@ -420,8 +758,12 @@
             document.getElementById('roleSelect').disabled = false;
             onRoleSelectChange('user');
 
-            const modal = new bootstrap.Modal(document.getElementById('userModal'));
-            modal.show();
+            const modalElement = document.getElementById('userModal');
+            let modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (!modalInstance) {
+                modalInstance = new bootstrap.Modal(modalElement);
+            }
+            modalInstance.show();
         }
 
         function handleEditUserClick(btn) {
@@ -448,7 +790,7 @@
         function openEditUserModal(user) {
             if (!user) return;
             const username = user.Username || user.username || '';
-            document.getElementById('userModalTitle').innerHTML = `<i class="bi bi-person-gear me-2"></i>Edit User — ${username}`;
+            document.getElementById('userModalTitle').textContent = `Manage Access (${username})`;
             document.getElementById('userForm').action = '/Settings/EditUser';
             document.getElementById('userIdInput').value = getPropVal(user, 'Id', 'id');
 
@@ -476,7 +818,6 @@
                 document.getElementById('adminLockBanner').style.display = 'none';
                 document.querySelectorAll('.perm-cb').forEach(cb => cb.disabled = false);
 
-                // Set explicit user permission values safely from database
                 setCbChecked('cbMaster', getPropVal(user, 'CanMasterData', 'canMasterData') === 1);
                 setCbChecked('cbLineMap', getPropVal(user, 'CanLineMapping', 'canLineMapping') === 1);
                 setCbChecked('cbSupplier', getPropVal(user, 'CanSupplierData', 'canSupplierData') === 1);
@@ -488,8 +829,9 @@
                 const reqApp = getPropVal(user, 'RequireApprovalKeluar', 'requireApprovalKeluar');
                 setCbChecked('cbReqApproval', reqApp === true || reqApp === 1);
 
-                setCbChecked('cbMasterMach', getPropVal(user, 'CanMasterMachine', 'canMasterMachine') === 1);
                 setCbChecked('cbCostIntel', getPropVal(user, 'CanCostIntelligence', 'canCostIntelligence') === 1);
+                setCbChecked('cbManagePm', getPropVal(user, 'CanManagePm', 'canManagePm') === 1);
+                setCbChecked('cbManagePmEdit', getPropVal(user, 'CanManagePmEdit', 'canManagePmEdit') === 1);
                 setCbChecked('cbSettings', getPropVal(user, 'CanSettings', 'canSettings') === 1);
                 setCbChecked('cbEmailSettings', getPropVal(user, 'CanEmailSettings', 'canEmailSettings') === 1);
             }
@@ -521,22 +863,21 @@
                 banner.style.display = 'none';
                 cbs.forEach(cb => cb.disabled = false);
 
-                // Role Presets only apply if the user explicitly changes the role dropdown manually
                 if (isManualChange) {
                     if (role === 'supervisor') {
-                        setCbValues(true, true, true, false, true, true, true, false, true, true, false, false);
+                        setCbValues(true, true, true, false, true, true, true, false, true, false, false);
                     } else if (role === 'manager') {
-                        setCbValues(true, false, true, false, false, false, true, false, true, true, false, false);
+                        setCbValues(true, false, true, false, false, false, true, false, true, false, false);
                     } else if (role === 'technician') {
-                        setCbValues(true, true, false, false, true, true, true, true, true, false, false, false);
+                        setCbValues(true, true, false, false, true, true, true, true, false, false, false);
                     } else { // user
-                        setCbValues(true, false, false, false, true, true, true, true, false, false, false, false);
+                        setCbValues(true, false, false, false, true, true, true, true, false, false, false);
                     }
                 }
             }
         }
 
-        function setCbValues(master, lineMap, supplier, admin, masuk, keluar, riwayat, reqApproval, masterMach, costIntel, set, emailSet) {
+        function setCbValues(master, lineMap, supplier, admin, masuk, keluar, riwayat, reqApproval, costIntel, set, emailSet) {
             setCbChecked('cbMaster', master);
             setCbChecked('cbLineMap', lineMap);
             setCbChecked('cbSupplier', supplier);
@@ -545,10 +886,10 @@
             setCbChecked('cbKeluar', keluar);
             setCbChecked('cbRiwayat', riwayat);
             setCbChecked('cbReqApproval', reqApproval);
-            setCbChecked('cbMasterMach', masterMach);
             setCbChecked('cbCostIntel', costIntel);
             setCbChecked('cbSettings', set);
             setCbChecked('cbEmailSettings', emailSet);
         }
     </script>
 }
+

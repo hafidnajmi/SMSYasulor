@@ -1,9 +1,11 @@
+@using Microsoft.EntityFrameworkCore
+@inject UPMS.Web.Data.UpmsDbContext DbContext
 @{
     ViewData["Title"] = "Dashboard";
     var kpi = ViewBag.Kpi as UPMS.Web.Services.KpiSummary;
     var costInsights = ViewBag.CostInsights as UPMS.Web.Services.CostInsights;
     var topLowStock = ViewBag.TopLowStock as List<UPMS.Web.Models.Entities.MasterData>;
-    var recentLogs = ViewBag.RecentLogs as List<UPMS.Web.Models.Entities.AuditLog>;
+    var recentLogs = ViewBag.RecentLogs as List<UPMS.Web.Services.RecentActivityDto>;
     var stockDist = ViewBag.StockDist as Dictionary<string, int>;
 
     int selYear = ViewBag.SelectedYear as int? ?? 0;
@@ -17,17 +19,140 @@
     double normalPct = totalCount > 0 ? ((double)normalCount / totalCount) * 100.0 : 0.0;
     double nearPct = totalCount > 0 ? ((double)nearCount / totalCount) * 100.0 : 0.0;
     double belowPct = totalCount > 0 ? ((double)belowCount / totalCount) * 100.0 : 0.0;
+
+    var curUser = User.Identity?.Name;
+    var userEntity = !string.IsNullOrEmpty(curUser) 
+        ? DbContext.Users.AsNoTracking().FirstOrDefault(u => u.Username.ToLower() == curUser.ToLower()) 
+        : null;
+
+    bool isUserAdmin = (userEntity?.Role?.ToLower() == "admin") || string.Equals(curUser, "admin", StringComparison.OrdinalIgnoreCase);
+
+    bool rbacMasterData = isUserAdmin || (userEntity?.CanMasterData == 1);
+    bool rbacBarangKeluar = isUserAdmin || (userEntity?.CanBarangKeluar == 1);
+    bool rbacRiwayat = isUserAdmin || (userEntity?.CanRiwayat == 1);
+    bool rbacAdminMgmt = isUserAdmin || (userEntity?.CanAdminMgmt == 1) || (userEntity?.CanBidding == 1);
+
+    bool canAccessOutgoing = rbacRiwayat || rbacBarangKeluar;
+    bool canAccessMasterData = rbacMasterData;
+    bool canAccessAdminMgmt = rbacAdminMgmt;
+    bool canAccessRiwayat = rbacRiwayat;
 }
 
-<!-- Top Header Row -->
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-    <div>
-        <h3 class="page-title">Welcome back, @(User.Identity?.Name ?? "Admin")</h3>
-        <p class="page-subtitle">Here’s what’s happening with your sparepart inventory today.</p>
-    </div>
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-        <span class="text-muted small me-2"><i class="bi bi-calendar3 me-1"></i>@DateTime.Now.ToString("dddd, dd MMMM yyyy | hh:mm tt")</span>
+<style>
+    /* Handcrafted Mobile Dashboard Styling */
+    .dashboard-header-card {
+        background: #ffffff;
+        border: 1px solid var(--color-border);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .dash-kpi-card {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        height: 100%;
+    }
+    .dash-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    @@media (max-width: 768px) {
+        .dashboard-header-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.75rem !important;
+        }
+        .dashboard-controls {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .dashboard-controls form {
+            flex: 1;
+            display: flex;
+            gap: 0.35rem;
+        }
+        .dashboard-controls form select {
+            flex: 1;
+            width: auto !important;
+            font-size: 11px !important;
+            padding: 0.25rem 0.4rem !important;
+        }
+        .page-title {
+            font-size: 1.25rem !important;
+        }
+        .page-subtitle {
+            font-size: 0.8rem !important;
+        }
+
+        /* 2x2 High-Density KPI Grid on Mobile */
+        .dash-kpi-row {
+            --bs-gutter-x: 0.5rem !important;
+            --bs-gutter-y: 0.5rem !important;
+        }
+        .dash-kpi-col {
+            padding-left: 0.25rem !important;
+            padding-right: 0.25rem !important;
+        }
+        .ems-kpi-card {
+            padding: 0.6rem 0.65rem !important;
+            min-height: 88px;
+        }
+        .ems-kpi-title {
+            font-size: 10px !important;
+            letter-spacing: 0em !important;
+            margin-bottom: 0.25rem !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ems-kpi-value {
+            font-size: 1.05rem !important;
+            line-height: 1.15 !important;
+            font-weight: 800 !important;
+        }
+        .ems-kpi-sub {
+            font-size: 9.5px !important;
+            margin-top: 0.2rem !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Donut Chart & Progress Bars Compact Container */
+        .donut-container {
+            min-height: 160px !important;
+            padding: 0.5rem !important;
+        }
+        .donut-wrapper {
+            width: 115px !important;
+            height: 115px !important;
+        }
         
+        .mini-kpi-box {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.2rem;
+        }
+    }
+</style>
+
+<!-- Top Header Row -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3 dashboard-header-flex">
+    <div>
+        <h3 class="page-title mb-0">Welcome back, @(User.Identity?.Name ?? "Admin")</h3>
+        <p class="page-subtitle mb-0">Here’s what’s happening with your sparepart inventory today.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap dashboard-controls">
+        <span class="text-muted small me-2 d-none d-lg-inline-block"><i class="bi bi-calendar3 me-1"></i>@DateTime.Now.ToString("dddd, dd MMMM yyyy | hh:mm tt")</span>
+        
+        <!-- Clean Auto Refresh Checkbox matching form-select style -->
+        <label class="d-inline-flex align-items-center gap-1.5 px-2 py-1 bg-white border rounded-0 me-1" style="font-size: 13px; font-weight: 400; color: var(--color-text); border-color: var(--color-border) !important; cursor: pointer; user-select: none; height: 31px;">
+            <input type="checkbox" id="autoRefreshCheckbox" class="form-check-input mt-0 me-1" style="width: 14px; height: 14px; cursor: pointer; border-radius: 2px;">
+            <span>Auto Refresh</span>
+        </label>
+
         <!-- Filter Form -->
         <form method="get" asp-action="Index" class="d-flex align-items-center gap-1">
             <select name="month" class="form-select form-select-sm" style="width: 110px;" onchange="this.form.submit()">
@@ -46,67 +171,135 @@
             </select>
         </form>
 
-        <a href="/Dashboard" class="btn btn-ems-outline btn-sm"><i class="bi bi-arrow-clockwise"></i> Refresh</a>
-        <button onclick="window.print()" class="btn btn-ems-primary btn-sm"><i class="bi bi-printer"></i> Print</button>
+        <a href="/Dashboard" class="btn btn-ems-outline btn-sm btn-refresh"><i class="bi bi-arrow-clockwise"></i> Refresh</a>
+        <button onclick="window.print()" class="btn btn-ems-primary btn-sm d-none d-md-inline-flex"><i class="bi bi-printer"></i> Print</button>
     </div>
 </div>
 
-<!-- Top 4 KPI Summary Cards (Python Parity) -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <a href="/History?tab=keluar" class="text-decoration-none">
-            <div class="ems-kpi-card ems-kpi-blue">
-                <div class="ems-kpi-title"><i class="bi bi-currency-dollar text-primary"></i>SPAREPART OUTGOING COST</div>
-                <div class="ems-kpi-value text-primary">Rp @((kpi?.OutgoingCostMonth ?? 0m).ToString("N0"))</div>
-                <div class="ems-kpi-sub"><i class="bi bi-clock me-1"></i>Total realtime outgoing cost</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="/MasterData" class="text-decoration-none">
-            <div class="ems-kpi-card ems-kpi-green">
-                <div class="ems-kpi-title"><i class="bi bi-boxes text-success"></i>TOTAL INVENTORY VALUE</div>
-                <div class="ems-kpi-value text-dark">Rp @((kpi?.TotalInventoryValue ?? 0m).ToString("N0"))</div>
-                <div class="ems-kpi-sub"><i class="bi bi-shield-check me-1 text-success"></i>Capital locked in parts</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="/MasterData?frequency=FAST" class="text-decoration-none">
-            <div class="ems-kpi-card ems-kpi-amber">
-                <div class="ems-kpi-title">
-                    <i class="bi bi-exclamation-triangle text-warning"></i>CRITICAL STOCK (BELOW SAFETY)
-                    @if (belowCount > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+<!-- Top 4 KPI Summary Cards (2x2 Grid on Mobile, 4x1 on Desktop) -->
+<div class="row g-2 g-md-3 mb-3 dash-kpi-row">
+    <div class="col-6 col-md-3 dash-kpi-col">
+        @if (rbacRiwayat)
+        {
+            <a href="/History?tab=keluar" class="text-decoration-none">
+                <div class="ems-kpi-card ems-kpi-blue dash-kpi-card">
+                    <div class="ems-kpi-title"><i class="bi bi-currency-dollar text-primary"></i>OUTGOING COST</div>
+                    <div class="ems-kpi-value text-primary">Rp @((kpi?.OutgoingCostMonth ?? 0m).ToString("N0"))</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-clock me-1"></i>Realtime cost</div>
                 </div>
-                <div class="ems-kpi-value text-danger">@belowCount Items</div>
-                <div class="ems-kpi-sub"><i class="bi bi-arrow-repeat me-1 text-danger"></i>Replenishment required</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="/AdminManagement?tab=approvals" class="text-decoration-none">
-            <div class="ems-kpi-card ems-kpi-cyan">
-                <div class="ems-kpi-title">
-                    <i class="bi bi-hourglass-split text-info"></i>PENDING APPROVALS
-                    @if ((kpi?.PendingApprovals ?? 0) > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+            </a>
+        }
+        else if (rbacBarangKeluar)
+        {
+            <a href="/BarangKeluar" class="text-decoration-none">
+                <div class="ems-kpi-card ems-kpi-blue dash-kpi-card">
+                    <div class="ems-kpi-title"><i class="bi bi-currency-dollar text-primary"></i>OUTGOING COST</div>
+                    <div class="ems-kpi-value text-primary">Rp @((kpi?.OutgoingCostMonth ?? 0m).ToString("N0"))</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-clock me-1"></i>Realtime cost</div>
                 </div>
-                <div class="ems-kpi-value text-dark">@(kpi?.PendingApprovals ?? 0) Transactions</div>
-                <div class="ems-kpi-sub"><i class="bi bi-list-check me-1 text-info"></i>Barang Keluar queue</div>
-            </div>
-        </a>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Transaksi Keluar.');" class="text-decoration-none" style="cursor: not-allowed;">
+                <div class="ems-kpi-card ems-kpi-blue dash-kpi-card" style="opacity: 0.85;">
+                    <div class="ems-kpi-title"><i class="bi bi-currency-dollar text-primary"></i>OUTGOING COST <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i></div>
+                    <div class="ems-kpi-value text-primary">Rp @((kpi?.OutgoingCostMonth ?? 0m).ToString("N0"))</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-clock me-1"></i>Realtime cost</div>
+                </div>
+            </a>
+        }
+    </div>
+    <div class="col-6 col-md-3 dash-kpi-col">
+        @if (canAccessMasterData)
+        {
+            <a href="/MasterData" class="text-decoration-none">
+                <div class="ems-kpi-card ems-kpi-green dash-kpi-card">
+                    <div class="ems-kpi-title"><i class="bi bi-boxes text-success"></i>TOTAL INVENTORY</div>
+                    <div class="ems-kpi-value text-dark">Rp @((kpi?.TotalInventoryValue ?? 0m).ToString("N0"))</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-shield-check me-1 text-success"></i>Capital locked</div>
+                </div>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Katalog Sparepart.');" class="text-decoration-none" style="cursor: not-allowed;">
+                <div class="ems-kpi-card ems-kpi-green dash-kpi-card" style="opacity: 0.85;">
+                    <div class="ems-kpi-title"><i class="bi bi-boxes text-success"></i>TOTAL INVENTORY <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i></div>
+                    <div class="ems-kpi-value text-dark">Rp @((kpi?.TotalInventoryValue ?? 0m).ToString("N0"))</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-shield-check me-1 text-success"></i>Capital locked</div>
+                </div>
+            </a>
+        }
+    </div>
+    <div class="col-6 col-md-3 dash-kpi-col">
+        @if (canAccessMasterData)
+        {
+            <a href="/MasterData?frequency=FAST" class="text-decoration-none">
+                <div class="ems-kpi-card ems-kpi-amber dash-kpi-card">
+                    <div class="ems-kpi-title">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>CRITICAL STOCK
+                        @if (belowCount > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+                    </div>
+                    <div class="ems-kpi-value text-danger">@belowCount Items</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-arrow-repeat me-1 text-danger"></i>Replenish required</div>
+                </div>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Katalog Sparepart.');" class="text-decoration-none" style="cursor: not-allowed;">
+                <div class="ems-kpi-card ems-kpi-amber dash-kpi-card" style="opacity: 0.85;">
+                    <div class="ems-kpi-title">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>CRITICAL STOCK <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i>
+                        @if (belowCount > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+                    </div>
+                    <div class="ems-kpi-value text-danger">@belowCount Items</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-arrow-repeat me-1 text-danger"></i>Replenish required</div>
+                </div>
+            </a>
+        }
+    </div>
+    <div class="col-6 col-md-3 dash-kpi-col">
+        @if (canAccessAdminMgmt)
+        {
+            <a href="/AdminManagement?tab=approvals" class="text-decoration-none">
+                <div class="ems-kpi-card ems-kpi-cyan dash-kpi-card">
+                    <div class="ems-kpi-title">
+                        <i class="bi bi-hourglass-split text-info"></i>APPROVALS
+                        @if ((kpi?.PendingApprovals ?? 0) > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+                    </div>
+                    <div class="ems-kpi-value text-dark">@(kpi?.PendingApprovals ?? 0) Pending</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-list-check me-1 text-info"></i>Transactions queue</div>
+                </div>
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Admin Portal & Approvals.');" class="text-decoration-none" style="cursor: not-allowed;">
+                <div class="ems-kpi-card ems-kpi-cyan dash-kpi-card" style="opacity: 0.85;">
+                    <div class="ems-kpi-title">
+                        <i class="bi bi-hourglass-split text-info"></i>APPROVALS <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i>
+                        @if ((kpi?.PendingApprovals ?? 0) > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
+                    </div>
+                    <div class="ems-kpi-value text-dark">@(kpi?.PendingApprovals ?? 0) Pending</div>
+                    <div class="ems-kpi-sub"><i class="bi bi-list-check me-1 text-info"></i>Transactions queue</div>
+                </div>
+            </a>
+        }
     </div>
 </div>
 
 <!-- Middle Panels Row (Stock Overview Donut + Stock Status Bars + Recent Activity) -->
 <div class="row g-3 mb-4">
     <!-- Stock Overview Donut Chart -->
-    <div class="col-md-3">
+    <div class="col-12 col-md-3">
         <div class="ems-filter-card h-100 mb-0">
-            <div class="ems-filter-header">
+            <div class="ems-filter-header py-2 px-3">
                 <span><i class="bi bi-pie-chart me-2 text-primary"></i>Stock Overview</span>
             </div>
-            <div class="p-3 d-flex flex-column align-items-center justify-content-center" style="min-height: 200px;">
-                <div style="position: relative; width: 140px; height: 140px;">
+            <div class="p-3 d-flex flex-column align-items-center justify-content-center donut-container" style="min-height: 180px;">
+                <div class="donut-wrapper" style="position: relative; width: 130px; height: 130px;">
                     <canvas id="stockStatusChart"></canvas>
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
                         <div class="fw-bold fs-5">@totalCount</div>
@@ -118,12 +311,12 @@
     </div>
 
     <!-- Stock Status Progress Bars -->
-    <div class="col-md-3">
+    <div class="col-12 col-md-3">
         <div class="ems-filter-card h-100 mb-0">
-            <div class="ems-filter-header">
+            <div class="ems-filter-header py-2 px-3">
                 <span><i class="bi bi-bar-chart-steps me-2 text-primary"></i>Stock Status</span>
             </div>
-            <div class="p-3 d-flex flex-column justify-content-center gap-3" style="min-height: 200px;">
+            <div class="p-3 d-flex flex-column justify-content-center gap-3" style="min-height: 180px;">
                 <div>
                     <div class="d-flex justify-content-between small fw-semibold mb-1">
                         <span><i class="bi bi-check-circle text-success me-1"></i>Normal Stock</span>
@@ -135,7 +328,7 @@
                 </div>
                 <div>
                     <div class="d-flex justify-content-between small fw-semibold mb-1">
-                        <span><i class="bi bi-exclamation-triangle text-warning me-1"></i>Near Safety Stock</span>
+                        <span><i class="bi bi-exclamation-triangle text-warning me-1"></i>Near Safety</span>
                         <span>@nearCount (@nearPct.ToString("F1")%)</span>
                     </div>
                     <div class="progress" style="height: 6px;">
@@ -144,7 +337,7 @@
                 </div>
                 <div>
                     <div class="d-flex justify-content-between small fw-semibold mb-1">
-                        <span><i class="bi bi-x-circle text-danger me-1"></i>Below Safety Stock</span>
+                        <span><i class="bi bi-x-circle text-danger me-1"></i>Below Safety</span>
                         <span>@belowCount (@belowPct.ToString("F1")%)</span>
                     </div>
                     <div class="progress" style="height: 6px;">
@@ -156,11 +349,18 @@
     </div>
 
     <!-- Recent Sparepart Activity Table -->
-    <div class="col-md-6">
+    <div class="col-12 col-md-6 recent-activity-card">
         <div class="ems-filter-card h-100 mb-0">
-            <div class="ems-filter-header">
-                <span><i class="bi bi-activity me-2 text-primary"></i>Recent Sparepart Activity</span>
-                <a href="/History" class="btn btn-sm btn-link text-decoration-none p-0">View all <i class="bi bi-arrow-right"></i></a>
+            <div class="ems-filter-header py-2 px-3">
+                <span><i class="bi bi-activity me-2 text-primary"></i>Recent Activity</span>
+                @if (canAccessRiwayat)
+                {
+                    <a href="/History" class="btn btn-sm btn-link text-decoration-none p-0">View all <i class="bi bi-arrow-right"></i></a>
+                }
+                else
+                {
+                    <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Transaction Logs.');" class="btn btn-sm btn-link text-muted text-decoration-none p-0" style="cursor: not-allowed;">View all <i class="bi bi-arrow-right"></i></a>
+                }
             </div>
             <div class="p-0">
                 <div class="table-responsive">
@@ -169,7 +369,7 @@
                             <tr>
                                 <th>ACTIVITY</th>
                                 <th>SPAREPART</th>
-                                <th>BY</th>
+                                <th>PIC</th>
                                 <th>TIME</th>
                             </tr>
                         </thead>
@@ -178,22 +378,25 @@
                             {
                                 foreach (var log in recentLogs)
                                 {
-                                    string icon = log.Action == "INSERT" ? "bi-arrow-down-circle text-success" : log.Action == "DELETE" ? "bi-trash text-danger" : "bi-pencil-square text-warning";
+                                    bool isMasuk = log.ActivityType == "Barang Masuk";
+                                    string icon = isMasuk ? "bi-box-arrow-in-down text-success" : "bi-box-arrow-up-right text-danger";
+                                    string badgeClass = isMasuk ? "text-success fw-bold" : "text-danger fw-bold";
+                                    
                                     <tr>
                                         <td>
-                                            <i class="bi @icon me-2"></i>
-                                            <span class="fw-semibold">@log.Action</span>
+                                            <i class="bi @icon me-1"></i>
+                                            <span class="@badgeClass">@log.ActivityType</span>
                                         </td>
-                                        <td class="fw-bold text-dark text-truncate" style="max-width: 200px;">@log.TableName (#@log.RecordId)</td>
-                                        <td class="small text-muted">@(log.ChangedBy ?? "system")</td>
-                                        <td class="col-mono text-muted">@log.ChangedAt.ToString("HH:mm:ss")</td>
+                                        <td class="fw-bold text-dark text-truncate" style="max-width: 180px;" title="@log.SparepartName">@log.SparepartName</td>
+                                        <td class="small text-secondary fw-semibold">@(string.IsNullOrWhiteSpace(log.Pic) ? "system" : log.Pic)</td>
+                                        <td class="col-mono text-muted">@log.Timestamp.ToString("HH:mm:ss")</td>
                                     </tr>
                                 }
                             }
                             else
                             {
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">No recent SQL Server activity recorded.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">No recent activity recorded.</td>
                                 </tr>
                             }
                         </tbody>
@@ -206,14 +409,14 @@
 
 <!-- Lower Panel 1: Operational Insights & Procurement Trends -->
 <div class="ems-filter-card mb-4">
-    <div class="ems-filter-header">
-        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Operational Insights & Procurement Trends</span>
+    <div class="ems-filter-header py-2 px-3">
+        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Operational Insights & Trends</span>
     </div>
     <div class="p-3">
         <!-- 3 Mini KPI Cards -->
         <div class="row g-2 mb-3">
-            <div class="col-md-4">
-                <div class="p-2 border bg-light d-flex align-items-center justify-content-between">
+            <div class="col-12 col-md-4">
+                <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">HIGHEST COST LINE</div>
                         <div class="fw-bold text-primary">@(costInsights?.HighestCostLine ?? "-")</div>
@@ -221,8 +424,8 @@
                     <div class="col-mono text-primary font-monospace fw-bold">Rp @((costInsights?.HighestCostLineAmount ?? 0m).ToString("N0"))</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="p-2 border bg-light d-flex align-items-center justify-content-between">
+            <div class="col-12 col-md-4">
+                <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">HIGHEST COST ASSET</div>
                         <div class="fw-bold text-success">@(costInsights?.HighestCostMachine ?? "-")</div>
@@ -230,8 +433,8 @@
                     <div class="col-mono text-success font-monospace fw-bold">Rp @((costInsights?.HighestCostMachineAmount ?? 0m).ToString("N0"))</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="p-2 border bg-light d-flex align-items-center justify-content-between">
+            <div class="col-12 col-md-4">
+                <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">TOP COST SPAREPART</div>
                         <div class="fw-bold text-warning text-truncate" style="max-width: 160px;" title="@(costInsights?.TopCostSparepart ?? "-")">@(costInsights?.TopCostSparepart ?? "-")</div>
@@ -242,30 +445,37 @@
         </div>
 
         <div class="small fw-semibold text-secondary mb-2"><i class="bi bi-diagram-3 me-1"></i>Line Cost Distribution</div>
-        <div style="min-height: 220px;">
+        <div style="min-height: 200px; position: relative;">
             <canvas id="costPerLineChart"></canvas>
         </div>
-        <div class="small text-muted fst-italic mt-2">Sumber: Barang Keluar</div>
+        <div class="small text-muted fst-italic mt-2" style="font-size: 10px;">Sumber: Barang Keluar</div>
     </div>
 </div>
 
 <!-- Lower Panel 2: Top 5 Low Stock Sparepart Table -->
 <div class="ems-filter-card mb-0">
-    <div class="ems-filter-header text-danger">
+    <div class="ems-filter-header py-2 px-3 text-danger">
         <span><i class="bi bi-exclamation-octagon me-2"></i>Top 5 Low Stock Sparepart</span>
-        <a href="/MasterData" class="btn btn-sm btn-link text-decoration-none p-0">View all low stock sparepart <i class="bi bi-arrow-right"></i></a>
+        @if (canAccessMasterData)
+        {
+            <a href="/MasterData" class="btn btn-sm btn-link text-decoration-none p-0">View all <i class="bi bi-arrow-right"></i></a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" onclick="if(typeof showEmsToast==='function') showEmsToast('danger', 'Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Catalog Sparepart.');" class="btn btn-sm btn-link text-muted text-decoration-none p-0" style="cursor: not-allowed;">View all <i class="bi bi-arrow-right"></i></a>
+        }
     </div>
     <div class="p-0">
         <div class="table-responsive">
             <table class="table-ems">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">NO</th>
+                        <th style="width: 40px;">NO</th>
                         <th>ITEM</th>
                         <th>MACHINE</th>
                         <th>BIN</th>
                         <th class="text-end">STOCK</th>
-                        <th class="text-end">SAFE STOCK</th>
+                        <th class="text-end">SAFE</th>
                         <th>STATUS</th>
                     </tr>
                 </thead>
@@ -282,8 +492,8 @@
 
                             <tr>
                                 <td class="col-mono">@no</td>
-                                <td class="fw-semibold">@item.Item</td>
-                                <td class="small text-muted">@(item.Machine ?? "-")</td>
+                                <td class="fw-semibold text-truncate" style="max-width: 150px;">@item.Item</td>
+                                <td class="small text-muted text-truncate" style="max-width: 120px;">@(item.Machine ?? "-")</td>
                                 <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
                                 <td class="text-end fw-bold text-danger">@curr</td>
                                 <td class="text-end col-mono">@safe</td>
@@ -397,6 +607,56 @@
                                     }
                                 }
                             }
+                        }
+                    }
+                });
+            }
+
+            // Auto Refresh Functionality (Every 5 minutes = 300,000 ms)
+            var autoRefreshTimer = null;
+            var autoRefreshIntervalMs = 5 * 60 * 1000; // 5 minutes
+            var autoRefreshCheckbox = document.getElementById('autoRefreshCheckbox');
+
+            function startAutoRefreshTimer() {
+                if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+                autoRefreshTimer = setInterval(function () {
+                    if (typeof showEmsToast === 'function') {
+                        showEmsToast('info', 'Memperbarui data dashboard...');
+                    }
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
+                }, autoRefreshIntervalMs);
+            }
+
+            function stopAutoRefreshTimer() {
+                if (autoRefreshTimer) {
+                    clearInterval(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                }
+            }
+
+            if (autoRefreshCheckbox) {
+                var isAutoRefreshEnabled = localStorage.getItem('ems_dashboard_auto_refresh') === 'true';
+                autoRefreshCheckbox.checked = isAutoRefreshEnabled;
+                if (isAutoRefreshEnabled) {
+                    startAutoRefreshTimer();
+                } else {
+                    stopAutoRefreshTimer();
+                }
+
+                autoRefreshCheckbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        localStorage.setItem('ems_dashboard_auto_refresh', 'true');
+                        startAutoRefreshTimer();
+                        if (typeof showEmsToast === 'function') {
+                            showEmsToast('success', 'Auto refresh aktif (setiap 5 menit)');
+                        }
+                    } else {
+                        localStorage.setItem('ems_dashboard_auto_refresh', 'false');
+                        stopAutoRefreshTimer();
+                        if (typeof showEmsToast === 'function') {
+                            showEmsToast('info', 'Auto refresh dinonaktifkan');
                         }
                     }
                 });

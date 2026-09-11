@@ -64,8 +64,6 @@ namespace UPMS.Web.Services
                 new Claim("CanEmailSettings", user.CanEmailSettings.ToString()),
                 new Claim("CanBarangKeluar", user.CanBarangKeluar.ToString()),
                 new Claim("CanLineMapping", user.CanLineMapping.ToString()),
-                new Claim("CanMasterMachine", user.CanMasterMachine.ToString()),
-                new Claim("CanSparepartMachine", user.CanSparepartMachine.ToString()),
                 new Claim("CanCostIntelligence", user.CanCostIntelligence.ToString()),
                 new Claim("RequireApprovalKeluar", user.RequireApprovalKeluar.ToString())
             };
@@ -89,11 +87,14 @@ namespace UPMS.Web.Services
         {
             try
             {
+                var safeUsername = string.IsNullOrWhiteSpace(username) ? "unknown" : username.Trim();
+                if (safeUsername.Length > 100) safeUsername = safeUsername.Substring(0, 100);
+
                 var log = new AuditLog
                 {
                     TableName = "Users",
-                    RecordId = username,
-                    Action = "LOGIN_FAILED",
+                    RecordId = safeUsername,
+                    Action = "LOGIN_FAIL",
                     OldData = null,
                     NewData = $"IP: {ipAddress ?? "unknown"}",
                     ChangedBy = "system",

@@ -39,9 +39,11 @@ namespace UPMS.Web.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(string username, string password, string? returnUrl = null)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(string username, string password, string? department = "Filling", string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
+            department = string.IsNullOrWhiteSpace(department) ? "Filling" : department.Trim();
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -88,13 +90,34 @@ namespace UPMS.Web.Controllers
             // AUTH-006: Reset failed attempts on successful login
             _loginAttempts.TryRemove(lockoutKey, out _);
 
+            // Store Department context in cookie for enterprise multi-dept security isolation
+            Response.Cookies.Append("SMS_ACTIVE_DEPT", department, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            });
+
             var principal = _authService.CreateClaimsPrincipal(user);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
             await _authService.UpdateLastLoginAsync(user.Id);
 
+            if (string.Equals(department, "Process", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(department, "Utility", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("ComingSoon", "Account", new { dept = department });
+            }
+
             if (user.Role == "operator")
             {
                 return Redirect("/Operator");
+            }
+
+            if (string.Equals(user.Role, "technician", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(user.Username, "technician", StringComparison.OrdinalIgnoreCase))
+            {
+                return Redirect($"/BarangKeluar?dept={Uri.EscapeDataString(department)}");
             }
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -105,12 +128,22 @@ namespace UPMS.Web.Controllers
             return Redirect("/Dashboard");
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ComingSoon(string? dept = "Process")
+        {
+            dept = string.IsNullOrWhiteSpace(dept) ? "Process" : dept.Trim();
+            ViewData["Dept"] = dept;
+            return View();
+        }
+
+        [HttpGet]
         [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            Response.Cookies.Delete("SMS_ACTIVE_DEPT");
             return RedirectToAction("Login", "Account");
         }
 

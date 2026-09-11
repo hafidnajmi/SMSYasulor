@@ -179,13 +179,38 @@ namespace UPMS.Web.Services
                 .ToListAsync();
         }
 
-        public async Task<List<AuditLog>> GetRecentActivitiesAsync(int count = 5)
+        public async Task<List<RecentActivityDto>> GetRecentActivitiesAsync(int count = 5)
         {
-            return await _db.AuditLogs
-                .OrderByDescending(a => a.ChangedAt)
+            var masukList = await _db.BarangMasuks
+                .OrderByDescending(bm => bm.CreatedAt)
                 .Take(count)
+                .Select(bm => new RecentActivityDto
+                {
+                    ActivityType = "Barang Masuk",
+                    SparepartName = bm.ItemName,
+                    Pic = bm.Pic ?? "system",
+                    Timestamp = bm.CreatedAt
+                })
                 .AsNoTracking()
                 .ToListAsync();
+
+            var keluarList = await _db.BarangKeluars
+                .OrderByDescending(bk => bk.CreatedAt)
+                .Take(count)
+                .Select(bk => new RecentActivityDto
+                {
+                    ActivityType = "Barang Keluar",
+                    SparepartName = bk.ItemName,
+                    Pic = bk.Pic ?? "system",
+                    Timestamp = bk.CreatedAt
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return masukList.Concat(keluarList)
+                .OrderByDescending(x => x.Timestamp)
+                .Take(count)
+                .ToList();
         }
 
         public async Task<CostInsights> GetCostInsightsAsync(int? year = null, int? month = null)

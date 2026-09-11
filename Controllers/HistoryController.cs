@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UPMS.Web.Services;
 
+using UPMS.Web.Data;
+using UPMS.Web.Helpers;
+
 namespace UPMS.Web.Controllers
 {
     [Authorize]
@@ -11,15 +14,26 @@ namespace UPMS.Web.Controllers
     {
         private readonly IInventoryService _inventoryService;
         private readonly IExcelExportService _excelService;
+        private readonly UpmsDbContext _db;
 
-        public HistoryController(IInventoryService inventoryService, IExcelExportService excelService)
+        public HistoryController(IInventoryService inventoryService, IExcelExportService excelService, UpmsDbContext db)
         {
             _inventoryService = inventoryService;
             _excelService = excelService;
+            _db = db;
         }
 
         public async Task<IActionResult> Index(string tab = "masuk", int? year = null, string? search = null, int page = 1)
         {
+            var username = User.Identity?.Name;
+            bool canRiwayat = await RbacHelper.HasPermissionAsync(_db, username, u => u.CanRiwayat);
+
+            if (!canRiwayat)
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Transaction Logs.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
             ViewBag.Tab = tab.ToLower();
             ViewBag.Year = year;
             ViewBag.Search = search;
@@ -39,6 +53,15 @@ namespace UPMS.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportExcel(string tab = "masuk", int? year = null, string? search = null)
         {
+            var username = User.Identity?.Name;
+            bool canRiwayat = await RbacHelper.HasPermissionAsync(_db, username, u => u.CanRiwayat);
+
+            if (!canRiwayat)
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor Transaction Logs.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
             if (tab.ToLower() == "keluar")
             {
                 var paged = await _inventoryService.GetBarangKeluarHistoryAsync(year, search, 1, 10000);
