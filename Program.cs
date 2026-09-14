@@ -198,10 +198,24 @@ _ = Task.Run(async () =>
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<UpmsDbContext>();
         await DbSeeder.SeedDefaultAdminAsync(db);
+
+        string sqlFile = Path.Combine(Directory.GetCurrentDirectory(), "sync_data_filling_and_reset.sql");
+        if (!File.Exists(sqlFile))
+        {
+            sqlFile = Path.Combine(AppContext.BaseDirectory, "sync_data_filling_and_reset.sql");
+        }
+
+        if (File.Exists(sqlFile))
+        {
+            Console.WriteLine("[Cloud Sync] Executing sync_data_filling_and_reset.sql on Cloud DB...");
+            string sqlContent = await File.ReadAllTextAsync(sqlFile);
+            await db.Database.ExecuteSqlRawAsync(sqlContent);
+            Console.WriteLine("[Cloud Sync] SUCCESS! Executed all sync and reset queries on Cloud DB.");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[Startup Warning] Background DbSeeder: {ex.Message}");
+        Console.WriteLine($"[Startup Warning] Background DbSeeder / SQL Sync: {ex.Message}");
     }
 });
 
