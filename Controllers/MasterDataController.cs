@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Models.Entities;
 using UPMS.Web.Services;
 
@@ -181,7 +183,51 @@ namespace UPMS.Web.Controllers
             return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
+        private static List<string> ParseCsvLine(string line)
+        {
+            var result = new List<string>();
+            bool inQuotes = false;
+            var current = new System.Text.StringBuilder();
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (c == '"')
+                {
+                    inQuotes = !inQuotes;
+                }
+                else if (c == ',' && !inQuotes)
+                {
+                    result.Add(current.ToString());
+                    current.Clear();
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+            result.Add(current.ToString());
+            return result;
+        }
+
+        private static int? ParseInt(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val)) return null;
+            string s = val.Replace(",", "").Replace("#REF!", "").Trim();
+            if (double.TryParse(s, out double d)) return (int)Math.Round(d);
+            return null;
+        }
+
+        private static decimal? ParseDecimal(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val)) return null;
+            string s = val.Replace(",", "").Replace("#REF!", "").Replace("\"", "").Replace(" ", "").Replace("-", "").Trim();
+            if (decimal.TryParse(s, out decimal d)) return d;
+            return null;
+        }
+
         private async Task<string> SaveUploadedImageAsync(IFormFile file)
+
         {
             string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "spareparts");
             if (!Directory.Exists(uploadsFolder))
