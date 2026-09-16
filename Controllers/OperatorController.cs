@@ -17,7 +17,7 @@ namespace UPMS.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var history = await _inventoryService.GetBarangKeluarHistoryAsync(null, null, 1, 10);
+            var history = await _inventoryService.GetBarangKeluarHistoryAsync(year: null, startDate: null, endDate: null, search: null, page: 1, pageSize: 10);
             return View(history.Items);
         }
     }

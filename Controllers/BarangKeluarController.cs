@@ -28,7 +28,7 @@ namespace UPMS.Web.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(int? year, string? search, int page = 1, string? dept = null)
+        public async Task<IActionResult> Index(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, string? dept = null)
         {
             if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanBarangKeluar))
             {
@@ -52,8 +52,10 @@ namespace UPMS.Web.Controllers
 
             ViewBag.ActiveDept = activeDept;
 
-            var history = await _inventoryService.GetBarangKeluarHistoryAsync(year, search, page, 50);
+            var history = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, page, 50);
             ViewBag.Year = year;
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.Search = search;
 
             ViewBag.Pics = await UPMS.Web.Helpers.PicHelper.GetPicsBarangKeluarAsync(_db);

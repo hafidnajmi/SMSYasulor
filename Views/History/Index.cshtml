@@ -14,7 +14,7 @@
         <p class="text-muted small mb-0">Audit history of all incoming shipments and outgoing sparepart usage logs.</p>
     </div>
     <div>
-        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-ems-outline btn-sm">
+        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-ems-outline btn-sm">
             <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
         </a>
     </div>
@@ -23,12 +23,12 @@
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "")" asp-action="Index" asp-route-tab="masuk">
+        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "")" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
             <i class="bi bi-box-arrow-in-down text-success me-1"></i>Barang Masuk History
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "")" asp-action="Index" asp-route-tab="keluar">
+        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "")" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
             <i class="bi bi-box-arrow-up-right text-danger me-1"></i>Barang Keluar History
         </a>
     </li>
@@ -42,11 +42,19 @@
     <div class="p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end">
             <input type="hidden" name="tab" value="@tab" />
-            <div class="col-md-4">
+            <div class="col-12 col-md-3">
                 <label class="form-label small fw-bold text-secondary">Search Query</label>
                 <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Item name, BIN, PIC..." />
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary"><i class="bi bi-calendar-event me-1"></i>From Date</label>
+                <input type="date" name="startDate" value="@ViewBag.StartDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small fw-bold text-secondary"><i class="bi bi-calendar-event me-1"></i>To Date</label>
+                <input type="date" name="endDate" value="@ViewBag.EndDate" class="form-control form-control-sm" />
+            </div>
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-bold text-secondary">Filter Year</label>
                 <select name="year" class="form-select form-select-sm">
                     <option value="">[All Years]</option>
@@ -56,9 +64,9 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2 d-flex gap-1">
+            <div class="col-6 col-md-3 d-flex gap-1">
                 <button type="submit" class="btn btn-ems-primary btn-sm flex-fill"><i class="bi bi-search me-1"></i>Filter</button>
-                <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+                <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
             </div>
         </form>
     </div>
@@ -109,6 +117,30 @@
                         }
                     </tbody>
                 </table>
+
+                @if (masukModel.TotalPages > 1)
+                {
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top">
+                        <span class="small text-muted">Showing page @masukModel.PageNumber of @masukModel.TotalPages (@masukModel.TotalCount total records)</span>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(masukModel.PageNumber <= 1 ? "disabled" : "")">
+                                <a class="page-link" href="/History?tab=masuk&page=@(masukModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                            </li>
+                            @for (int p = 1; p <= masukModel.TotalPages; p++)
+                            {
+                                if (p == 1 || p == masukModel.TotalPages || Math.Abs(p - masukModel.PageNumber) <= 2)
+                                {
+                                    <li class="page-item @(p == masukModel.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="/History?tab=masuk&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                                    </li>
+                                }
+                            }
+                            <li class="page-item @(masukModel.PageNumber >= masukModel.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="/History?tab=masuk&page=@(masukModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        </ul>
+                    </div>
+                }
             }
             else if (tab == "keluar" && keluarModel != null)
             {
@@ -164,6 +196,30 @@
                         }
                     </tbody>
                 </table>
+
+                @if (keluarModel.TotalPages > 1)
+                {
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top">
+                        <span class="small text-muted">Showing page @keluarModel.PageNumber of @keluarModel.TotalPages (@keluarModel.TotalCount total records)</span>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(keluarModel.PageNumber <= 1 ? "disabled" : "")">
+                                <a class="page-link" href="/History?tab=keluar&page=@(keluarModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                            </li>
+                            @for (int p = 1; p <= keluarModel.TotalPages; p++)
+                            {
+                                if (p == 1 || p == keluarModel.TotalPages || Math.Abs(p - keluarModel.PageNumber) <= 2)
+                                {
+                                    <li class="page-item @(p == keluarModel.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="/History?tab=keluar&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                                    </li>
+                                }
+                            }
+                            <li class="page-item @(keluarModel.PageNumber >= keluarModel.TotalPages ? "disabled" : "")">
+                                <a class="page-link" href="/History?tab=keluar&page=@(keluarModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        </ul>
+                    </div>
+                }
             }
         </div>
     </div>

@@ -235,13 +235,25 @@ namespace UPMS.Web.Services
             });
         }
 
-        public async Task<PagedResult<BarangMasuk>> GetBarangMasukHistoryAsync(int? year, string? search, int page = 1, int pageSize = 50)
+        public async Task<PagedResult<BarangMasuk>> GetBarangMasukHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50)
         {
             var query = _db.BarangMasuks.AsNoTracking();
 
             if (year.HasValue && year.Value > 0)
             {
                 query = query.Where(b => b.Tanggal.Year == year.Value);
+            }
+
+            if (startDate.HasValue)
+            {
+                var start = startDate.Value.Date;
+                query = query.Where(b => b.Tanggal >= start);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(b => b.Tanggal <= end);
             }
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -449,7 +461,7 @@ namespace UPMS.Web.Services
                 .ToListAsync();
         }
 
-        public async Task<PagedResult<BarangKeluar>> GetBarangKeluarHistoryAsync(int? year, string? search, int page = 1, int pageSize = 50)
+        public async Task<PagedResult<BarangKeluar>> GetBarangKeluarHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50)
         {
             var query = _db.BarangKeluars
                 .Where(b => b.ApprovalStatus == null || b.ApprovalStatus == "Approved")
@@ -458,6 +470,18 @@ namespace UPMS.Web.Services
             if (year.HasValue && year.Value > 0)
             {
                 query = query.Where(b => b.Tanggal.Year == year.Value);
+            }
+
+            if (startDate.HasValue)
+            {
+                var start = startDate.Value.Date;
+                query = query.Where(b => b.Tanggal >= start);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(b => b.Tanggal <= end);
             }
 
             if (!string.IsNullOrWhiteSpace(search))

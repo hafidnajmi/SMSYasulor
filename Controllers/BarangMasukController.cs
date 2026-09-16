@@ -27,15 +27,17 @@ namespace UPMS.Web.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(int? year, string? search, int page = 1)
+        public async Task<IActionResult> Index(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1)
         {
             if (!await UPMS.Web.Helpers.RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanBarangMasuk))
             {
                 TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk membuka Barang Masuk.";
                 return RedirectToAction("Index", "Dashboard");
             }
-            var history = await _inventoryService.GetBarangMasukHistoryAsync(year, search, page, 50);
+            var history = await _inventoryService.GetBarangMasukHistoryAsync(year, startDate, endDate, search, page, 50);
             ViewBag.Year = year;
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.Search = search;
 
             ViewBag.Pics = await UPMS.Web.Helpers.PicHelper.GetPicsBarangMasukAsync(_db);
