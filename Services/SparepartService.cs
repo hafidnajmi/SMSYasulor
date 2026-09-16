@@ -115,8 +115,8 @@ namespace UPMS.Web.Services
         public async Task<List<MasterData>> GetLowStockItemsAsync(int top = 5)
         {
             return await _db.MasterDatas
-                .Where(m => !m.IsDeleted && m.CurrentStock <= m.SafetyStock)
-                .OrderBy(m => m.CurrentStock - m.SafetyStock)
+                .Where(m => !m.IsDeleted && (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0))
+                .OrderBy(m => (m.CurrentStock ?? 0) - (m.SafetyStock ?? 0))
                 .Take(top)
                 .AsNoTracking()
                 .ToListAsync();

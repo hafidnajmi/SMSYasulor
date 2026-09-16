@@ -21,7 +21,7 @@ namespace UPMS.Web.Services
         {
             var now = DateTime.Now;
             int totalParts = await _db.MasterDatas.CountAsync(m => !m.IsDeleted);
-            int lowStock = await _db.MasterDatas.CountAsync(m => !m.IsDeleted && (m.CurrentStock ?? 0) <= (m.SafetyStock ?? 0));
+            int lowStock = await _db.MasterDatas.CountAsync(m => !m.IsDeleted && (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0));
             int pending = await _db.BarangKeluars.CountAsync(b => b.ApprovalStatus == "Pending");
 
             var costQuery = _db.BarangKeluars
@@ -172,7 +172,7 @@ namespace UPMS.Web.Services
         public async Task<List<MasterData>> GetTopLowStockAsync(int count = 5)
         {
             return await _db.MasterDatas
-                .Where(m => !m.IsDeleted && (m.CurrentStock ?? 0) <= (m.SafetyStock ?? 0))
+                .Where(m => !m.IsDeleted && (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0))
                 .OrderBy(m => (m.CurrentStock ?? 0) - (m.SafetyStock ?? 0))
                 .Take(count)
                 .AsNoTracking()

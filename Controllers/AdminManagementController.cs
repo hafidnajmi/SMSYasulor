@@ -72,7 +72,7 @@ namespace UPMS.Web.Controllers
             // 1. Summary KPIs across ALL items (fast SQL aggregates)
             vm.TotalMasterItems = await masterQuery.CountAsync();
             vm.TotalValuation = await masterQuery.SumAsync(m => (m.CurrentStock ?? 0) * (m.CurrentUnitPrice ?? 0m));
-            vm.CriticalLowStockCount = await masterQuery.CountAsync(m => (m.CurrentStock ?? 0) <= (m.SafetyStock ?? 0));
+            vm.CriticalLowStockCount = await masterQuery.CountAsync(m => (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0));
             vm.AveragePrice = vm.TotalMasterItems > 0 ? await masterQuery.AverageAsync(m => m.CurrentUnitPrice ?? 0m) : 0m;
 
             vm.AvailableCategories = await masterQuery
@@ -110,11 +110,11 @@ namespace UPMS.Web.Controllers
             {
                 if (stock.ToUpper() == "CRITICAL")
                 {
-                    filteredQuery = filteredQuery.Where(m => (m.CurrentStock ?? 0) <= (m.SafetyStock ?? 0));
+                    filteredQuery = filteredQuery.Where(m => (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0));
                 }
                 else if (stock.ToUpper() == "NORMAL")
                 {
-                    filteredQuery = filteredQuery.Where(m => (m.CurrentStock ?? 0) > (m.SafetyStock ?? 0));
+                    filteredQuery = filteredQuery.Where(m => (m.SafetyStock ?? 0) == 0 || (m.CurrentStock ?? 0) >= (m.SafetyStock ?? 0));
                 }
             }
 
