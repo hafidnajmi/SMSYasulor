@@ -165,17 +165,17 @@
                     <div class="row g-2 mb-3">
                         <div class="col-8">
                             <label class="form-label small fw-bold text-secondary mb-1">SMTP Server RFQ</label>
-                            <input type="text" asp-for="SmtpServerRfq" class="form-control form-control-sm" placeholder="smtp.office365.com" />
+                            <input type="text" asp-for="SmtpServerRfq" class="form-control form-control-sm" id="smtpServerRfqInput" placeholder="smtp.office365.com" />
                         </div>
                         <div class="col-4">
                             <label class="form-label small fw-bold text-secondary mb-1">Port</label>
-                            <input type="number" asp-for="SmtpPortRfq" class="form-control form-control-sm" placeholder="587" />
+                            <input type="number" asp-for="SmtpPortRfq" class="form-control form-control-sm" id="smtpPortRfqInput" placeholder="587" />
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-secondary mb-1">Email Pengirim RFQ</label>
-                        <input type="email" asp-for="SenderEmailRfq" class="form-control form-control-sm" placeholder="procurement@company.com" />
+                        <input type="email" asp-for="SenderEmailRfq" class="form-control form-control-sm" id="senderEmailRfqInput" placeholder="procurement@company.com" />
                     </div>
 
                     <div class="mb-3">
@@ -287,6 +287,9 @@
             btn.disabled = true;
             statusDiv.innerHTML = '<span class="text-secondary"><i class="spinner-border spinner-border-sm me-1"></i>Menyusun dan mengirim email RFQ draft...</span>';
 
+            const server = document.getElementById('smtpServerRfqInput').value;
+            const port = document.getElementById('smtpPortRfqInput').value;
+            const sender = document.getElementById('senderEmailRfqInput').value;
             const pass = document.getElementById('rfqPasswordInput').value;
             const receiver = document.getElementById('receiverEmailRfqInput').value;
 
@@ -294,7 +297,7 @@
                 const res = await fetch('/EmailSettings/SendTestRfq', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ pass, receiver })
+                    body: new URLSearchParams({ server, port, sender, pass, receiver })
                 });
                 const data = await res.json();
 

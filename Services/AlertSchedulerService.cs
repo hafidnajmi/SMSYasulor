@@ -345,7 +345,7 @@ namespace UPMS.Web.Services
 
             // Intro paragraph
             sb.AppendLine("<p style='font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.6; margin-bottom: 20px;'>");
-            sb.AppendLine("Melalui surat ini, kami dari bagian Sparepart Management L'Oreal Indonesia bermaksud meminta penawaran harga untuk suku cadang (spare parts) berikut yang sedang kami butuhkan:");
+            sb.AppendLine("Melalui surat ini, kami dari bagian Sparepart Management PT Yasulor Indonesia bermaksud meminta penawaran harga untuk suku cadang (spare parts) berikut yang sedang kami butuhkan:");
             sb.AppendLine("</p>");
 
             // Table
@@ -397,7 +397,7 @@ namespace UPMS.Web.Services
             sb.AppendLine("Hormat kami,");
             sb.AppendLine("</p>");
             sb.AppendLine("<div style='font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; color: #111111;'>SMS Inventory System</div>");
-            sb.AppendLine("<div style='font-family: Arial, sans-serif; font-size: 12px; color: #666666; margin-top: 2px;'>L'Oreal Indonesia - Plant Division</div>");
+            sb.AppendLine("<div style='font-family: Arial, sans-serif; font-size: 12px; color: #666666; margin-top: 2px;'>PT Yasulor Indonesia - UP Filling</div>");
 
             sb.AppendLine("</div></body></html>");
 
