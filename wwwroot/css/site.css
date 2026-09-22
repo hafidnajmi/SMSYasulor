@@ -514,3 +514,122 @@ body {
     background: #FEF2F2;
     border-color: #FECACA;
 }
+
+/* Responsive Mobile Layout Adjustments & Touch Optimizations */
+.ems-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.ems-mobile-sidebar-header {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .ems-page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    .ems-page-header .ems-page-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .ems-page-header .ems-page-actions .btn,
+    .ems-page-header .ems-page-actions a {
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .ems-header {
+        padding: 0 0.75rem !important;
+    }
+    .ems-header-title {
+        font-size: 13px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 190px;
+    }
+    .ems-logo-subtitle {
+        display: none !important;
+    }
+    .ems-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+        width: 275px !important;
+        box-shadow: 6px 0 25px rgba(0,0,0,0.22);
+        z-index: 1045 !important;
+        top: 0 !important;
+    }
+    .ems-sidebar.show-mobile {
+        transform: translateX(0) !important;
+    }
+    .ems-mobile-sidebar-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0.85rem;
+        height: 56px;
+        background-color: #FFFFFF;
+        color: #111827;
+        border-bottom: 1px solid #D1D5DB;
+    }
+    .ems-nav-link {
+        height: 44px !important;
+        font-size: 13.5px !important;
+        padding-left: 0.85rem !important;
+    }
+    .ems-nav-link i {
+        font-size: 1.15rem !important;
+    }
+    .ems-wrapper {
+        margin-left: 0 !important;
+    }
+    .ems-content {
+        padding: 0.85rem 0.65rem !important;
+    }
+    .ems-sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+    }
+    .ems-sidebar-overlay.show {
+        display: block;
+    }
+    /* Touch Target & Input Sizing */
+    .btn-ems-icon-action {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 16px !important;
+    }
+    .table-responsive {
+        max-height: calc(100vh - 220px) !important;
+        box-shadow: inset -10px 0 8px -8px rgba(0, 0, 0, 0.08);
+    }
+    .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+    /* Prevent iOS browser auto-zoom on form inputs */
+    input[type="text"], input[type="search"], input[type="number"], input[type="password"], input[type="datetime-local"], select, textarea {
+        font-size: 14px !important;
+    }
+}
+@media (max-width: 576px) {
+    .ems-header-title {
+        max-width: 140px;
+        font-size: 12px !important;
+    }
+    .ems-user-name {
+        display: none !important;
+    }
+}

@@ -69,8 +69,17 @@ body {
 body:not(.modal-open) {
     overflow-y: auto !important;
 }
-.ems-header, .ems-sidebar, .ems-filter-card, .ems-kpi-card,
-.btn, .form-control, .form-select, .badge, .table-ems, .modal-content, .dropdown-menu {
+.card, .bk-card, .bm-card, .ems-header, .ems-sidebar, .ems-filter-card, .ems-kpi-card, .bk-history-card, .bm-history-card,
+.btn, .btn-sm, .btn-lg, .form-control, .form-select, .input-group-text, .input-group,
+.badge, .alert, .modal, .modal-content, .modal-header, .modal-footer, .modal-body, .dropdown-menu,
+.bk-icon-badge, .bm-icon-badge, #cameraScanModal, #cameraScanModal *, .btn-ganti-kamera, div[class*="rounded"] {
+    border-radius: 0px !important;
+}
+.ems-icon-badge, .bk-icon-badge, .bm-icon-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
     border-radius: 0px !important;
 }
 .ems-header {
@@ -150,88 +159,105 @@ body:not(.modal-open) {
 .ems-nav-header {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-muted);
-    padding: 0.9rem 1.25rem 0.35rem;
-    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #64748B;
+    padding: 1.1rem 1.25rem 0.35rem;
+    font-weight: 700;
     white-space: nowrap;
     transition: opacity 0.15s ease;
 }
+
 .ems-nav-link {
-    color: var(--color-secondary);
+    color: #334155;
     display: flex;
     align-items: center;
-    padding: 0 0 0 18px;
+    padding: 0 1.25rem;
     height: 40px;
-    font-size: 13px;
-    font-weight: 400;
-    border-left: 3px solid transparent;
+    font-size: 13.5px;
+    font-weight: 500;
     text-decoration: none;
     white-space: nowrap;
     margin: 1px 0;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    border-left: 3px solid transparent;
+    border-radius: 0 !important;
+    transition: all 0.15s ease;
 }
+
 .ems-nav-link:hover {
-    background-color: #F3F4F6;
-    color: var(--color-primary);
+    background-color: #F8FAFC;
+    color: #0F4C81;
 }
+
 .ems-nav-link.active {
-    background-color: #EFF6FF;
-    color: var(--color-primary);
-    border-left-color: var(--color-primary);
-    font-weight: 600;
+    background-color: #EFF6FF !important;
+    border-left: 3px solid #0F4C81 !important;
+    color: #0F4C81 !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
 }
-.ems-nav-link i {
-    font-size: 1.15rem;
+
+.ems-nav-link .nav-icon-box {
     width: 24px;
     height: 24px;
+    background: transparent !important;
+    border-radius: 0 !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    margin-right: 12px;
     flex-shrink: 0;
-    text-align: center;
 }
+
+.ems-nav-link.active .nav-icon-box {
+    background: transparent !important;
+    color: #0F4C81 !important;
+}
+.ems-nav-link.active .nav-icon-box i {
+    color: #0F4C81 !important;
+}
+
+.ems-nav-link i {
+    font-size: 1.15rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .ems-nav-link span {
-    margin-left: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: opacity 0.15s ease;
 }
+
 .ems-sidebar-footer {
-    padding: 0.5rem 0;
-    border-top: 1px solid var(--color-border);
+    padding: 0.25rem 0;
+    border-top: 1px solid #E2E8F0;
 }
+
 .ems-sidebar-footer button {
-    height: 40px;
-    padding: 0 0 0 18px;
+    height: 44px;
+    padding: 0 1.25rem;
     width: 100%;
-    border-radius: 0;
+    border-radius: 0 !important;
     display: flex;
     align-items: center;
-    color: var(--color-secondary);
+    justify-content: flex-start;
+    gap: 12px;
+    color: #475569 !important;
+    background-color: transparent !important;
+    border: none !important;
+    font-weight: 500 !important;
+    font-size: 13.5px;
     text-decoration: none;
-    border: none;
-    background: transparent;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease;
+    box-shadow: none !important;
 }
+
 .ems-sidebar-footer button:hover {
-    background-color: #FEF2F2;
-    color: #DC2626;
+    background-color: #F8FAFC !important;
+    color: #0F172A !important;
 }
-.ems-sidebar-footer button i {
-    width: 24px;
-    height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    flex-shrink: 0;
-}
-.ems-sidebar-footer button span {
-    margin-left: 12px;
-    white-space: nowrap;
-}
+
 .ems-wrapper {
     margin-left: var(--sidebar-width);
     padding-top: var(--topbar-height);
@@ -290,11 +316,22 @@ body:not(.modal-open) {
     border-left-color: var(--color-primary) !important;
     box-shadow: none !important;
 }
-.sidebar-collapsed .ems-nav-link span {
+.sidebar-collapsed .ems-nav-link span:not(.nav-icon-box) {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     width: 0 !important;
+}
+.sidebar-collapsed .ems-nav-link .nav-icon-box {
+    display: inline-flex !important;
+    margin-right: 0 !important;
+    width: 24px !important;
+    height: 24px !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.sidebar-collapsed .ems-sidebar-footer button span {
+    display: none !important;
 }
 .sidebar-collapsed .ems-nav-link i {
     font-size: 1.15rem !important;
@@ -408,22 +445,80 @@ body:not(.modal-open) {
 .btn-ems-icon-action.text-warning:hover { background: #FFFBEB; border-color: #FDE68A; }
 .btn-ems-icon-action.text-danger:hover  { background: #FEF2F2; border-color: #FECACA; }
 
-/* Responsive Mobile Layout Adjustments */
+/* Responsive Mobile Layout Adjustments & Touch Optimizations */
+.ems-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.ems-mobile-sidebar-header {
+    display: none;
+}
+
 @@media (max-width: 768px) {
+    .ems-page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    .ems-page-header .ems-page-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .ems-page-header .ems-page-actions .btn,
+    .ems-page-header .ems-page-actions a {
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+        white-space: nowrap;
+    }
     .ems-header {
-        padding: 0 0.85rem !important;
+        padding: 0 0.75rem !important;
+    }
+    .ems-header-title {
+        font-size: 13px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 190px;
     }
     .ems-logo-subtitle {
         display: none !important;
     }
     .ems-sidebar {
         transform: translateX(-100%);
-        transition: transform 0.25s ease-in-out;
-        width: 260px !important;
-        box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+        transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+        width: 275px !important;
+        box-shadow: 6px 0 25px rgba(0,0,0,0.22);
+        z-index: 1045 !important;
+        top: 0 !important;
     }
     .ems-sidebar.show-mobile {
         transform: translateX(0) !important;
+    }
+    .ems-mobile-sidebar-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 0.85rem;
+        height: 56px;
+        background-color: #FFFFFF;
+        color: #111827;
+        border-bottom: 1px solid #D1D5DB;
+    }
+    .ems-nav-link {
+        height: 44px !important;
+        font-size: 13.5px !important;
+        padding: 0 1.25rem !important;
+        margin: 1px 0 !important;
+        border-radius: 0 !important;
+    }
+    .ems-nav-link i {
+        font-size: 1.2rem !important;
     }
     .ems-wrapper {
         margin-left: 0 !important;
@@ -435,11 +530,39 @@ body:not(.modal-open) {
         display: none;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.4);
-        z-index: 1015;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
     }
     .ems-sidebar-overlay.show {
         display: block;
+    }
+    /* Touch Target & Input Sizing */
+    .btn-ems-icon-action {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 16px !important;
+    }
+    .table-responsive {
+        max-height: calc(100vh - 220px) !important;
+        box-shadow: inset -10px 0 8px -8px rgba(0, 0, 0, 0.08);
+    }
+    .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+    /* Prevent iOS browser auto-zoom on form inputs */
+    input[type="text"], input[type="search"], input[type="number"], input[type="password"], input[type="datetime-local"], select, textarea {
+        font-size: 14px !important;
+    }
+}
+@@media (max-width: 576px) {
+    .ems-header-title {
+        max-width: 140px;
+        font-size: 12px !important;
+    }
+    .ems-user-name {
+        display: none !important;
     }
 }
     </style>
@@ -453,19 +576,19 @@ body:not(.modal-open) {
                 <i class="bi bi-list fs-5"></i>
             </button>
             <!-- Mobile Sidebar Toggle Button -->
-            <button class="btn btn-sm btn-outline-secondary d-md-none me-2 p-1 px-2" type="button" onclick="toggleMobileSidebar()" title="Toggle Menu">
+            <button class="btn btn-sm btn-outline-secondary d-md-none me-2 p-1 px-2" type="button" onclick="toggleMobileSidebar()" title="Toggle Menu" style="min-width:38px; min-height:38px;">
                 <i class="bi bi-list fs-5"></i>
             </button>
             <a href="/" class="ems-logo-container">
-                <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 46px; width: auto; object-fit: contain;" class="me-2" />
+                <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 42px; width: auto; object-fit: contain;" class="me-2" />
                 <div>
-                    <div class="fw-normal text-dark" style="font-size: 15px; line-height: 1.1; font-weight: 400;">Sparepart Management System</div>
+                    <div class="fw-normal text-dark ems-header-title" style="font-size: 15px; line-height: 1.1; font-weight: 400;">Sparepart Management System</div>
                     <div class="ems-logo-subtitle" style="font-weight: 400;">Enterprise Management Suite</div>
                 </div>
             </a>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 gap-md-3">
             @if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 var activeDept = Context.Request.Cookies["SMS_ACTIVE_DEPT"] ?? "Filling";
@@ -475,7 +598,7 @@ body:not(.modal-open) {
                 <div class="dropdown">
                     <button class="btn btn-sm btn-link text-decoration-none p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                         <div class="ems-user-avatar">@(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "A")</div>
-                        <span class="small fw-semibold text-dark">@User.Identity.Name</span>
+                        <span class="small fw-semibold text-dark ems-user-name">@User.Identity.Name</span>
                         <i class="bi bi-chevron-down text-muted small"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-1">
@@ -522,10 +645,20 @@ body:not(.modal-open) {
     <div class="app-wrapper">
         <!-- Sidebar Navigation -->
         <aside class="ems-sidebar">
-            <div>
+            <div class="ems-mobile-sidebar-header">
+                <div class="d-flex align-items-center me-1" style="flex:1; min-width:0;">
+                    <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 32px; width: auto; object-fit: contain;" class="me-2 flex-shrink-0" />
+                    <div style="min-width:0; overflow:hidden;">
+                        <div class="fw-semibold text-dark text-nowrap" style="font-size: 11.5px; line-height: 1.2; text-overflow: ellipsis; overflow: hidden;">Sparepart Management System</div>
+                        <div class="text-muted text-nowrap" style="font-size: 8.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.02em; text-overflow: ellipsis; overflow: hidden;">Enterprise Management Suite</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-sm flex-shrink-0" onclick="toggleMobileSidebar()" aria-label="Close"></button>
+            </div>
+            <div class="pb-3">
                 <div class="ems-nav-header">Dashboard</div>
                 <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index" title="Dashboard">
-                    <i class="bi bi-speedometer2"></i>
+                    <span class="nav-icon-box"><i class="bi bi-speedometer2" style="color:#0F4C81;"></i></span>
                     <span>Dashboard</span>
                 </a>
 
@@ -533,7 +666,7 @@ body:not(.modal-open) {
                 {
                     <div class="ems-nav-header">Master Data</div>
                     <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MasterData" ? "active" : "")" asp-controller="MasterData" asp-action="Index" title="Spareparts Catalog">
-                        <i class="bi bi-boxes"></i>
+                        <span class="nav-icon-box"><i class="bi bi-boxes" style="color:#0F4C81;"></i></span>
                         <span>Spareparts Catalog</span>
                     </a>
                 }
@@ -544,21 +677,21 @@ body:not(.modal-open) {
                     @if (rbacBarangMasuk)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")" asp-controller="BarangMasuk" asp-action="Index" title="Barang Masuk">
-                            <i class="bi bi-box-arrow-in-down text-success"></i>
+                            <span class="nav-icon-box"><i class="bi bi-box-arrow-in-down" style="color:#059669;"></i></span>
                             <span>Barang Masuk</span>
                         </a>
                     }
                     @if (rbacBarangKeluar)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")" asp-controller="BarangKeluar" asp-action="Index" title="Barang Keluar">
-                            <i class="bi bi-box-arrow-up-right text-danger"></i>
+                            <span class="nav-icon-box"><i class="bi bi-box-arrow-up-right" style="color:#DC2626;"></i></span>
                             <span>Barang Keluar</span>
                         </a>
                     }
                     @if (rbacRiwayat)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "History" ? "active" : "")" asp-controller="History" asp-action="Index" title="Transaction Logs">
-                            <i class="bi bi-clock-history text-primary"></i>
+                            <span class="nav-icon-box"><i class="bi bi-clock-history" style="color:#0284C7;"></i></span>
                             <span>Transaction Logs</span>
                         </a>
                     }
@@ -568,11 +701,11 @@ body:not(.modal-open) {
                 {
                     <div class="ems-nav-header">Maintenance</div>
                     <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Maintenance" asp-action="Index" title="Manage PM">
-                        <i class="bi bi-calendar-check text-success"></i>
+                        <span class="nav-icon-box"><i class="bi bi-calendar-check" style="color:#16A34A;"></i></span>
                         <span>Manage PM</span>
                     </a>
                     <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" && ViewContext.RouteData.Values["action"]?.ToString() == "PmPlan" ? "active" : "")" asp-controller="Maintenance" asp-action="PmPlan" title="Preventive Maintenance Plan">
-                        <i class="bi bi-list-task text-primary"></i>
+                        <span class="nav-icon-box"><i class="bi bi-list-task" style="color:#0284C7;"></i></span>
                         <span>Preventive Maintenance Plan</span>
                     </a>
                 }
@@ -583,7 +716,7 @@ body:not(.modal-open) {
                     @if (rbacCostIntel)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CostIntelligence" ? "active" : "")" asp-controller="CostIntelligence" asp-action="Index" title="Cost Intelligence">
-                            <i class="bi bi-graph-up-arrow"></i>
+                            <span class="nav-icon-box"><i class="bi bi-graph-up-arrow" style="color:#0F4C81;"></i></span>
                             <span>Cost Intelligence</span>
                         </a>
                     }
@@ -591,14 +724,14 @@ body:not(.modal-open) {
                     @if (rbacLineMapping)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "LineCompatibility" ? "active" : "")" asp-controller="LineCompatibility" asp-action="Index" title="Line Compatibility">
-                            <i class="bi bi-diagram-3-fill text-info"></i>
+                            <span class="nav-icon-box"><i class="bi bi-diagram-3-fill" style="color:#0EA5E9;"></i></span>
                             <span>Line Compatibility</span>
                         </a>
                     }
                     @if (rbacSupplierData)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")" asp-controller="Supplier" asp-action="Index" title="Master Supplier">
-                            <i class="bi bi-truck text-warning"></i>
+                            <span class="nav-icon-box"><i class="bi bi-truck" style="color:#D97706;"></i></span>
                             <span>Master Supplier</span>
                         </a>
                     }
@@ -610,21 +743,21 @@ body:not(.modal-open) {
                     @if (rbacAdminMgmt)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminManagement" ? "active" : "")" asp-controller="AdminManagement" asp-action="Index" title="Admin Portal">
-                            <i class="bi bi-shield-check text-warning"></i>
+                            <span class="nav-icon-box"><i class="bi bi-shield-check" style="color:#EA580C;"></i></span>
                             <span>Admin Portal</span>
                         </a>
                     }
                     @if (rbacSettings)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")" asp-controller="Settings" asp-action="Index" title="Settings & Users">
-                            <i class="bi bi-gear"></i>
+                            <span class="nav-icon-box"><i class="bi bi-gear" style="color:#0F4C81;"></i></span>
                             <span>Settings & Users</span>
                         </a>
                     }
                     @if (rbacEmailSettings)
                     {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "EmailSettings" ? "active" : "")" asp-controller="EmailSettings" asp-action="Index" title="Email Settings">
-                            <i class="bi bi-envelope-at text-info"></i>
+                            <span class="nav-icon-box"><i class="bi bi-envelope-at" style="color:#0EA5E9;"></i></span>
                             <span>Email Settings</span>
                         </a>
                     }
@@ -633,8 +766,8 @@ body:not(.modal-open) {
 
             <div class="ems-sidebar-footer">
                 <form asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="btn btn-link nav-link p-0 text-secondary small d-flex align-items-center gap-2" title="Logout">
-                        <i class="bi bi-box-arrow-right fs-6"></i>
+                    <button type="submit" title="Logout">
+                        <i class="bi bi-box-arrow-right fs-6" style="color: #64748B;"></i>
                         <span>Logout</span>
                     </button>
                 </form>

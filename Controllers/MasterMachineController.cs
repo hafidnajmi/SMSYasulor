@@ -22,7 +22,7 @@ namespace UPMS.Web.Controllers
             "B20", "B21", "B22", "B24",
             "J3", "J4", "J5",
             "T1", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T12",
-            "S6", "S8", "S9", "S10", "S14", "S15", "S16", "S18", "S19", "S20"
+            "S6", "S7", "S8", "S9", "S10", "S14", "S15", "S16", "S18", "S19", "S20"
         };
 
         public MasterMachineController(UpmsDbContext db)

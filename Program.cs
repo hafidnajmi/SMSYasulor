@@ -132,6 +132,11 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
+// Scheduled Auto-Alert background service
+// FAST-frequency parts: alert every 14 days (2 weeks)
+// SLOW-frequency parts: alert every 30 days (1 month)
+builder.Services.AddHostedService<AlertSchedulerService>();
+
 var app = builder.Build();
 
 var forwardedOptions = new ForwardedHeadersOptions

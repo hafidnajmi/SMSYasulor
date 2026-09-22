@@ -77,14 +77,14 @@
 </style>
 
 <!-- Title Header -->
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="ems-page-header mb-3">
     <div>
         <h3 class="fw-bold mb-1" style="color: #0F4C81;">Spareparts Catalog</h3>
         <p class="text-muted small mb-0">Manage and track all sparepart inventory catalog items across UP1 and UP2.</p>
     </div>
     @if (!hideActionsAndAlerts)
     {
-        <div class="d-flex gap-2">
+        <div class="ems-page-actions">
             <a href="#" onclick="return executeSecureExport('/MasterData/ExportExcel?search=@ViewBag.Search&upArea=@ViewBag.UpArea&category=@ViewBag.Category&frequency=@ViewBag.Frequency&line=@ViewBag.Line&stockStatus=@ViewBag.StockStatus', 'Spareparts Catalog');" class="btn btn-ems-outline btn-sm">
                 <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
             </a>
@@ -99,60 +99,60 @@
     var currentStatus = ViewBag.StockStatus as string ?? "";
 }
 
-<!-- Header KPI Cards (EMS Theme) -->
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="ems-kpi-card ems-kpi-danger @(currentStatus == "below" ? "border border-2 border-danger shadow-sm bg-white" : "")" onclick="filterByStockStatus('below')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Below Safety Stock">
-            <div class="ems-kpi-title text-danger d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-exclamation-triangle me-1"></i> BELOW SAFETY STOCK</span>
+<!-- Header KPI Cards (EMS Theme Responsive 2x2 Mobile Grid - Consistent Heights) -->
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="ems-kpi-card ems-kpi-danger h-100 d-flex flex-column justify-content-between @(currentStatus == "below" ? "border border-2 border-danger shadow-sm bg-white" : "")" onclick="filterByStockStatus('below')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Below Safety Stock">
+            <div class="ems-kpi-title text-danger text-nowrap d-flex justify-content-between align-items-center">
+                <span class="text-truncate"><i class="bi bi-exclamation-triangle me-1"></i> BELOW SAFETY</span>
                 @if (currentStatus == "below")
                 {
-                    <span class="badge bg-danger text-white style-active-badge" style="font-size: 10px;">Filtered</span>
+                    <span class="badge bg-danger text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
                 }
             </div>
-            <div class="ems-kpi-value text-danger">
+            <div class="ems-kpi-value text-danger mt-1">
                 @kpis.BelowSafetyStock.ToString("N0")
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="ems-kpi-card ems-kpi-warning @(currentStatus == "near" ? "border border-2 border-warning shadow-sm bg-white" : "")" onclick="filterByStockStatus('near')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Near Safety Stock">
-            <div class="ems-kpi-title text-warning d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-exclamation-circle me-1"></i> NEAR SAFETY STOCK</span>
+    <div class="col-6 col-md-3">
+        <div class="ems-kpi-card ems-kpi-warning h-100 d-flex flex-column justify-content-between @(currentStatus == "near" ? "border border-2 border-warning shadow-sm bg-white" : "")" onclick="filterByStockStatus('near')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Near Safety Stock">
+            <div class="ems-kpi-title text-warning text-nowrap d-flex justify-content-between align-items-center">
+                <span class="text-truncate"><i class="bi bi-exclamation-circle me-1"></i> NEAR SAFETY</span>
                 @if (currentStatus == "near")
                 {
-                    <span class="badge bg-warning text-dark style-active-badge" style="font-size: 10px;">Filtered</span>
+                    <span class="badge bg-warning text-dark ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
                 }
             </div>
-            <div class="ems-kpi-value text-warning">
+            <div class="ems-kpi-value text-warning mt-1">
                 @kpis.NearSafetyStock.ToString("N0")
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="ems-kpi-card ems-kpi-success @(currentStatus == "normal" ? "border border-2 border-success shadow-sm bg-white" : "")" onclick="filterByStockStatus('normal')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan sparepart Normal Stock">
-            <div class="ems-kpi-title text-success d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-check-circle me-1"></i> NORMAL STOCK</span>
+    <div class="col-6 col-md-3">
+        <div class="ems-kpi-card ems-kpi-success h-100 d-flex flex-column justify-content-between @(currentStatus == "normal" ? "border border-2 border-success shadow-sm bg-white" : "")" onclick="filterByStockStatus('normal')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Normal Stock">
+            <div class="ems-kpi-title text-success text-nowrap d-flex justify-content-between align-items-center">
+                <span class="text-truncate"><i class="bi bi-check-circle me-1"></i> NORMAL STOCK</span>
                 @if (currentStatus == "normal")
                 {
-                    <span class="badge bg-success text-white style-active-badge" style="font-size: 10px;">Filtered</span>
+                    <span class="badge bg-success text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
                 }
             </div>
-            <div class="ems-kpi-value text-success">
+            <div class="ems-kpi-value text-success mt-1">
                 @kpis.NormalStock.ToString("N0")
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="ems-kpi-card ems-kpi-blue @(string.IsNullOrEmpty(currentStatus) ? "border border-2 border-primary shadow-sm bg-white" : "")" onclick="filterByStockStatus('')" style="cursor:pointer; transition: all 0.2s ease;" title="Klik untuk menampilkan Semua Sparepart">
-            <div class="ems-kpi-title text-primary d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-boxes me-1"></i> TOTAL SPAREPARTS</span>
+    <div class="col-6 col-md-3">
+        <div class="ems-kpi-card ems-kpi-blue h-100 d-flex flex-column justify-content-between @(string.IsNullOrEmpty(currentStatus) ? "border border-2 border-primary shadow-sm bg-white" : "")" onclick="filterByStockStatus('')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan Semua Sparepart">
+            <div class="ems-kpi-title text-primary text-nowrap d-flex justify-content-between align-items-center">
+                <span class="text-truncate"><i class="bi bi-boxes me-1"></i> TOTAL ITEMS</span>
                 @if (string.IsNullOrEmpty(currentStatus))
                 {
-                    <span class="badge bg-primary text-white style-active-badge" style="font-size: 10px;">All Items</span>
+                    <span class="badge bg-primary text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
                 }
             </div>
-            <div class="ems-kpi-value text-primary">
+            <div class="ems-kpi-value text-primary mt-1">
                 @kpis.TotalSpareparts.ToString("N0")
             </div>
         </div>
@@ -163,16 +163,16 @@
 <div class="ems-filter-card mb-4">
     <div class="ems-filter-header">
         <span><i class="bi bi-funnel me-1 text-primary"></i>Filter &amp; Search Spareparts</span>
-        <span class="text-muted fw-normal small">@Model?.TotalCount.ToString("N0") item(s) found</span>
+        <span class="text-muted small">@Model?.TotalCount.ToString("N0") items</span>
     </div>
     <div class="p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
             <input type="hidden" name="stockStatus" id="stockStatusInput" value="@ViewBag.StockStatus" />
-            <div class="col-xl-3 col-lg-3 col-md-6">
+            <div class="col-12 col-md-4 col-xl-3">
                 <label class="form-label small fw-bold text-secondary mb-1">Search Query</label>
                 <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Part #, Item, BIN, Machine..." />
             </div>
-            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">UP Area</label>
                 <select name="upArea" class="form-select form-select-sm">
                     <option value="">[All Areas]</option>
@@ -182,7 +182,7 @@
                     }
                 </select>
             </div>
-            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">Category</label>
                 <select name="category" class="form-select form-select-sm">
                     <option value="">[All Categories]</option>
@@ -192,7 +192,7 @@
                     }
                 </select>
             </div>
-            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">Frequency</label>
                 <select name="frequency" class="form-select form-select-sm">
                     <option value="">[All Frequency]</option>
@@ -200,7 +200,7 @@
                     <option value="SLOW" selected="@(ViewBag.Frequency == "SLOW" ? "selected" : null)">SLOW</option>
                 </select>
             </div>
-            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-bold text-secondary mb-1">Production Line</label>
                 <select name="line" class="form-select form-select-sm">
                     <option value="">[All Lines]</option>
@@ -927,7 +927,7 @@
             "B4", "B5", "B10", "B11", "B15", "B16", "B17", "B18", "B19", "B20", "B21", "B22", "B24",
             "J3", "J4", "J5",
             "T1", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T12",
-            "S6", "S8", "S9", "S10", "S14", "S15", "S16", "S18", "S19", "S20",
+            "S6", "S7", "S8", "S9", "S10", "S14", "S15", "S16", "S18", "S19", "S20",
             "GENERAL", "VACANT", "WASHER"
         ];
 

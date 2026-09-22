@@ -487,13 +487,20 @@ namespace UPMS.Web.Services
             if (!string.IsNullOrWhiteSpace(search))
             {
                 string term = search.Trim().ToLower();
+                var matchingMachineIds = await _db.MachineMasters
+                    .AsNoTracking()
+                    .Where(m => m.MachineCode.ToLower().Contains(term) || m.MachineName.ToLower().Contains(term))
+                    .Select(m => m.Id)
+                    .ToListAsync();
+
                 query = query.Where(b =>
                     b.ItemName.ToLower().Contains(term) ||
                     (b.Bin != null && b.Bin.ToLower().Contains(term)) ||
                     (b.PartNumber != null && b.PartNumber.ToLower().Contains(term)) ||
                     (b.MasterDataId != null && b.MasterDataId.ToLower().Contains(term)) ||
                     (b.Pic != null && b.Pic.ToLower().Contains(term)) ||
-                    (b.Line != null && b.Line.ToLower().Contains(term))
+                    (b.Line != null && b.Line.ToLower().Contains(term)) ||
+                    (b.MachineId.HasValue && matchingMachineIds.Contains(b.MachineId.Value))
                 );
             }
 

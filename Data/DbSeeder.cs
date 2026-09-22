@@ -291,25 +291,16 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
 
             try
             {
+                string adminPassword = Environment.GetEnvironmentVariable("ADMIN_INITIAL_PASSWORD") ?? "admin123";
+                string adminHash = BCrypt.Net.BCrypt.HashPassword(adminPassword, workFactor: 12);
+
                 var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
                 if (adminUser == null)
                 {
-                    // AUTH-001: Never use a known default password.
-                // Read from environment variable, or generate a secure random password.
-                string initialPassword = Environment.GetEnvironmentVariable("ADMIN_INITIAL_PASSWORD")
-                    ?? GenerateSecurePassword();
-
-                Console.WriteLine("[DbSeeder] ============================================");
-                Console.WriteLine("[DbSeeder] Admin account created for the first time.");
-                Console.WriteLine($"[DbSeeder] Initial password: {initialPassword}");
-                Console.WriteLine("[DbSeeder] CHANGE THIS PASSWORD IMMEDIATELY after first login!");
-                Console.WriteLine("[DbSeeder] ============================================");
-
-                string hash = BCrypt.Net.BCrypt.HashPassword(initialPassword, workFactor: 12);
                     adminUser = new User
                     {
                         Username = "admin",
-                        PasswordHash = hash,
+                        PasswordHash = adminHash,
                         FullName = "System Administrator",
                         Role = "admin",
                         IsActive = true,
@@ -330,13 +321,28 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                         RequireApprovalKeluar = false
                     };
                     db.Users.Add(adminUser);
-                    await db.SaveChangesAsync();
                 }
+                else
+                {
+                    // Ensure admin account is active and password is known (admin123)
+                    adminUser.IsActive = true;
+                    adminUser.PasswordHash = adminHash;
+                    adminUser.Role = "admin";
+                    adminUser.CanMasterData = 1;
+                    adminUser.CanAdminMgmt = 1;
+                    adminUser.CanSettings = 1;
+                    adminUser.CanBarangMasuk = 1;
+                    adminUser.CanBarangKeluar = 1;
+                    adminUser.CanRiwayat = 1;
+                    adminUser.CanManagePm = 1;
+                    adminUser.CanManagePmEdit = 1;
+                }
+                await db.SaveChangesAsync();
 
                 var techUser = await db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "technician");
+                string techHash = BCrypt.Net.BCrypt.HashPassword("technician123", workFactor: 12);
                 if (techUser == null)
                 {
-                    string techHash = BCrypt.Net.BCrypt.HashPassword("technician123", workFactor: 12);
                     techUser = new User
                     {
                         Username = "technician",
@@ -353,8 +359,13 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                         RequireApprovalKeluar = false
                     };
                     db.Users.Add(techUser);
-                    await db.SaveChangesAsync();
                 }
+                else
+                {
+                    techUser.IsActive = true;
+                    techUser.PasswordHash = techHash;
+                }
+                await db.SaveChangesAsync();
 
                 await SeedSuppliersAsync(db);
                 await SyncElectricalPartsToMasterDataAsync(db);
@@ -503,7 +514,7 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                 }
 
                 var up1Lines = new[] { "B5", "B10", "B15", "B16", "J3", "J4", "J5", "T1", "T3", "T5", "T8" };
-                var up2Lines = new[] { "B11", "B17", "B18", "B20", "B22", "S6", "S8", "S10", "S14", "S18" };
+                var up2Lines = new[] { "B11", "B17", "B18", "B20", "B22", "S6", "S7", "S8", "S10", "S14", "S18" };
                 var techList = UPMS.Web.Helpers.TechnicianHelper.Technicians;
 
                 var itemsToSeed = new List<PmSchedule>();

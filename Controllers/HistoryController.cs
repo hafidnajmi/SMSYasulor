@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Services;
 
 using UPMS.Web.Data;
@@ -43,6 +46,23 @@ namespace UPMS.Web.Controllers
             if (tab.ToLower() == "keluar")
             {
                 var keluarHistory = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, page, 50);
+
+                var machineIds = keluarHistory.Items
+                    .Where(b => b.MachineId.HasValue)
+                    .Select(b => b.MachineId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                ViewBag.MachineMap = await _db.MachineMasters
+                    .AsNoTracking()
+                    .Where(m => machineIds.Contains(m.Id))
+                    .ToDictionaryAsync(
+                        m => m.Id,
+                        m => !string.IsNullOrWhiteSpace(m.MachineCode) && !string.IsNullOrWhiteSpace(m.MachineName) && m.MachineCode != m.MachineName
+                            ? $"{m.MachineCode} ({m.MachineName})"
+                            : (!string.IsNullOrWhiteSpace(m.MachineCode) ? m.MachineCode : m.MachineName)
+                    );
+
                 return View(keluarHistory);
             }
             else
@@ -67,7 +87,24 @@ namespace UPMS.Web.Controllers
             if (tab.ToLower() == "keluar")
             {
                 var paged = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, 1, 10000);
-                byte[] fileBytes = _excelService.ExportBarangKeluarToExcel(paged.Items);
+
+                var machineIds = paged.Items
+                    .Where(b => b.MachineId.HasValue)
+                    .Select(b => b.MachineId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                var machineMap = await _db.MachineMasters
+                    .AsNoTracking()
+                    .Where(m => machineIds.Contains(m.Id))
+                    .ToDictionaryAsync(
+                        m => m.Id,
+                        m => !string.IsNullOrWhiteSpace(m.MachineCode) && !string.IsNullOrWhiteSpace(m.MachineName) && m.MachineCode != m.MachineName
+                            ? $"{m.MachineCode} ({m.MachineName})"
+                            : (!string.IsNullOrWhiteSpace(m.MachineCode) ? m.MachineCode : m.MachineName)
+                    );
+
+                byte[] fileBytes = _excelService.ExportBarangKeluarToExcel(paged.Items, machineMap);
                 string fileName = $"History_BarangKeluar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }

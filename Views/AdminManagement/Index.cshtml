@@ -7,14 +7,14 @@
 }
 
 <!-- EMS Header -->
-<div class="d-flex align-items-center justify-content-between mb-4">
+<div class="ems-page-header mb-4">
     <div>
         <h3 class="fw-bold mb-1" style="color: #0F4C81; font-family: Arial, Helvetica, sans-serif;">
             Admin Management Portal
         </h3>
         <p class="text-muted small mb-0">Procurement comparison, bidding history tracking, and outgoing stock approvals.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="ems-page-actions">
         <button onclick="window.print()" class="btn btn-ems-outline btn-sm"><i class="bi bi-printer me-1"></i>Print View</button>
     </div>
 </div>
@@ -330,22 +330,27 @@
                 <table class="table-ems" id="biddingTable">
                     <thead>
                         <tr>
-                            <th style="white-space:nowrap;">BIDDING ID</th>
-                            <th style="white-space:nowrap;">TAHUN</th>
+                            <th style="width:40px; white-space:nowrap;">NO</th>
                             <th style="white-space:nowrap;">LINE</th>
-                            <th style="min-width:110px; white-space:nowrap;">BIN</th>
-                            <th style="min-width:130px; white-space:nowrap;">MASTER PART ID</th>
-                            <th style="min-width:180px; white-space:nowrap;">NAMA ITEM</th>
-                            <th style="min-width:180px; white-space:nowrap;">DETAIL</th>
-                            <th style="white-space:nowrap;">BUDGET CODE</th>
-                            <th class="text-center" style="white-space:nowrap;">QTY NEED</th>
-                            <th class="text-center" style="white-space:nowrap;">SAFETY STK</th>
-                            <th class="text-center" style="white-space:nowrap;">CURR STK</th>
-                            <th class="text-center" style="white-space:nowrap;">QTY BID</th>
+                            <th style="min-width:100px; white-space:nowrap;">BIN</th>
+                            <th style="white-space:nowrap;">CATEGORY</th>
+                            <th style="white-space:nowrap;">FREQUENCY</th>
+                            <th style="min-width:140px; white-space:nowrap;">MACHINE</th>
+                            <th style="min-width:180px; white-space:nowrap;">ITEM</th>
+                            <th style="min-width:180px; white-space:nowrap;">PO NAME</th>
+                            <th style="min-width:140px; white-space:nowrap;">BRAND/FAMILY</th>
+                            <th class="text-center" style="white-space:nowrap;">TBM/MONTH</th>
+                            <th class="text-center" style="white-space:nowrap;">LT (MONTH)</th>
+                            <th class="text-center" style="white-space:nowrap;">QTY NEED / YEAR</th>
+                            <th class="text-center" style="white-space:nowrap;">SAFETY STOCK</th>
+                            <th class="text-center" style="white-space:nowrap;">CURRENT STOCK</th>
+                            <th class="text-end" style="min-width:140px; white-space:nowrap;">2025 PRICE</th>
                             <th class="text-end" style="min-width:140px; white-space:nowrap;">PRICE (IDR)</th>
-                            <th class="text-end" style="min-width:160px; white-space:nowrap;">TOTAL VALUE (RP)</th>
-                            <th style="min-width:140px; white-space:nowrap;">SUPPLIER</th>
-                            <th style="white-space:nowrap;">BID STATUS</th>
+                            <th style="min-width:160px; white-space:nowrap;">CURRENT SUPPLIER</th>
+                            <th style="white-space:nowrap;">LINE ALLOCATION</th>
+                            <th class="text-center" style="white-space:nowrap;">QTY/LINE</th>
+                            <th class="text-center" style="white-space:nowrap;">QTY BID</th>
+                            <th class="text-end" style="min-width:160px; white-space:nowrap;">VALUE</th>
                             <th class="text-center" style="white-space:nowrap;">STATUS</th>
                             <th class="text-center" style="min-width:130px; white-space:nowrap;">ACTIONS</th>
                         </tr>
@@ -353,31 +358,37 @@
                     <tbody>
                         @if (Model.BiddingRecordDtos.Any())
                         {
+                            int bidRowNo = 1;
                             foreach (var bid in Model.BiddingRecordDtos)
                             {
                                 <tr>
-                                    <td><span class="font-monospace text-primary">#@bid.Id</span></td>
-                                    <td><span class="badge bg-light text-dark border fw-normal">@bid.BiddingYear</span></td>
+                                    <td class="text-center font-monospace text-muted" style="background-color:#F8FAFC;">@(bidRowNo++)</td>
                                     <td><span class="badge bg-secondary-subtle text-dark fw-normal">@bid.Line</span></td>
                                     <td><span class="font-monospace text-muted">@bid.Bin</span></td>
-                                    <td><span class="font-monospace small text-primary">@bid.MasterDataId</span></td>
-                                    <td class="text-dark">@bid.ItemName</td>
+                                    <td><span class="badge bg-light text-dark border fw-normal">@bid.Category</span></td>
+                                    <td><span class="small text-secondary">@bid.Frequency</span></td>
+                                    <td class="text-dark small">@bid.Machine</td>
+                                    <td class="text-dark fw-semibold">@bid.ItemName</td>
                                     <td class="small text-secondary">@bid.Detail</td>
-                                    <td><span class="badge bg-info-subtle text-info border fw-normal">@bid.BudgetCode</span></td>
+                                    <td class="small text-dark">@bid.Brand</td>
+                                    <td class="text-center font-monospace">@bid.TbmPerMonth</td>
+                                    <td class="text-center font-monospace">@bid.LtPerMonth</td>
                                     <td class="text-center">@bid.QtyNeedYear</td>
                                     <td class="text-center">@bid.SafetyStock</td>
                                     <td class="text-center">@bid.CurrentStock</td>
-                                    <td class="text-center text-primary">@bid.QtyBid</td>
-                                    <td class="text-end font-monospace text-dark">Rp @bid.Price.ToString("N0")</td>
-                                    <td class="text-end font-monospace text-success">Rp @bid.TotalValue.ToString("N0")</td>
-                                    <td class="text-dark">@bid.SupplierName</td>
-                                    <td><span class="small text-secondary">@bid.BiddingStage</span></td>
+                                    <td class="text-end font-monospace text-muted">Rp @bid.Price2025.ToString("N0")</td>
+                                    <td class="text-end font-monospace text-dark fw-bold">Rp @bid.Price.ToString("N0")</td>
+                                    <td class="text-dark fw-semibold">@bid.SupplierName</td>
+                                    <td><span class="badge bg-info-subtle text-info border fw-normal">@bid.LineAllocation</span></td>
+                                    <td class="text-center font-monospace">@bid.QtyPerLine</td>
+                                    <td class="text-center text-primary fw-bold">@bid.QtyBid</td>
+                                    <td class="text-end font-monospace text-success fw-bold">Rp @bid.TotalValue.ToString("N0")</td>
                                     <td class="text-center align-middle">
                                         @{
                                             var st = (bid.Status ?? "Completed").ToLower().Trim();
                                             string badgeCss = st == "pending" ? "bg-warning-subtle text-warning-emphasis border border-warning" :
-                                                             (st == "cancelled" || st == "canceled") ? "bg-danger-subtle text-danger border border-danger" :
-                                                             "bg-success-subtle text-success border border-success";
+                                                              (st == "cancelled" || st == "canceled") ? "bg-danger-subtle text-danger border border-danger" :
+                                                              "bg-success-subtle text-success border border-success";
                                         }
                                         <span class="badge @badgeCss small">@(bid.Status ?? "Completed")</span>
                                     </td>
@@ -400,7 +411,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="18" class="text-center text-muted py-4">No bidding history records found.</td>
+                                <td colspan="23" class="text-center text-muted py-4">No bidding history records found.</td>
                             </tr>
                         }
                     </tbody>

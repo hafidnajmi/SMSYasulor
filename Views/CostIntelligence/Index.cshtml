@@ -5,57 +5,174 @@
 }
 
 <style>
+    /* Microsoft Fluent & SMS Flat Sharp Styling (0 Border Radius) */
+    :root {
+        --ci-primary: #0F4C81;
+        --ci-primary-hover: #0b3c67;
+        --ci-border: #e1dfdd;
+    }
+
+    .ci-header-banner,
+    .ems-filter-card,
+    .ems-kpi-card,
+    .kpi-card-custom,
+    .chart-box,
+    .card,
+    .card-header,
+    .form-control,
+    .form-select,
+    .btn,
+    .badge,
+    .alert,
+    .input-group-text,
+    .nav-tabs .nav-link,
+    .modal-content,
+    .ci-mobile-card {
+        border-radius: 0px !important;
+    }
+
+    .ci-header-banner {
+        background: #ffffff;
+        border: 1px solid var(--ci-border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .ems-filter-card {
+        background: #ffffff;
+        border: 1px solid var(--ci-border);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+
+    .ems-filter-header {
+        padding: 0.65rem 1rem;
+        background: #faf9f8;
+        border-bottom: 1px solid var(--ci-border);
+        font-weight: 600;
+        font-size: 13px;
+        color: #323130;
+    }
+
+    .kpi-card-custom {
+        background: #ffffff;
+        border: 1px solid var(--ci-border);
+        border-left: 4px solid var(--ci-primary);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        padding: 1rem;
+    }
+
+    .kpi-card-green {
+        border-left-color: #107c41 !important;
+    }
+
+    .kpi-card-amber {
+        border-left-color: #d97706 !important;
+    }
+
     .kpi-title-sm {
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.5px;
         text-transform: uppercase;
     }
+
     .kpi-value-lg {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
         font-family: 'Consolas', 'Courier New', monospace;
     }
+
     .chart-box {
         background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 0;
+        border: 1px solid var(--ci-border);
         padding: 16px;
         position: relative;
     }
-    .table-ems tbody tr {
-        transition: background-color 0.12s ease-in-out;
+
+    .table-ems {
+        width: 100%;
+        border-collapse: collapse;
     }
+
+    .table-ems th {
+        font-size: 11px;
+        font-weight: 700;
+        color: #323130;
+        background-color: #faf9f8;
+        padding: 10px 12px;
+        border-bottom: 2px solid var(--ci-border);
+        white-space: nowrap;
+    }
+
+    .table-ems td {
+        font-size: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f3f2f1;
+        vertical-align: middle;
+    }
+
     .table-ems tbody tr:hover {
         background-color: #EFF6FF !important;
     }
+
+    .nav-tabs {
+        border-bottom: 1px solid var(--ci-border);
+    }
+
+    .nav-tabs .nav-link {
+        color: #605e5c;
+        font-size: 13px;
+        border: 1px solid transparent;
+        margin-right: 4px;
+        padding: 10px 20px;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0F4C81 !important;
+        background-color: #ffffff !important;
+        border-color: var(--ci-border) var(--ci-border) #ffffff !important;
+        border-top: 3px solid #0F4C81 !important;
+        font-weight: 700;
+    }
+
+    .ci-mobile-card {
+        background: #ffffff;
+        border: 1px solid var(--ci-border);
+        padding: 0.85rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
 </style>
 
-<!-- Title Header -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Cost Intelligence &amp; Analytics</h3>
-        <p class="text-muted small mb-0">Analysis of sparepart expenditure across production lines, machinery, and maintenance activities.</p>
+<!-- Top Title Bar -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3 ci-header-banner p-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center text-white" style="width: 44px; height: 44px; background-color: #0F4C81; border-radius: 0px !important; flex-shrink: 0;">
+            <i class="bi bi-graph-up-arrow fs-4"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.05rem;">Cost Intelligence &amp; Analytics</h4>
+            <p class="text-muted small mb-0 mt-0.5">Analysis of sparepart expenditure across production lines, machinery, and maintenance activities.</p>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportToExcel", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, year = Model.SelectedYear, tab = Model.ActiveTab })', 'Cost Intelligence');" class="btn btn-ems-outline btn-sm">
-            <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export CSV
+    <div class="d-flex gap-2 align-items-center w-100 w-sm-auto">
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportToExcel", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, year = Model.SelectedYear, tab = Model.ActiveTab })', 'Cost Intelligence');" class="btn btn-outline-success btn-sm px-3 flex-fill flex-sm-grow-0 d-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 0px !important; white-space: nowrap;">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export CSV
         </a>
     </div>
 </div>
 
 <!-- Filter Panel -->
 <div class="ems-filter-card mb-4">
-    <div class="ems-filter-header">
+    <div class="ems-filter-header d-flex align-items-center justify-content-between flex-wrap gap-2">
         <span><i class="bi bi-funnel me-1 text-primary"></i>Period &amp; Line Filter</span>
-        <span class="text-muted fw-normal small">Active Filter: @Model.StartDate to @Model.EndDate (@Model.SelectedLine) @(Model.SelectedYear.HasValue ? $"| Year: {Model.SelectedYear}" : "| 12M Rolling")</span>
+        <span class="text-muted fw-normal small">Active Filter: <strong>@Model.StartDate</strong> to <strong>@Model.EndDate</strong> (@Model.SelectedLine) @(Model.SelectedYear.HasValue ? $"| Year: {Model.SelectedYear}" : "| 12M Rolling")</span>
     </div>
     <div class="p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
             <input type="hidden" name="tab" value="@Model.ActiveTab" />
-            <div class="col-md-2">
-                <label class="form-label small fw-bold text-secondary mb-1">Filter Year</label>
-                <select name="year" class="form-select form-select-sm" onchange="onYearSelectChange(this.value)">
+            <div class="col-12 col-sm-6 col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11px;">Filter Year</label>
+                <select name="year" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;" onchange="onYearSelectChange(this.value)">
                     <option value="" selected="@(Model.SelectedYear == null ? "selected" : null)">Rolling 12M</option>
                     @foreach (var y in Model.AvailableYears)
                     {
@@ -63,23 +180,23 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold text-secondary mb-1">Start Date</label>
+            <div class="col-12 col-sm-6 col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11px;">Start Date</label>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
-                    <input type="date" id="startDateInput" name="startDate" value="@Model.StartDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                    <span class="input-group-text bg-light text-muted border-end-0" style="height: 38px; border-radius: 0px !important;"><i class="bi bi-calendar-event"></i></span>
+                    <input type="date" id="startDateInput" name="startDate" value="@Model.StartDate" class="form-control form-control-sm border-start-0" style="height: 38px; border-radius: 0px !important;" onchange="document.getElementById('filterForm').submit();" />
                 </div>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold text-secondary mb-1">End Date</label>
+            <div class="col-12 col-sm-6 col-md-2">
+                <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11px;">End Date</label>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white"><i class="bi bi-calendar-event text-secondary"></i></span>
-                    <input type="date" id="endDateInput" name="endDate" value="@Model.EndDate" class="form-control" onchange="document.getElementById('filterForm').submit();" />
+                    <span class="input-group-text bg-light text-muted border-end-0" style="height: 38px; border-radius: 0px !important;"><i class="bi bi-calendar-event"></i></span>
+                    <input type="date" id="endDateInput" name="endDate" value="@Model.EndDate" class="form-control form-control-sm border-start-0" style="height: 38px; border-radius: 0px !important;" onchange="document.getElementById('filterForm').submit();" />
                 </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small fw-bold text-secondary mb-1">Production Line</label>
-                <select name="line" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit();">
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11px;">Production Line</label>
+                <select name="line" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;" onchange="document.getElementById('filterForm').submit();">
                     <option value="All" selected="@(Model.SelectedLine == "All" ? "selected" : null)">All Production Lines</option>
                     @foreach (var l in Model.AvailableLines)
                     {
@@ -87,30 +204,30 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3 d-flex gap-1">
-                <button type="submit" class="btn btn-ems-primary btn-sm w-100"><i class="bi bi-search me-1"></i>Apply Filter</button>
-                <a href="/CostIntelligence" class="btn btn-ems-outline btn-sm" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <div class="col-12 col-md-3 d-flex gap-2 mt-2 mt-md-0">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 0px !important; background-color: #0F4C81; border-color: #0F4C81; white-space: nowrap;"><i class="bi bi-search me-1"></i>Apply Filter</button>
+                <a href="/CostIntelligence" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" style="height: 38px; width: 38px; border-radius: 0px !important; flex-shrink: 0;" title="Reset Filters"><i class="bi bi-arrow-counterclockwise fs-6"></i></a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- 3 Global Summary KPI Cards (Matching Python App) -->
+<!-- 3 Global Summary KPI Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-blue p-3">
-            <div class="kpi-title-sm text-primary d-flex justify-content-between align-items-center">
+    <div class="col-12 col-md-4">
+        <div class="kpi-card-custom p-3">
+            <div class="kpi-title-sm d-flex justify-content-between align-items-center" style="color: #0F4C81 !important;">
                 <span><i class="bi bi-currency-dollar me-1"></i> TOTAL COST EXPENDITURE</span>
                 <i class="bi bi-wallet2 fs-5 opacity-50"></i>
             </div>
-            <div class="kpi-value-lg text-primary mt-2">
+            <div class="kpi-value-lg mt-2" style="color: #0F4C81;">
                 Rp @Model.TotalCost.ToString("N0")
             </div>
             <div class="text-muted small mt-1">Total approved expenditure in selected period</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-green p-3">
+    <div class="col-12 col-md-4">
+        <div class="kpi-card-custom kpi-card-green p-3">
             <div class="kpi-title-sm text-success d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-box-seam me-1"></i> TOTAL QTY SPAREPARTS ISSUED</span>
                 <i class="bi bi-bar-chart-steps fs-5 opacity-50"></i>
@@ -121,13 +238,13 @@
             <div class="text-muted small mt-1">Total sparepart units consumed by machines</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-amber p-3">
-            <div class="kpi-title-sm text-warning d-flex justify-content-between align-items-center">
+    <div class="col-12 col-md-4">
+        <div class="kpi-card-custom kpi-card-amber p-3">
+            <div class="kpi-title-sm d-flex justify-content-between align-items-center" style="color: #d97706 !important;">
                 <span><i class="bi bi-cpu me-1"></i> UNIQUE SPAREPARTS ISSUED</span>
                 <i class="bi bi-gear-wide-connected fs-5 opacity-50"></i>
             </div>
-            <div class="kpi-value-lg text-warning mt-2">
+            <div class="kpi-value-lg mt-2" style="color: #d97706;">
                 @Model.UniqueSparepartsCount.ToString("N0")
             </div>
             <div class="text-muted small mt-1">Distinct sparepart part IDs issued</div>
@@ -137,7 +254,7 @@
 
 @if (Model.HasRecentSpike)
 {
-    <div class="alert alert-warning border-warning d-flex align-items-center mb-4 shadow-sm" style="border-radius:0;">
+    <div class="alert alert-warning border-warning d-flex align-items-center mb-4 shadow-sm" style="border-radius: 0px !important;">
         <i class="bi bi-exclamation-triangle-fill text-warning fs-4 me-3"></i>
         <div>
             <strong class="d-block text-dark">Spike Alert Detected!</strong>
@@ -147,12 +264,12 @@
 }
 
 <!-- 12-Month Historical Monthly Expenditure Trend & Spike Detection -->
-<div class="card shadow-sm border-0 mb-4" style="border-radius:0;">
-    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between" style="color: #0F4C81;">
+<div class="card shadow-sm border mb-4" style="border-radius: 0px !important;">
+    <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2" style="color: #0F4C81;">
         <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Monthly Expenditure Trend &amp; Cost Spike Detection</span>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-light text-secondary border small">Trend Period: @(Model.SelectedYear.HasValue ? $"Year {Model.SelectedYear}" : "Rolling 12M")</span>
-            <span class="badge bg-light text-secondary border small">Line: @Model.SelectedLine</span>
+            <span class="badge bg-light text-secondary border small" style="border-radius: 0px !important;">Trend Period: @(Model.SelectedYear.HasValue ? $"Year {Model.SelectedYear}" : "Rolling 12M")</span>
+            <span class="badge bg-light text-secondary border small" style="border-radius: 0px !important;">Line: @Model.SelectedLine</span>
         </div>
     </div>
     <div class="card-body p-3">
@@ -162,27 +279,26 @@
     </div>
 </div>
 
-<!-- Main Analysis Navigation Tabs -->
-<ul class="nav nav-tabs mb-3 border-bottom-0">
-    <li class="nav-item">
-        <a class="nav-link px-4 fw-bold @(Model.ActiveTab == "line" ? "active" : "")" href="@Url.Action("Index", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = "line" })" style="border-radius:0;">
-            <i class="bi bi-diagram-3 me-2"></i>Cost per Line Analysis
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link px-4 fw-bold @(Model.ActiveTab == "machine" ? "active" : "")" href="@Url.Action("Index", new { startDate = Model.StartDate, endDate = Model.EndDate, line = Model.SelectedLine, tab = "machine" })" style="border-radius:0;">
-            <i class="bi bi-cpu me-2"></i>Cost per Machine Analysis
-        </a>
-    </li>
-</ul>
+<!-- Main Analysis Navigation Tabs (Smooth Client-Side Switch) -->
+<div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom flex-row flex-nowrap overflow-auto" style="border-color: #e1dfdd !important;">
+    <button type="button" id="btnTabLine" class="btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 @(Model.ActiveTab == "line" ? "text-white" : "btn-outline-secondary text-dark bg-white")"
+            onclick="switchAnalysisTab('line')"
+            style="border-radius: 0px !important; height: 38px; white-space: nowrap; @(Model.ActiveTab == "line" ? "background-color: #0F4C81 !important; border-color: #0F4C81 !important; color: #ffffff !important;" : "")">
+        <i class="bi bi-diagram-3 fs-6"></i>Cost per Line Analysis
+    </button>
+    <button type="button" id="btnTabMachine" class="btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 @(Model.ActiveTab == "machine" ? "text-white" : "btn-outline-secondary text-dark bg-white")"
+            onclick="switchAnalysisTab('machine')"
+            style="border-radius: 0px !important; height: 38px; white-space: nowrap; @(Model.ActiveTab == "machine" ? "background-color: #0F4C81 !important; border-color: #0F4C81 !important; color: #ffffff !important;" : "")">
+        <i class="bi bi-cpu fs-6"></i>Cost per Machine Analysis
+    </button>
+</div>
 
-@if (Model.ActiveTab == "line")
-{
-    <!-- TAB 1: Cost per Line -->
+<!-- TAB 1: Cost per Line Pane -->
+<div id="tab-pane-line" class="ci-tab-pane" style="display: @(Model.ActiveTab == "line" ? "block" : "none");">
     <div class="row g-4 mb-4">
         <!-- Top 5 Highest Cost Lines Chart -->
-        <div class="col-md-5">
-            <div class="chart-box h-100">
+        <div class="col-12 col-lg-5">
+            <div class="chart-box h-100" style="border-radius: 0px !important;">
                 <h6 class="fw-bold mb-3 text-dark" style="font-size: 13px;"><i class="bi bi-bar-chart-line me-1 text-primary"></i>Top 5 Highest Cost Lines</h6>
                 <div style="height: 280px; position: relative;">
                     <canvas id="lineCostChart"></canvas>
@@ -190,14 +306,16 @@
             </div>
         </div>
 
-        <!-- Line Cost Table -->
-        <div class="col-md-7">
-            <div class="card shadow-sm border-0 h-100" style="border-radius:0;">
-                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
-                    <i class="bi bi-table me-1"></i>Cost Breakdown by Production Line
+        <!-- Line Cost Table & Cards -->
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm border h-100" style="border-radius: 0px !important;">
+                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between" style="color: #0F4C81;">
+                    <span><i class="bi bi-table me-1"></i>Cost Breakdown by Production Line</span>
+                    <span class="badge bg-primary px-2 py-1" style="background-color: #0F4C81 !important; border-radius: 0px !important;">@Model.LineCosts.Count Line</span>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <!-- Desktop Table View -->
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table-ems mb-0">
                             <thead>
                                 <tr>
@@ -221,8 +339,8 @@
                                             <td class="text-center align-middle text-muted">@item.UniqueSparepartCount</td>
                                             <td class="text-end align-middle font-monospace fw-bold text-primary">Rp @item.TotalCost.ToString("N0")</td>
                                             <td class="text-center align-middle">
-                                                <button type="button" class="btn-ems-icon-action text-primary" onclick="openLineDrilldownModal('@item.Line')" title="View Line Consumption Detail">
-                                                    <i class="bi bi-zoom-in"></i>
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="border-radius: 0px !important;" onclick="openLineDrilldownModal('@item.Line')" title="View Line Consumption Detail">
+                                                    <i class="bi bi-zoom-in me-1"></i>Detail
                                                 </button>
                                             </td>
                                         </tr>
@@ -239,18 +357,60 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none p-3">
+                        @if (Model.LineCosts.Any())
+                        {
+                            foreach (var item in Model.LineCosts)
+                            {
+                                <div class="ci-mobile-card">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                        <span class="badge bg-dark" style="border-radius: 0px !important;">@item.Line</span>
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="border-radius: 0px !important;" onclick="openLineDrilldownModal('@item.Line')">
+                                            <i class="bi bi-zoom-in me-1"></i>Detail
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-muted small">Total Cost:</span>
+                                        <strong class="font-monospace text-primary fs-6">Rp @item.TotalCost.ToString("N0")</strong>
+                                    </div>
+                                    <div class="row g-2 text-center bg-light p-2 border" style="font-size: 11px;">
+                                        <div class="col-4">
+                                            <span class="text-muted d-block" style="font-size: 10px;">MESIN</span>
+                                            <strong class="text-dark">@item.TotalMachine</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="text-muted d-block" style="font-size: 10px;">TRANSAKSI</span>
+                                            <strong class="text-dark">@item.TransactionCount</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="text-muted d-block" style="font-size: 10px;">PARTS</span>
+                                            <strong class="text-dark">@item.UniqueSparepartCount</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4 small">
+                                No transaction cost records found.
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-}
-else
-{
-    <!-- TAB 2: Cost per Machine -->
+</div>
+
+<!-- TAB 2: Cost per Machine Pane -->
+<div id="tab-pane-machine" class="ci-tab-pane" style="display: @(Model.ActiveTab == "machine" ? "block" : "none");">
     <div class="row g-4 mb-4">
         <!-- Top 5 Highest Cost Machines Chart -->
-        <div class="col-md-5">
-            <div class="chart-box h-100">
+        <div class="col-12 col-lg-5">
+            <div class="chart-box h-100" style="border-radius: 0px !important;">
                 <h6 class="fw-bold mb-3 text-dark" style="font-size: 13px;"><i class="bi bi-bar-chart-line me-1 text-primary"></i>Top 5 Highest Cost Machines</h6>
                 <div style="height: 280px; position: relative;">
                     <canvas id="machineCostChart"></canvas>
@@ -258,14 +418,16 @@ else
             </div>
         </div>
 
-        <!-- Machine Cost Table -->
-        <div class="col-md-7">
-            <div class="card shadow-sm border-0 h-100" style="border-radius:0;">
-                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom" style="color: #0F4C81;">
-                    <i class="bi bi-table me-1"></i>Cost Breakdown by Machinery
+        <!-- Machine Cost Table & Cards -->
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm border h-100" style="border-radius: 0px !important;">
+                <div class="card-header bg-white py-2 px-3 fw-bold small border-bottom d-flex align-items-center justify-content-between" style="color: #0F4C81;">
+                    <span><i class="bi bi-table me-1"></i>Cost Breakdown by Machinery</span>
+                    <span class="badge bg-primary px-2 py-1" style="background-color: #0F4C81 !important; border-radius: 0px !important;">@Model.MachineCosts.Count Mesin</span>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
+                    <!-- Desktop Table View -->
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table-ems mb-0">
                             <thead>
                                 <tr>
@@ -288,7 +450,7 @@ else
                                             <td class="align-middle fw-bold text-primary font-monospace">@item.MachineCode</td>
                                             <td class="align-middle fw-semibold text-dark">@item.MachineName</td>
                                             <td class="align-middle">
-                                                <span class="badge @(isActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") border px-2 py-1" style="font-size: 10px;">
+                                                <span class="badge @(isActive ? "bg-success-subtle text-success border-success-subtle" : "bg-danger-subtle text-danger border-danger-subtle") border px-2 py-1" style="font-size: 10px; border-radius: 0px !important;">
                                                     @item.Status
                                                 </span>
                                             </td>
@@ -296,8 +458,8 @@ else
                                             <td class="text-end align-middle font-monospace text-dark">@item.TotalQty.ToString("N0")</td>
                                             <td class="text-end align-middle font-monospace fw-bold text-primary">Rp @item.TotalCost.ToString("N0")</td>
                                             <td class="text-center align-middle">
-                                                <button type="button" class="btn-ems-icon-action text-primary" onclick="openMachineDrilldownModal(@item.MachineId)" title="Sparepart Consumption Detail">
-                                                    <i class="bi bi-zoom-in"></i>
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="border-radius: 0px !important;" onclick="openMachineDrilldownModal(@item.MachineId)" title="Sparepart Consumption Detail">
+                                                    <i class="bi bi-zoom-in me-1"></i>Detail
                                                 </button>
                                             </td>
                                         </tr>
@@ -314,17 +476,54 @@ else
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none p-3">
+                        @if (Model.MachineCosts.Any())
+                        {
+                            foreach (var item in Model.MachineCosts)
+                            {
+                                bool isActive = string.Equals(item.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+                                <div class="ci-mobile-card">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <code class="text-primary fw-bold" style="font-size: 12px;">@item.MachineCode</code>
+                                            <span class="badge bg-dark" style="border-radius: 0px !important;">@item.Line</span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="border-radius: 0px !important;" onclick="openMachineDrilldownModal(@item.MachineId)">
+                                            <i class="bi bi-zoom-in me-1"></i>Detail
+                                        </button>
+                                    </div>
+                                    <div class="fw-bold text-dark mb-1" style="font-size: 13px;">@item.MachineName</div>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="badge @(isActive ? "bg-success-subtle text-success border-success-subtle" : "bg-danger-subtle text-danger border-danger-subtle") border px-2 py-0.5" style="font-size: 10px; border-radius: 0px !important;">@item.Status</span>
+                                        <strong class="font-monospace text-primary fs-6">Rp @item.TotalCost.ToString("N0")</strong>
+                                    </div>
+                                    <div class="bg-light p-2 border small d-flex justify-content-between">
+                                        <span class="text-muted">Total Qty Issued:</span>
+                                        <strong class="font-monospace text-dark">@item.TotalQty.ToString("N0") Unit</strong>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted py-4 small">
+                                No machine consumption records found.
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-}
+</div>
 
 <!-- 1. Line Drilldown Modal -->
 <div class="modal fade" id="lineDrilldownModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+        <div class="modal-content" style="border-radius:0px !important; border: 1px solid var(--ci-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0px !important;">
                 <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-diagram-3 me-2"></i>Line Consumption Breakdown — <span id="lineDrilldownTitle"></span></h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
@@ -354,7 +553,7 @@ else
                 </div>
             </div>
             <div class="modal-footer py-2 px-3 bg-light">
-                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" style="border-radius:0px !important; height:34px;" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -363,8 +562,8 @@ else
 <!-- 2. Machine Drilldown Modal -->
 <div class="modal fade" id="machineDrilldownModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+        <div class="modal-content" style="border-radius:0px !important; border: 1px solid var(--ci-border);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0px !important;">
                 <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-cpu me-2"></i>Machine Consumption Detail — <span id="machineDrilldownTitle"></span></h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
@@ -394,7 +593,7 @@ else
                 </div>
             </div>
             <div class="modal-footer py-2 px-3 bg-light">
-                <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" style="border-radius:0px !important; height:34px;" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -403,6 +602,59 @@ else
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Smooth Client-side Tab Switcher
+        function switchAnalysisTab(tabName) {
+            var paneLine = document.getElementById('tab-pane-line');
+            var paneMachine = document.getElementById('tab-pane-machine');
+            var btnLine = document.getElementById('btnTabLine');
+            var btnMachine = document.getElementById('btnTabMachine');
+            
+            var formTabInp = document.querySelector('input[name="tab"]');
+            if (formTabInp) formTabInp.value = tabName;
+
+            if (tabName === 'line') {
+                if (paneLine) paneLine.style.display = 'block';
+                if (paneMachine) paneMachine.style.display = 'none';
+
+                if (btnLine) {
+                    btnLine.className = 'btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 text-white';
+                    btnLine.style.cssText = 'border-radius: 0px !important; height: 38px; white-space: nowrap; background-color: #0F4C81 !important; border-color: #0F4C81 !important; color: #ffffff !important;';
+                }
+                if (btnMachine) {
+                    btnMachine.className = 'btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 btn-outline-secondary text-dark bg-white';
+                    btnMachine.style.cssText = 'border-radius: 0px !important; height: 38px; white-space: nowrap;';
+                }
+
+                if (window.chartLineInstance) {
+                    window.chartLineInstance.resize();
+                    window.chartLineInstance.update();
+                }
+            } else {
+                if (paneLine) paneLine.style.display = 'none';
+                if (paneMachine) paneMachine.style.display = 'block';
+
+                if (btnMachine) {
+                    btnMachine.className = 'btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 text-white';
+                    btnMachine.style.cssText = 'border-radius: 0px !important; height: 38px; white-space: nowrap; background-color: #0F4C81 !important; border-color: #0F4C81 !important; color: #ffffff !important;';
+                }
+                if (btnLine) {
+                    btnLine.className = 'btn btn-sm px-3.5 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-2 flex-shrink-0 btn-outline-secondary text-dark bg-white';
+                    btnLine.style.cssText = 'border-radius: 0px !important; height: 38px; white-space: nowrap;';
+                }
+
+                if (window.chartMachineInstance) {
+                    window.chartMachineInstance.resize();
+                    window.chartMachineInstance.update();
+                }
+            }
+
+            if (window.history && window.history.replaceState) {
+                var newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('tab', tabName);
+                window.history.replaceState(null, '', newUrl.toString());
+            }
+        }
+
         // Formatter helper
         function formatRupiah(amount) {
             return 'Rp ' + Number(amount).toLocaleString('id-ID');
@@ -423,7 +675,7 @@ else
                 const trendSpikes = @Html.Raw(trendSpikesJson);
                 const trendGrowth = @Html.Raw(trendGrowthJson);
 
-                const pointColors = trendSpikes.map(s => s ? '#DC2626' : '#2563EB');
+                const pointColors = trendSpikes.map(s => s ? '#DC2626' : '#0F4C81');
                 const pointRadius = trendSpikes.map(s => s ? 6 : 3);
 
                 const ctxTrend = document.getElementById('monthlyTrendChart').getContext('2d');
@@ -434,8 +686,8 @@ else
                         datasets: [{
                             label: 'Monthly Expenditure (Rp)',
                             data: trendCosts,
-                            borderColor: '#2563EB',
-                            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                            borderColor: '#0F4C81',
+                            backgroundColor: 'rgba(15, 76, 129, 0.08)',
                             borderWidth: 2,
                             fill: true,
                             tension: 0.3,
@@ -476,7 +728,8 @@ else
                 });
                 </text>
             }
-            @if (Model.ActiveTab == "line" && Model.LineCosts.Any())
+
+            @if (Model.LineCosts.Any())
             {
                 var top5Lines = Model.LineCosts.Take(5).ToList();
                 var lineLabelsJson = Json.Serialize(top5Lines.Select(x => x.Line));
@@ -485,45 +738,47 @@ else
                 const lineLabels = @Html.Raw(lineLabelsJson);
                 const lineCosts = @Html.Raw(lineCostsJson);
 
-                const ctxLine = document.getElementById('lineCostChart').getContext('2d');
-                new Chart(ctxLine, {
-                    type: 'bar',
-                    data: {
-                        labels: lineLabels,
-                        datasets: [{
-                            label: 'Total Cost (Rp)',
-                            data: lineCosts,
-                            backgroundColor: '#2563EB',
-                            borderColor: '#1D4ED8',
-                            borderWidth: 1,
-                            barPercentage: 0.55
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) { return formatRupiah(context.raw); }
-                                }
-                            }
+                const ctxLine = document.getElementById('lineCostChart');
+                if (ctxLine) {
+                    window.chartLineInstance = new Chart(ctxLine.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: lineLabels,
+                            datasets: [{
+                                label: 'Total Cost (Rp)',
+                                data: lineCosts,
+                                backgroundColor: '#0F4C81',
+                                borderColor: '#0b3c67',
+                                borderWidth: 1,
+                                barPercentage: 0.55
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) { return formatRupiah(context.raw); }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
                 </text>
             }
 
-            @if (Model.ActiveTab == "machine" && Model.MachineCosts.Any())
+            @if (Model.MachineCosts.Any())
             {
                 var top5Machines = Model.MachineCosts.Take(5).ToList();
                 var machineLabelsJson = Json.Serialize(top5Machines.Select(x => x.MachineCode));
@@ -532,41 +787,43 @@ else
                 const machineLabels = @Html.Raw(machineLabelsJson);
                 const machineCosts = @Html.Raw(machineCostsJson);
 
-                const ctxMachine = document.getElementById('machineCostChart').getContext('2d');
-                new Chart(ctxMachine, {
-                    type: 'bar',
-                    data: {
-                        labels: machineLabels,
-                        datasets: [{
-                            label: 'Total Cost (Rp)',
-                            data: machineCosts,
-                            backgroundColor: '#2563EB',
-                            borderColor: '#1D4ED8',
-                            borderWidth: 1,
-                            barPercentage: 0.55
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) { return formatRupiah(context.raw); }
-                                }
-                            }
+                const ctxMachine = document.getElementById('machineCostChart');
+                if (ctxMachine) {
+                    window.chartMachineInstance = new Chart(ctxMachine.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: machineLabels,
+                            datasets: [{
+                                label: 'Total Cost (Rp)',
+                                data: machineCosts,
+                                backgroundColor: '#0F4C81',
+                                borderColor: '#0b3c67',
+                                borderWidth: 1,
+                                barPercentage: 0.55
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) { return formatRupiah(context.raw); }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) { return 'Rp ' + (value / 1000000).toFixed(0) + 'M'; }
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
                 </text>
             }
         });
@@ -651,7 +908,7 @@ else
                         <td class="fw-bold text-primary font-monospace">${r.masterDataId}</td>
                         <td class="fw-semibold text-dark">${r.itemName}</td>
                         <td class="font-monospace text-muted">${r.bin}</td>
-                        <td><span class="badge bg-light text-dark border">${r.maintenanceType}</span></td>
+                        <td><span class="badge bg-light text-dark border" style="border-radius: 0px !important;">${r.maintenanceType}</span></td>
                         <td class="text-end font-monospace">${Number(r.qtyTotal).toLocaleString('id-ID')}</td>
                         <td class="text-center text-muted">${r.frequencyCount}</td>
                         <td class="text-end font-monospace fw-bold text-primary">${formatRupiah(r.totalCost)}</td>
@@ -675,3 +932,4 @@ else
         }
     </script>
 }
+

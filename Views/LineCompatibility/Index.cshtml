@@ -10,54 +10,78 @@
         border-color: #ced4da !important;
         outline: none !important;
     }
+    .lc-mobile-card {
+        border: 1px solid var(--color-border, #e2e8f0);
+        border-radius: 0px !important;
+        background: #fff;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
 </style>
 
 <!-- Title Header -->
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-        <h3 class="fw-bold mb-1" style="color: #0F4C81;">Line Compatibility</h3>
-        <p class="text-muted small mb-0">Manage sparepart compatibility mapping for each production line.</p>
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="background-color: #0F4C81; width: 44px; height: 44px; border-radius: 0px !important; font-size: 20px;">
+            <i class="bi bi-diagram-3-fill"></i>
+        </div>
+        <div>
+            <h3 class="fw-bold mb-0 text-dark" style="font-size: 1.35rem; letter-spacing: -0.02em;">Line Compatibility</h3>
+            <p class="text-muted small mb-0">Manage sparepart compatibility mapping for each production line.</p>
+        </div>
     </div>
 </div>
 
-<!-- KPI Cards -->
+<!-- KPI Summary Cards -->
 @{
     var totalLines    = Model.LinesHealth.Count;
     var totalMappings = Model.LinesHealth.Sum(l => l.CompatibleParts);
     var totalMachines = Model.LinesHealth.Sum(l => l.TotalMachines);
 }
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
     <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-blue h-100">
-            <div class="ems-kpi-title"><i class="bi bi-building"></i> PRODUCTION LINES</div>
-            <div class="ems-kpi-value text-primary">@totalLines</div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-success h-100">
-            <div class="ems-kpi-title"><i class="bi bi-tools"></i> MAPPED SPAREPARTS</div>
-            <div class="ems-kpi-value text-success">
-                @Model.TotalMappedPartsCount.ToString("N0") <span style="font-size: 1.05rem; font-weight: 600; color: #15803D;">Items</span>
-            </div>
-            <div class="text-muted mt-1" style="font-size: 11px;">
-                <i class="bi bi-box-seam me-1 text-success"></i>@Model.TotalMappedStockQty.ToString("N0") total stock units (pcs) with defined line
+        <div class="card h-100 border shadow-sm" style="border-radius: 0px !important; border-top: 3px solid #0F4C81 !important;">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold text-muted mb-1" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <i class="bi bi-building me-1 text-primary"></i> Production Lines
+                </div>
+                <div class="fs-2 fw-bold text-primary mb-0" style="line-height: 1;">@totalLines</div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ems-kpi-card ems-kpi-cyan h-100">
-            <div class="ems-kpi-title"><i class="bi bi-cpu"></i> TOTAL MACHINES</div>
-            <div class="ems-kpi-value" style="color:#0284C7;">@totalMachines</div>
+        <div class="card h-100 border shadow-sm" style="border-radius: 0px !important; border-top: 3px solid #10B981 !important;">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold text-muted mb-1" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <i class="bi bi-tools me-1 text-success"></i> Mapped Spareparts
+                </div>
+                <div class="fs-2 fw-bold text-success mb-1" style="line-height: 1;">
+                    @Model.TotalMappedPartsCount.ToString("N0") <span style="font-size: 1rem; font-weight: 600; color: #10B981;">Items</span>
+                </div>
+                <div class="text-muted" style="font-size: 11px;">
+                    <i class="bi bi-box-seam me-1 text-success"></i>@Model.TotalMappedStockQty.ToString("N0") total stock units (pcs) with defined line
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border shadow-sm" style="border-radius: 0px !important; border-top: 3px solid #0284C7 !important;">
+            <div class="card-body p-3">
+                <div class="text-uppercase small fw-bold text-muted mb-1" style="font-size: 11px; letter-spacing: 0.5px;">
+                    <i class="bi bi-cpu me-1" style="color: #0284C7;"></i> Total Machines
+                </div>
+                <div class="fs-2 fw-bold mb-0" style="line-height: 1; color: #0284C7;">@totalMachines</div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Filter & Search Panel -->
-<div class="ems-filter-card mb-3">
-    <div class="ems-filter-header">
-        <span><i class="bi bi-funnel me-1 text-primary"></i>Filter &amp; Search Lines</span>
+<!-- Filter & Search Lines Panel -->
+<div class="card border mb-3 shadow-sm" style="border-radius: 0px !important;">
+    <div class="card-header bg-light py-2 px-3 border-bottom" style="border-radius: 0px !important;">
+        <span class="fw-bold small text-secondary"><i class="bi bi-funnel me-1 text-primary"></i> Filter &amp; Search Lines</span>
     </div>
-    <div class="p-3">
+    <div class="card-body p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end line-filter-form">
             <input type="hidden" name="subTab" value="line" />
             <input type="hidden" name="selectedLine" value="@Model.SelectedLine" />
@@ -65,7 +89,7 @@
             
             <div class="col-md-3">
                 <label class="form-label small fw-bold text-secondary mb-1">UP Area</label>
-                <select name="areaFilter" class="form-select form-select-sm">
+                <select name="areaFilter" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;">
                     <option value="">[All Areas]</option>
                     <option value="UP1" selected="@(Model.AreaFilter == "UP1" ? "selected" : null)">UP1</option>
                     <option value="UP2" selected="@(Model.AreaFilter == "UP2" ? "selected" : null)">UP2</option>
@@ -73,19 +97,23 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-bold text-secondary mb-1">Search Line Code</label>
-                <input type="text" name="lineSearch" value="@Model.LineSearch" class="form-control form-control-sm" placeholder="e.g. B11, S6, UP1..." />
+                <input type="text" name="lineSearch" value="@Model.LineSearch" class="form-control form-control-sm" placeholder="e.g. B11, S6, UP1..." style="height: 38px; border-radius: 0px !important;" />
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-bold text-secondary mb-1">Sort By</label>
-                <select name="lineSort" class="form-select form-select-sm">
+                <select name="lineSort" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;">
                     <option value="line_code" selected="@(Model.LineSort == "line_code" ? "selected" : null)">Line Code (A-Z)</option>
                     <option value="parts"     selected="@(Model.LineSort == "parts"     ? "selected" : null)">Most Spareparts</option>
                     <option value="machines"  selected="@(Model.LineSort == "machines"  ? "selected" : null)">Most Machines</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-1 align-items-center">
-                <button type="submit" class="btn btn-ems-primary btn-sm flex-fill"><i class="bi bi-funnel"></i> Apply</button>
-                <a href="@Url.Action("Index", new { subTab = "line", kpiTab = Model.KpiTab })" class="btn btn-ems-outline btn-sm detail-ajax-link" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+                <button type="submit" class="btn btn-ems-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 0px !important;">
+                    <i class="bi bi-funnel"></i> Apply
+                </button>
+                <a href="@Url.Action("Index", new { subTab = "line", kpiTab = Model.KpiTab })" class="btn btn-ems-outline btn-sm detail-ajax-link d-flex align-items-center justify-content-center" title="Reset Filters" style="height: 38px; width: 38px; border-radius: 0px !important;">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
                 <span class="text-muted text-nowrap ms-2" style="font-size:12px;">
                     <i class="bi bi-info-circle me-1"></i>@Model.LinesHealth.Count line(s)
                 </span>
@@ -95,14 +123,14 @@
 </div>
 
 <!-- Main Content: Two-panel layout (Line list | Detail) -->
-<div class="row g-0" style="border: 1px solid var(--color-border); background: #fff; min-height: 720px;">
+<div class="row g-0 border shadow-sm mb-4" style="background: #fff; min-height: 720px; border-radius: 0px !important;">
 
     <!-- LEFT: Production Line List -->
-    <div class="col-md-3 d-flex flex-column" style="border-right: 1px solid var(--color-border); max-height: 720px;">
+    <div class="col-md-3 d-flex flex-column border-end" style="max-height: 720px;">
         <!-- Section header -->
-        <div style="padding: 8px 12px; background: #F8FAFC; border-bottom: 1px solid var(--color-border);">
+        <div style="padding: 10px 14px; background: #F8FAFC; border-bottom: 1px solid var(--color-border, #e2e8f0);">
             <span class="fw-bold" style="font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #475569;">
-                <i class="bi bi-building me-1"></i>Production Lines
+                <i class="bi bi-building me-1 text-primary"></i>Production Lines
             </span>
         </div>
         <div id="left-lines-container" style="flex:1; overflow-y:auto;">
@@ -121,7 +149,7 @@
 
                     <a href="@Url.Action("Index", new { subTab="line", selectedLine=ln.LineCode, lineSearch=Model.LineSearch, areaFilter=Model.AreaFilter, lineSort=Model.LineSort, kpiTab=Model.KpiTab })"
                        class="line-sidebar-link"
-                       style="display:block; text-decoration:none; padding:10px 12px;
+                       style="display:block; text-decoration:none; padding:12px 14px;
                               border-bottom: 1px solid #F1F5F9;
                               background: @(isActive ? "#EFF6FF" : "#fff");
                               border-left: 3px solid @(isActive ? "#0F4C81" : "transparent");
@@ -130,8 +158,8 @@
                        onmouseout="if(!@(isActive ? "true" : "false"))this.style.background='#fff'">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="fw-bold" style="color:@(isActive ? "#0F4C81" : "#111827"); font-size:13px;">@ln.LineCode</span>
+                            <span class="badge bg-light text-secondary border" style="font-size: 10px; border-radius: 0px !important;">@ln.Area</span>
                         </div>
-                        <div class="text-muted" style="font-size:11px;">Area: @ln.Area</div>
                         <div class="d-flex gap-3 mt-2" style="font-size:11px;">
                             <span><span class="fw-bold" style="color:#0F4C81;">@ln.TotalMachines</span> <span class="text-muted">Mach</span></span>
                             <span><span class="fw-bold text-success">@ln.CompatibleParts</span> <span class="text-muted">Parts</span></span>
@@ -158,29 +186,31 @@
             var isPartsActive = Model.KpiTab != "machines";
 
             <!-- Detail sub-header -->
-            <div style="padding: 10px 16px; background: #F8FAFC; border-bottom: 1px solid var(--color-border); display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                    <span class="fw-bold" style="font-size:13px; color:#0F4C81;">
+            <div style="padding: 12px 16px; background: #F8FAFC; border-bottom: 1px solid var(--color-border, #e2e8f0); display:flex; align-items:center; justify-content:space-between;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold" style="font-size:14px; color:#0F4C81;">
                         <i class="bi bi-building me-1"></i>@Model.SelectedLine
                     </span>
-                    <span class="text-muted ms-2" style="font-size:12px;">Area: @(lnData?.Area ?? "-")</span>
-                    <span class="text-muted ms-2" style="font-size:12px;">Last Updated: @(lnData?.LastActivity.HasValue == true && lnData.LastActivity.Value > DateTime.MinValue ? lnData.LastActivity.Value.ToString("dd MMM yyyy") : "N/A")</span>
+                    <span class="badge bg-white text-dark border ms-1" style="font-size:11px; border-radius: 0px !important;">Area: @(lnData?.Area ?? "-")</span>
+                    <span class="text-muted ms-2" style="font-size:11px;"><i class="bi bi-clock me-1"></i>Last Updated: @(lnData?.LastActivity.HasValue == true && lnData.LastActivity.Value > DateTime.MinValue ? lnData.LastActivity.Value.ToString("dd MMM yyyy") : "N/A")</span>
                 </div>
             </div>
 
             <!-- Sub-KPI selector tabs (Instant JS Switching) -->
-            <div style="display:flex; border-bottom: 1px solid var(--color-border);">
+            <div style="display:flex; border-bottom: 1px solid var(--color-border, #e2e8f0);">
                 <button type="button" id="tab-btn-parts" onclick="switchDetailTab('parts')"
-                   style="flex:1; text-align:center; padding:10px 8px; font-size:12px; cursor:pointer; font-weight:@(isPartsActive ? "700" : "400");
+                   style="flex:1; text-align:center; padding:12px 8px; font-size:13px; cursor:pointer; font-weight:@(isPartsActive ? "700" : "500");
                           color:@(isPartsActive ? "#0F4C81" : "#6B7280");
-                          border:none; border-bottom: 2px solid @(isPartsActive ? "#0F4C81" : "transparent");
+                          border:none; border-bottom: 3px solid @(isPartsActive ? "#0F4C81" : "transparent");
+                          border-radius: 0px !important;
                           background: @(isPartsActive ? "#fff" : "#F8FAFC"); transition: all .1s;">
                     <i class="bi bi-tools me-1"></i>@(lnData?.CompatibleParts ?? 0) Spareparts
                 </button>
                 <button type="button" id="tab-btn-machines" onclick="switchDetailTab('machines')"
-                   style="flex:1; text-align:center; padding:10px 8px; font-size:12px; cursor:pointer; font-weight:@(!isPartsActive ? "700" : "400");
+                   style="flex:1; text-align:center; padding:12px 8px; font-size:13px; cursor:pointer; font-weight:@(!isPartsActive ? "700" : "500");
                           color:@(!isPartsActive ? "#0F4C81" : "#6B7280");
-                          border:none; border-bottom: 2px solid @(!isPartsActive ? "#0F4C81" : "transparent");
+                          border:none; border-bottom: 3px solid @(!isPartsActive ? "#0F4C81" : "transparent");
+                          border-radius: 0px !important;
                           background: @(!isPartsActive ? "#fff" : "#F8FAFC"); transition: all .1s;">
                     <i class="bi bi-cpu me-1"></i>@(lnData?.TotalMachines ?? 0) Machines
                 </button>
@@ -189,32 +219,34 @@
             <!-- Content Area -->
             <div class="d-flex flex-column flex-fill justify-content-between">
 
-                @* ── PARTS TABLE PANEL ── *@
+                @* ── PARTS PANEL ── *@
                 <div id="tab-parts-panel" class="d-flex flex-column flex-fill justify-content-between" style="display: @(isPartsActive ? "flex" : "none") !important;">
                     <div>
                         <!-- Table toolbar -->
                         <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #F1F5F9; background:#FAFBFC;">
-                            <span class="text-muted" style="font-size:11px;">
+                            <span class="text-muted" style="font-size:12px;">
                                 Showing <strong>@Model.CompatibleParts.Count</strong> of <strong>@Model.PartsTotalCount</strong> spareparts for line <strong>@Model.SelectedLine</strong>
                             </span>
-                            <form method="get" asp-action="Index" class="d-flex align-items-center detail-search-form" style="width: 310px;">
+                            <form method="get" asp-action="Index" class="d-flex align-items-center detail-search-form" style="width: 320px;">
                                 <input type="hidden" name="subTab" value="line" />
                                 <input type="hidden" name="selectedLine" value="@Model.SelectedLine" />
                                 <input type="hidden" name="kpiTab" value="parts" />
                                 <input type="hidden" name="lineSearch" value="@Model.LineSearch" />
                                 <input type="hidden" name="lineSort" value="@Model.LineSort" />
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white text-muted border-end-0" style="font-size:12px;"><i class="bi bi-search"></i></span>
-                                    <input type="text" name="detailSearch" value="@Model.DetailSearch" class="form-control form-control-sm border-start-0 ps-0 ems-search-input" placeholder="Search Part #, Item, Machine..." style="font-size:12px;" />
+                                    <span class="input-group-text bg-white text-muted border-end-0" style="font-size:12px; border-radius: 0px !important;"><i class="bi bi-search"></i></span>
+                                    <input type="text" name="detailSearch" value="@Model.DetailSearch" class="form-control form-control-sm border-start-0 ps-0 ems-search-input" placeholder="Search Part #, Item, Machine..." style="font-size:12px; height: 38px; border-radius: 0px !important;" />
                                     @if (!string.IsNullOrEmpty(Model.DetailSearch))
                                     {
-                                        <a href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", lineSearch=Model.LineSearch, lineSort=Model.LineSort })" class="btn btn-sm btn-light border text-muted detail-ajax-link" title="Clear search" style="font-size:11px;"><i class="bi bi-x-lg"></i></a>
+                                        <a href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", lineSearch=Model.LineSearch, lineSort=Model.LineSort })" class="btn btn-sm btn-light border text-muted detail-ajax-link d-flex align-items-center justify-content-center" title="Clear search" style="font-size:11px; height: 38px; border-radius: 0px !important;"><i class="bi bi-x-lg"></i></a>
                                     }
-                                    <button class="btn btn-ems-primary btn-sm px-2" type="submit" style="font-size:11px;">Search</button>
+                                    <button class="btn btn-ems-primary btn-sm px-3" type="submit" style="font-size:12px; height: 38px; border-radius: 0px !important;">Search</button>
                                 </div>
                             </form>
                         </div>
-                        <div class="table-responsive">
+
+                        <!-- Desktop Table -->
+                        <div class="table-responsive d-none d-md-block">
                             <table class="table-ems mb-0">
                                 <thead>
                                     <tr>
@@ -240,7 +272,7 @@
                                                 <td class="text-nowrap"><span class="font-monospace fw-bold text-primary">@p.Id</span></td>
                                                 <td style="min-width:160px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@p.Item"><span class="fw-bold">@p.Item</span></td>
                                                 <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="@p.Machine"><span class="small text-secondary">@p.Machine</span></td>
-                                                <td class="text-nowrap"><span class="badge bg-light text-dark border font-monospace">@p.Bin</span></td>
+                                                <td class="text-nowrap"><span class="badge bg-light text-dark border font-monospace" style="border-radius: 0px !important;">@p.Bin</span></td>
                                                 <td class="text-nowrap"><span class="small text-secondary">@p.Category</span></td>
                                                 <td class="text-end font-monospace text-nowrap">@(p.LeadTime > 0 ? $"{p.LeadTime:N0} mth" : "—")</td>
                                                 <td class="text-end font-monospace text-nowrap">@p.CurrentStock pcs</td>
@@ -261,62 +293,95 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Mobile Card List -->
+                        <div class="d-block d-md-none p-2">
+                            @if (Model.CompatibleParts.Any())
+                            {
+                                foreach (var p in Model.CompatibleParts)
+                                {
+                                    <div class="lc-mobile-card">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <span class="font-monospace fw-bold text-primary" style="font-size:13px;">@p.Id</span>
+                                            <span class="badge bg-light text-dark border font-monospace" style="font-size:10px; border-radius:0px !important;">@p.Bin</span>
+                                        </div>
+                                        <div class="fw-bold mb-1" style="font-size:13px; color:#1E293B;">@p.Item</div>
+                                        <div class="small text-secondary mb-2" style="font-size:11px;">Machine: @p.Machine | Category: @p.Category</div>
+                                        <div class="d-flex justify-content-between align-items-center pt-2 border-top" style="font-size:11px;">
+                                            <span class="text-muted">Stock: <strong class="text-dark">@p.CurrentStock pcs</strong></span>
+                                            <span class="font-monospace fw-bold text-primary">Rp @p.CurrentPrice.ToString("N0")</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4" style="font-size:12px;">
+                                    <i class="bi bi-tools d-block fs-4 mb-2 opacity-25"></i>
+                                    No spareparts registered for line <strong>@Model.SelectedLine</strong>.
+                                </div>
+                            }
+                        </div>
+
                     </div>
 
                     @* Pagination Footer *@
-                    <div class="d-flex align-items-center justify-content-between px-3 py-2 mt-auto" style="border-top:1px solid var(--color-border); background:#FAFBFC;">
-                        <span class="text-muted" style="font-size:11px;">Page @Model.PartsPage of @Model.PartsTotalPages</span>
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2 mt-auto" style="border-top:1px solid var(--color-border, #e2e8f0); background:#FAFBFC;">
+                        <span class="text-muted" style="font-size:12px;">Page @Model.PartsPage of @Model.PartsTotalPages</span>
                         <div class="d-flex gap-1">
                             @if (Model.PartsPage > 1)
                             {
-                                <a class="btn btn-ems-outline btn-sm detail-ajax-link" href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", partsPage=Model.PartsPage-1, lineSearch=Model.LineSearch, lineSort=Model.LineSort })">‹ Prev</a>
+                                <a class="btn btn-ems-outline btn-sm detail-ajax-link" style="height: 38px; border-radius: 0px !important; display: inline-flex; align-items: center;" href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", partsPage=Model.PartsPage-1, lineSearch=Model.LineSearch, lineSort=Model.LineSort })">‹ Prev</a>
                             }
                             else
                             {
-                                <button class="btn btn-ems-outline btn-sm" disabled>‹ Prev</button>
+                                <button class="btn btn-ems-outline btn-sm" style="height: 38px; border-radius: 0px !important;" disabled>‹ Prev</button>
                             }
                             @if (Model.PartsPage < Model.PartsTotalPages)
                             {
-                                <a class="btn btn-ems-outline btn-sm detail-ajax-link" href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", partsPage=Model.PartsPage+1, lineSearch=Model.LineSearch, lineSort=Model.LineSort })">Next ›</a>
+                                <a class="btn btn-ems-outline btn-sm detail-ajax-link" style="height: 38px; border-radius: 0px !important; display: inline-flex; align-items: center;" href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="parts", partsPage=Model.PartsPage+1, lineSearch=Model.LineSearch, lineSort=Model.LineSort })">Next ›</a>
                             }
                             else
                             {
-                                <button class="btn btn-ems-outline btn-sm" disabled>Next ›</button>
+                                <button class="btn btn-ems-outline btn-sm" style="height: 38px; border-radius: 0px !important;" disabled>Next ›</button>
                             }
                         </div>
                     </div>
                 </div>
 
-                @* ── MACHINES TABLE PANEL ── *@
+                @* ── MACHINES PANEL ── *@
                 <div id="tab-machines-panel" class="d-flex flex-column flex-fill justify-content-between" style="display: @(!isPartsActive ? "flex" : "none") !important;">
                     <div>
+                        <!-- Toolbar -->
                         <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #F1F5F9; background:#FAFBFC;">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="text-muted" style="font-size:11px;">
+                                <span class="text-muted" style="font-size:12px;">
                                     <strong>@Model.MachinesInLine.Count</strong> machines registered in line <strong>@Model.SelectedLine</strong>
                                 </span>
-                                <button type="button" class="btn btn-ems-primary btn-sm px-2 py-0" style="font-size:11px;" data-bs-toggle="modal" data-bs-target="#addMachineModal" data-line="@Model.SelectedLine" data-area="@(lnData?.Area ?? "UP1")">
+                                <button type="button" class="btn btn-ems-primary btn-sm px-3 d-flex align-items-center gap-1" style="height: 38px; font-size:12px; border-radius: 0px !important;" data-bs-toggle="modal" data-bs-target="#addMachineModal" data-line="@Model.SelectedLine" data-area="@(lnData?.Area ?? "UP1")">
                                     <i class="bi bi-plus-lg me-1"></i>Add Machine
                                 </button>
                             </div>
-                            <form method="get" asp-action="Index" class="d-flex align-items-center detail-search-form" style="width: 310px;">
+                            <form method="get" asp-action="Index" class="d-flex align-items-center detail-search-form" style="width: 320px;">
                                 <input type="hidden" name="subTab" value="line" />
                                 <input type="hidden" name="selectedLine" value="@Model.SelectedLine" />
                                 <input type="hidden" name="kpiTab" value="machines" />
                                 <input type="hidden" name="lineSearch" value="@Model.LineSearch" />
                                 <input type="hidden" name="lineSort" value="@Model.LineSort" />
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white text-muted border-end-0" style="font-size:12px;"><i class="bi bi-search"></i></span>
-                                    <input type="text" name="detailSearch" value="@Model.DetailSearch" class="form-control form-control-sm border-start-0 ps-0 ems-search-input" placeholder="Search machine code/name..." style="font-size:12px;" />
+                                    <span class="input-group-text bg-white text-muted border-end-0" style="font-size:12px; border-radius: 0px !important;"><i class="bi bi-search"></i></span>
+                                    <input type="text" name="detailSearch" value="@Model.DetailSearch" class="form-control form-control-sm border-start-0 ps-0 ems-search-input" placeholder="Search machine code/name..." style="font-size:12px; height: 38px; border-radius: 0px !important;" />
                                     @if (!string.IsNullOrEmpty(Model.DetailSearch))
                                     {
-                                        <a href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="machines", lineSearch=Model.LineSearch, lineSort=Model.LineSort })" class="btn btn-sm btn-light border text-muted detail-ajax-link" title="Clear search" style="font-size:11px;"><i class="bi bi-x-lg"></i></a>
+                                        <a href="@Url.Action("Index", new { subTab="line", selectedLine=Model.SelectedLine, kpiTab="machines", lineSearch=Model.LineSearch, lineSort=Model.LineSort })" class="btn btn-sm btn-light border text-muted detail-ajax-link d-flex align-items-center justify-content-center" title="Clear search" style="font-size:11px; height: 38px; border-radius: 0px !important;"><i class="bi bi-x-lg"></i></a>
                                     }
-                                    <button class="btn btn-ems-primary btn-sm px-2" type="submit" style="font-size:11px;">Search</button>
+                                    <button class="btn btn-ems-primary btn-sm px-3" type="submit" style="font-size:12px; height: 38px; border-radius: 0px !important;">Search</button>
                                 </div>
                             </form>
                         </div>
-                        <div class="table-responsive">
+
+                        <!-- Desktop Table -->
+                        <div class="table-responsive d-none d-md-block">
                             <table class="table-ems mb-0">
                                 <thead>
                                     <tr>
@@ -343,7 +408,7 @@
                                                 <td class="col-mono text-muted text-center">@rowNo</td>
                                                 <td class="text-nowrap"><span class="font-monospace fw-bold text-primary">@m.MachineCode</span></td>
                                                 <td class="fw-bold">@m.MachineName</td>
-                                                <td class="text-nowrap"><span class="badge bg-light text-dark font-monospace border">@(m.Line ?? "-")</span></td>
+                                                <td class="text-nowrap"><span class="badge bg-light text-dark font-monospace border" style="border-radius: 0px !important;">@(m.Line ?? "-")</span></td>
                                                 <td class="text-nowrap"><span class="small text-secondary">@(m.Area ?? "-")</span></td>
                                                 <td class="text-nowrap"><span class="small text-secondary">@(m.MachineType ?? "-")</span></td>
                                                 <td class="small text-muted text-nowrap">@(m.Manufacturer ?? "-")</td>
@@ -351,11 +416,11 @@
                                                 <td class="text-center text-nowrap">
                                                     @if (isActive)
                                                     {
-                                                        <span class="badge-ems-success">Active</span>
+                                                        <span class="badge-ems-success" style="border-radius: 0px !important;">Active</span>
                                                     }
                                                     else
                                                     {
-                                                        <span class="badge-ems-danger">Inactive</span>
+                                                        <span class="badge-ems-danger" style="border-radius: 0px !important;">Inactive</span>
                                                     }
                                                 </td>
                                                 <td class="text-center text-nowrap">
@@ -414,6 +479,78 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Mobile Card List -->
+                        <div class="d-block d-md-none p-2">
+                            @if (Model.MachinesInLine.Any())
+                            {
+                                foreach (var m in Model.MachinesInLine)
+                                {
+                                    var isActive = (m.Status ?? "active").Equals("active", StringComparison.OrdinalIgnoreCase);
+                                    <div class="lc-mobile-card">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <span class="font-monospace fw-bold text-primary" style="font-size:13px;">@m.MachineCode</span>
+                                            @if (isActive)
+                                            {
+                                                <span class="badge-ems-success" style="font-size:10px; border-radius:0px !important;">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-ems-danger" style="font-size:10px; border-radius:0px !important;">Inactive</span>
+                                            }
+                                        </div>
+                                        <div class="fw-bold mb-1" style="font-size:13px; color:#1E293B;">@m.MachineName</div>
+                                        <div class="small text-secondary mb-2" style="font-size:11px;">
+                                            Type: @(m.MachineType ?? "-") | Mfr: @(m.Manufacturer ?? "-") | Model: @(m.Model ?? "-")
+                                        </div>
+                                        <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
+                                            <button type="button" class="btn btn-ems-outline btn-sm px-2 py-1" style="font-size:11px; border-radius:0px !important;"
+                                                    data-bs-toggle="modal" data-bs-target="#editMachineModal"
+                                                    data-id="@m.Id"
+                                                    data-code="@m.MachineCode"
+                                                    data-name="@m.MachineName"
+                                                    data-line="@m.Line"
+                                                    data-area="@m.Area"
+                                                    data-type="@m.MachineType"
+                                                    data-manufacturer="@m.Manufacturer"
+                                                    data-model="@m.Model"
+                                                    data-status="@m.Status">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </button>
+                                            <form asp-action="ToggleMachineStatus" asp-route-id="@m.Id" asp-route-selectedLine="@Model.SelectedLine" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                @if (isActive)
+                                                {
+                                                    <button type="submit" class="btn btn-ems-outline btn-sm text-warning px-2 py-1" style="font-size:11px; border-radius:0px !important;">
+                                                        <i class="bi bi-power me-1"></i>Deactivate
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="btn btn-ems-outline btn-sm text-success px-2 py-1" style="font-size:11px; border-radius:0px !important;">
+                                                        <i class="bi bi-play-circle me-1"></i>Activate
+                                                    </button>
+                                                }
+                                            </form>
+                                            <button type="button" class="btn btn-ems-outline btn-sm text-danger px-2 py-1" style="font-size:11px; border-radius:0px !important;"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteMachineModal"
+                                                    data-id="@m.Id"
+                                                    data-code="@m.MachineCode">
+                                                <i class="bi bi-trash me-1"></i>Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center text-muted py-4" style="font-size:12px;">
+                                    <i class="bi bi-cpu d-block fs-4 mb-2 opacity-25"></i>
+                                    No machines registered for line <strong>@Model.SelectedLine</strong>.
+                                </div>
+                            }
+                        </div>
+
                     </div>
                 </div>
 
@@ -423,13 +560,11 @@
 
 </div><!-- /Main Content -->
 
-</div><!-- /Main Content -->
-
 <!-- Add Sparepart Mapping Modal -->
 <div class="modal fade" id="addMappingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
+        <div class="modal-content" style="border-radius:0px !important; border: 1px solid var(--color-border, #e2e8f0);">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0px !important;">
                 <h6 class="modal-title mb-0 fw-bold" style="font-size:13px;">
                     <i class="bi bi-plus-circle me-2"></i>Register Line Compatibility
                 </h6>
@@ -442,12 +577,12 @@
                         <label class="form-label small fw-bold text-secondary mb-1">Production Line</label>
                         @if (Model.SelectedLine != null)
                         {
-                            <input type="text" class="form-control form-control-sm font-monospace" value="@Model.SelectedLine" readonly style="background:#F8FAFC;" />
+                            <input type="text" class="form-control form-control-sm font-monospace" value="@Model.SelectedLine" readonly style="background:#F8FAFC; height:38px; border-radius: 0px !important;" />
                             <input type="hidden" name="lineName" value="@Model.SelectedLine" />
                         }
                         else
                         {
-                            <select name="lineName" class="form-select form-select-sm" required>
+                            <select name="lineName" class="form-select form-select-sm" required style="height:38px; border-radius: 0px !important;">
                                 <option value="">[Select Line]</option>
                                 @foreach (var ln in Model.LinesHealth)
                                 {
@@ -458,13 +593,13 @@
                     </div>
                     <div class="mb-1">
                         <label class="form-label small fw-bold text-secondary mb-1">Sparepart Part Number <span class="text-danger">*</span></label>
-                        <input type="text" name="sparepartId" class="form-control form-control-sm font-monospace" placeholder="e.g. UPF-10001" required />
+                        <input type="text" name="sparepartId" class="form-control form-control-sm font-monospace" placeholder="e.g. UPF-10001" required style="height:38px; border-radius: 0px !important;" />
                         <div class="text-muted mt-1" style="font-size:11px;">Enter the exact Part Number / Sparepart ID.</div>
                     </div>
                 </div>
-                <div class="modal-footer py-2 px-3" style="background:#F8FAFC;">
-                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-ems-primary btn-sm"><i class="bi bi-check-lg me-1"></i>Register</button>
+                <div class="modal-footer py-2 px-3" style="background:#F8FAFC; border-radius:0px !important;">
+                    <button type="button" class="btn btn-ems-outline btn-sm" style="height:38px; border-radius: 0px !important;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-3" style="height:38px; border-radius: 0px !important;"><i class="bi bi-check-lg me-1"></i>Register</button>
                 </div>
             </form>
         </div>
@@ -474,9 +609,9 @@
 <!-- 1. Add Machine Modal -->
 <div class="modal fade" id="addMachineModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius:0;">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
-                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-plus-lg me-2"></i>Add New Production Machine</h6>
+        <div class="modal-content" style="border-radius:0px !important;">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0px !important;">
+                <h6 class="modal-title fw-bold mb-0" style="font-size:13px;"><i class="bi bi-plus-lg me-2"></i>Add New Production Machine</h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="CreateMachine" method="post">
@@ -485,44 +620,44 @@
                     <div class="row g-2">
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Line Code <span class="text-danger">*</span></label>
-                            <input type="text" name="Line" id="add-machine-line" class="form-control form-control-sm font-monospace" value="@Model.SelectedLine" readonly style="background:#F8FAFC;" />
+                            <input type="text" name="Line" id="add-machine-line" class="form-control form-control-sm font-monospace" value="@Model.SelectedLine" readonly style="background:#F8FAFC; height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Area</label>
-                            <input type="text" name="Area" id="add-machine-area" class="form-control form-control-sm" value="@Model.SelectedLineData?.Area" readonly style="background:#F8FAFC;" />
+                            <input type="text" name="Area" id="add-machine-area" class="form-control form-control-sm" value="@Model.SelectedLineData?.Area" readonly style="background:#F8FAFC; height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-secondary">Machine Name <span class="text-danger">*</span></label>
-                            <input type="text" name="MachineName" id="add-machine-name" class="form-control form-control-sm" placeholder="e.g. Conveyor Belt Unit" required oninput="autoGenerateAddMachineCode()" />
+                            <input type="text" name="MachineName" id="add-machine-name" class="form-control form-control-sm" placeholder="e.g. Conveyor Belt Unit" required oninput="autoGenerateAddMachineCode()" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-secondary">Machine Code <span class="text-danger">*</span></label>
-                            <input type="text" name="MachineCode" id="add-machine-code" class="form-control form-control-sm font-monospace fw-bold text-primary" placeholder="MAC-B10-CONVEYOR" required />
+                            <input type="text" name="MachineCode" id="add-machine-code" class="form-control form-control-sm font-monospace fw-bold text-primary" placeholder="MAC-B10-CONVEYOR" required style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Machine Type</label>
-                            <input type="text" name="MachineType" class="form-control form-control-sm" placeholder="e.g. Filler, Capper, Conveyor" />
+                            <input type="text" name="MachineType" class="form-control form-control-sm" placeholder="e.g. Filler, Capper, Conveyor" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Status</label>
-                            <select name="Status" class="form-select form-select-sm">
+                            <select name="Status" class="form-select form-select-sm" style="height:38px; border-radius: 0px !important;">
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Manufacturer</label>
-                            <input type="text" name="Manufacturer" class="form-control form-control-sm" placeholder="e.g. Bosch, Krones" />
+                            <input type="text" name="Manufacturer" class="form-control form-control-sm" placeholder="e.g. Bosch, Krones" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Model / Series</label>
-                            <input type="text" name="Model" class="form-control form-control-sm" placeholder="e.g. Mod-2026" />
+                            <input type="text" name="Model" class="form-control form-control-sm" placeholder="e.g. Mod-2026" style="height:38px; border-radius: 0px !important;" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-3">
-                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-ems-primary btn-sm px-4"><i class="bi bi-save me-1"></i> Save Machine</button>
+                <div class="modal-footer bg-light py-2 px-3" style="border-radius:0px !important;">
+                    <button type="button" class="btn btn-ems-outline btn-sm" style="height:38px; border-radius: 0px !important;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-4" style="height:38px; border-radius: 0px !important;"><i class="bi bi-save me-1"></i> Save Machine</button>
                 </div>
             </form>
         </div>
@@ -532,9 +667,9 @@
 <!-- 2. Edit Machine Modal -->
 <div class="modal fade" id="editMachineModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius:0;">
-            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
-                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-pencil me-2"></i>Edit Machine Specification</h6>
+        <div class="modal-content" style="border-radius:0px !important;">
+            <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0px !important;">
+                <h6 class="modal-title fw-bold mb-0" style="font-size:13px;"><i class="bi bi-pencil me-2"></i>Edit Machine Specification</h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="EditMachine" method="post">
@@ -544,44 +679,44 @@
                     <div class="row g-2">
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-secondary">Machine Code <span class="text-danger">*</span></label>
-                            <input type="text" name="MachineCode" id="edit-code" class="form-control form-control-sm font-monospace fw-bold text-primary" required />
+                            <input type="text" name="MachineCode" id="edit-code" class="form-control form-control-sm font-monospace fw-bold text-primary" required style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-12">
                             <label class="form-label small fw-bold text-secondary">Machine Name <span class="text-danger">*</span></label>
-                            <input type="text" name="MachineName" id="edit-name" class="form-control form-control-sm" required />
+                            <input type="text" name="MachineName" id="edit-name" class="form-control form-control-sm" required style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Line</label>
-                            <input type="text" name="Line" id="edit-line" class="form-control form-control-sm font-monospace" readonly style="background:#F8FAFC;" />
+                            <input type="text" name="Line" id="edit-line" class="form-control form-control-sm font-monospace" readonly style="background:#F8FAFC; height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Area</label>
-                            <input type="text" name="Area" id="edit-area" class="form-control form-control-sm" />
+                            <input type="text" name="Area" id="edit-area" class="form-control form-control-sm" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Machine Type</label>
-                            <input type="text" name="MachineType" id="edit-type" class="form-control form-control-sm" />
+                            <input type="text" name="MachineType" id="edit-type" class="form-control form-control-sm" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Status</label>
-                            <select name="Status" id="edit-status" class="form-select form-select-sm">
+                            <select name="Status" id="edit-status" class="form-select form-select-sm" style="height:38px; border-radius: 0px !important;">
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Manufacturer</label>
-                            <input type="text" name="Manufacturer" id="edit-manufacturer" class="form-control form-control-sm" />
+                            <input type="text" name="Manufacturer" id="edit-manufacturer" class="form-control form-control-sm" style="height:38px; border-radius: 0px !important;" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary">Model / Series</label>
-                            <input type="text" name="Model" id="edit-model" class="form-control form-control-sm" />
+                            <input type="text" name="Model" id="edit-model" class="form-control form-control-sm" style="height:38px; border-radius: 0px !important;" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-3">
-                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-ems-primary btn-sm px-4"><i class="bi bi-save me-1"></i> Save Changes</button>
+                <div class="modal-footer bg-light py-2 px-3" style="border-radius:0px !important;">
+                    <button type="button" class="btn btn-ems-outline btn-sm" style="height:38px; border-radius: 0px !important;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-ems-primary btn-sm px-4" style="height:38px; border-radius: 0px !important;"><i class="bi bi-save me-1"></i> Save Changes</button>
                 </div>
             </form>
         </div>
@@ -591,9 +726,9 @@
 <!-- 3. Delete Machine Modal -->
 <div class="modal fade" id="deleteMachineModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
-        <div class="modal-content" style="border-radius:0;">
-            <div class="modal-header py-2 px-3 bg-danger text-white" style="border-radius:0;">
-                <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-exclamation-triangle me-2"></i>Delete Machine</h6>
+        <div class="modal-content" style="border-radius:0px !important;">
+            <div class="modal-header py-2 px-3 bg-danger text-white" style="border-radius:0px !important;">
+                <h6 class="modal-title fw-bold mb-0" style="font-size:13px;"><i class="bi bi-exclamation-triangle me-2"></i>Delete Machine</h6>
                 <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <form asp-action="DeleteMachine" method="post">
@@ -603,13 +738,13 @@
                 <div class="modal-body p-3 text-center">
                     <p class="small text-secondary mb-1">Are you sure you want to delete machine:</p>
                     <strong class="font-monospace text-primary d-block mb-2" id="delete-code-display"></strong>
-                    <div class="alert alert-warning py-1 px-2 mb-0 small" style="font-size:11px;">
+                    <div class="alert alert-warning py-1 px-2 mb-0 small" style="font-size:11px; border-radius:0px !important;">
                         This action will remove the machine record permanently.
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between">
-                    <button type="button" class="btn btn-ems-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash me-1"></i>Delete</button>
+                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between" style="border-radius:0px !important;">
+                    <button type="button" class="btn btn-ems-outline btn-sm" style="height:38px; border-radius: 0px !important;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="height:38px; border-radius: 0px !important;"><i class="bi bi-trash me-1"></i>Delete</button>
                 </div>
             </form>
         </div>
@@ -667,13 +802,13 @@
                 if (pBtn) {
                     pBtn.style.fontWeight = '700';
                     pBtn.style.color = '#0F4C81';
-                    pBtn.style.borderBottom = '2px solid #0F4C81';
+                    pBtn.style.borderBottom = '3px solid #0F4C81';
                     pBtn.style.background = '#fff';
                 }
                 if (mBtn) {
-                    mBtn.style.fontWeight = '400';
+                    mBtn.style.fontWeight = '500';
                     mBtn.style.color = '#6B7280';
-                    mBtn.style.borderBottom = '2px solid transparent';
+                    mBtn.style.borderBottom = '3px solid transparent';
                     mBtn.style.background = '#F8FAFC';
                 }
             } else {
@@ -683,13 +818,13 @@
                 if (mBtn) {
                     mBtn.style.fontWeight = '700';
                     mBtn.style.color = '#0F4C81';
-                    mBtn.style.borderBottom = '2px solid #0F4C81';
+                    mBtn.style.borderBottom = '3px solid #0F4C81';
                     mBtn.style.background = '#fff';
                 }
                 if (pBtn) {
-                    pBtn.style.fontWeight = '400';
+                    pBtn.style.fontWeight = '500';
                     pBtn.style.color = '#6B7280';
-                    pBtn.style.borderBottom = '2px solid transparent';
+                    pBtn.style.borderBottom = '3px solid transparent';
                     pBtn.style.background = '#F8FAFC';
                 }
             }

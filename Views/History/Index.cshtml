@@ -5,90 +5,129 @@
     string tab = ViewBag.Tab as string ?? "masuk";
     var masukModel = Model as UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangMasuk>;
     var keluarModel = Model as UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangKeluar>;
+    var machineMap = ViewBag.MachineMap as Dictionary<int, string> ?? new Dictionary<int, string>();
 }
 
-<!-- EMS Header -->
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h3 class="fw-bold mb-1" style="color: #0B4A8F;">Transaction Logs & History</h3>
-        <p class="text-muted small mb-0">Audit history of all incoming shipments and outgoing sparepart usage logs.</p>
+<style>
+    .hist-card {
+        border: 1px solid #E2E8F0;
+        border-radius: 0px !important;
+        background: #FFFFFF;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .hist-mobile-card {
+        border: 1px solid #E2E8F0;
+        border-radius: 0px !important;
+        background: #FFFFFF;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .hist-mobile-card:hover {
+        border-color: #CBD5E1;
+    }
+
+    @@media (max-width: 576px) {
+        .hist-filter-btn-group {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="d-inline-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-sm" style="background-color: #0F4C81; width: 36px; height: 36px; border-radius: 0px !important;">
+            <i class="bi bi-clock-history fs-5" style="line-height: 1;"></i>
+        </div>
+        <div>
+            <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Transaction Logs &amp; History</h4>
+            <p class="text-muted small mb-0" style="font-size: 12px;">Audit history of all incoming shipments and outgoing sparepart usage logs.</p>
+        </div>
     </div>
     <div>
-        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-ems-outline btn-sm">
-            <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
+        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-radius: 0px !important;">
+            <i class="bi bi-file-earmark-excel me-1 text-success"></i> Export Excel
         </a>
     </div>
 </div>
 
-<!-- Tabs -->
-<ul class="nav nav-tabs mb-4">
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-3" style="border-bottom: 2px solid #E2E8F0;">
     <li class="nav-item">
-        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "")" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
-            <i class="bi bi-box-arrow-in-down text-success me-1"></i>Barang Masuk History
+        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
+            <i class="bi bi-box-arrow-in-down text-success me-1"></i> Barang Masuk History
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "")" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
-            <i class="bi bi-box-arrow-up-right text-danger me-1"></i>Barang Keluar History
+        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
+            <i class="bi bi-box-arrow-up-right text-danger me-1"></i> Barang Keluar History
         </a>
     </li>
 </ul>
 
-<!-- EMS Filter Card -->
-<div class="ems-filter-card">
-    <div class="ems-filter-header">
-        <span><i class="bi bi-funnel me-2 text-primary"></i>Search & Filter Logs</span>
+<!-- Filter Card -->
+<div class="hist-card p-3 mb-4">
+    <div class="fw-bold text-dark mb-2 pb-1 border-bottom d-flex align-items-center gap-1" style="font-size: 0.875rem;">
+        <i class="bi bi-funnel text-primary"></i> Search &amp; Filter Logs
     </div>
-    <div class="p-3">
-        <form method="get" asp-action="Index" class="row g-2 align-items-end">
-            <input type="hidden" name="tab" value="@tab" />
-            <div class="col-12 col-md-3">
-                <label class="form-label small fw-bold text-secondary">Search Query</label>
-                <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Item name, BIN, PIC..." />
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label small fw-bold text-secondary"><i class="bi bi-calendar-event me-1"></i>From Date</label>
-                <input type="date" name="startDate" value="@ViewBag.StartDate" class="form-control form-control-sm" />
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label small fw-bold text-secondary"><i class="bi bi-calendar-event me-1"></i>To Date</label>
-                <input type="date" name="endDate" value="@ViewBag.EndDate" class="form-control form-control-sm" />
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label small fw-bold text-secondary">Filter Year</label>
-                <select name="year" class="form-select form-select-sm">
-                    <option value="">[All Years]</option>
-                    @for (int y = DateTime.Now.Year; y >= 2020; y--)
-                    {
-                        <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">@y</option>
-                    }
-                </select>
-            </div>
-            <div class="col-6 col-md-3 d-flex gap-1">
-                <button type="submit" class="btn btn-ems-primary btn-sm flex-fill"><i class="bi bi-search me-1"></i>Filter</button>
-                <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
-            </div>
-        </form>
-    </div>
+    <form method="get" asp-action="Index" class="row g-2 align-items-end">
+        <input type="hidden" name="tab" value="@tab" />
+        <div class="col-12 col-md-3">
+            <label class="form-label small fw-bold text-secondary mb-1">Search Query</label>
+            <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Item name, BIN, PIC..." style="border-radius: 0px !important;" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>From Date</label>
+            <input type="date" name="startDate" value="@ViewBag.StartDate" class="form-control form-control-sm" style="border-radius: 0px !important;" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>To Date</label>
+            <input type="date" name="endDate" value="@ViewBag.EndDate" class="form-control form-control-sm" style="border-radius: 0px !important;" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label small fw-bold text-secondary mb-1">Filter Year</label>
+            <select name="year" class="form-select form-select-sm" style="border-radius: 0px !important;">
+                <option value="">[All Years]</option>
+                @for (int y = DateTime.Now.Year; y >= 2020; y--)
+                {
+                    <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">@y</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3 d-flex gap-1 hist-filter-btn-group">
+            <button type="submit" class="btn btn-ems-primary btn-sm flex-fill fw-semibold" style="border-radius: 0px !important;"><i class="bi bi-search me-1"></i>Filter</button>
+            <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm" title="Reset Filter" style="border-radius: 0px !important;"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
 </div>
 
-<!-- History Table Card -->
-<div class="ems-filter-card">
-    <div class="p-0">
-        <div class="table-responsive">
-            @if (tab == "masuk" && masukModel != null)
-            {
-                <table class="table-ems">
-                    <thead>
+<!-- History Card Container -->
+<div class="hist-card mb-4 overflow-hidden">
+    @if (tab == "masuk" && masukModel != null)
+    {
+        <div class="bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-dark small">
+                <i class="bi bi-box-arrow-in-down me-1 text-success"></i> Log Transaksi Barang Masuk
+            </div>
+            <span class="text-muted small">@masukModel.TotalCount.ToString("N0") Record(s)</span>
+        </div>
+
+        <!-- Desktop & Tablet View (Table) -->
+        <div class="d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                    <thead class="table-light text-secondary">
                         <tr>
-                            <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
-                            <th>DATE</th>
-                            <th>PART NUMBER</th>
-                            <th>BIN</th>
-                            <th>ITEM NAME</th>
-                            <th class="text-end">QTY RECEIVED (+)</th>
-                            <th>PIC</th>
-                            <th>SUPPLIER</th>
+                            <th class="text-center bg-light text-secondary border-end" style="width: 50px; font-weight: 600;">NO</th>
+                            <th style="font-weight: 600;">DATE</th>
+                            <th style="font-weight: 600;">PART NUMBER</th>
+                            <th style="font-weight: 600;">BIN</th>
+                            <th style="font-weight: 600;">ITEM NAME</th>
+                            <th class="text-end" style="font-weight: 600;">QTY RECEIVED (+)</th>
+                            <th style="font-weight: 600;">PIC</th>
+                            <th style="font-weight: 600;">SUPPLIER</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,11 +137,11 @@
                             foreach (var item in masukModel.Items)
                             {
                                 <tr>
-                                    <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoMasuk++)</td>
-                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="text-center font-monospace small text-muted border-end" style="background-color: #F8FAFC; width: 50px;">@(rowNoMasuk++)</td>
+                                    <td class="small text-muted font-monospace">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? "-")</span></td>
-                                    <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
-                                    <td class="fw-semibold">@item.ItemName</td>
+                                    <td><span class="badge bg-light text-dark font-monospace border" style="border-radius: 0px !important;">@(item.Bin ?? "-")</span></td>
+                                    <td class="fw-semibold text-dark">@item.ItemName</td>
                                     <td class="text-end text-success fw-bold">+@item.Qty</td>
                                     <td class="small">@(item.Pic ?? "-")</td>
                                     <td class="small text-secondary">@(item.Supplier ?? "-")</td>
@@ -112,51 +151,111 @@
                         else
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">No incoming transaction records found.</td>
+                                <td colspan="8" class="text-center text-muted py-4">Tidak ada log transaksi barang masuk ditemukan.</td>
                             </tr>
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
 
-                @if (masukModel.TotalPages > 1)
+        <!-- Mobile Card View (<768px) -->
+        <div class="d-md-none p-2 bg-light">
+            @if (masukModel.Items.Any())
+            {
+                int rowNoMasukM = ((masukModel.PageNumber - 1) * masukModel.PageSize) + 1;
+                foreach (var item in masukModel.Items)
                 {
-                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top">
-                        <span class="small text-muted">Showing page @masukModel.PageNumber of @masukModel.TotalPages (@masukModel.TotalCount total records)</span>
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item @(masukModel.PageNumber <= 1 ? "disabled" : "")">
-                                <a class="page-link" href="/History?tab=masuk&page=@(masukModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
-                            </li>
-                            @for (int p = 1; p <= masukModel.TotalPages; p++)
-                            {
-                                if (p == 1 || p == masukModel.TotalPages || Math.Abs(p - masukModel.PageNumber) <= 2)
-                                {
-                                    <li class="page-item @(p == masukModel.PageNumber ? "active" : "")">
-                                        <a class="page-link" href="/History?tab=masuk&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
-                                    </li>
-                                }
-                            }
-                            <li class="page-item @(masukModel.PageNumber >= masukModel.TotalPages ? "disabled" : "")">
-                                <a class="page-link" href="/History?tab=masuk&page=@(masukModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
-                            </li>
-                        </ul>
+                    <div class="hist-mobile-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                            <div>
+                                <span class="badge bg-secondary text-white font-monospace me-1" style="font-size: 10px; border-radius: 0px !important;">#@(rowNoMasukM++)</span>
+                                <span class="fw-bold text-dark d-block mt-1" style="font-size: 13.5px;">@item.ItemName</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold fs-6" style="border-radius: 0px !important;">+@item.Qty</span>
+                        </div>
+                        <div class="row g-1 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 11px;">Part Number:</span>
+                                <span class="font-monospace fw-semibold text-dark" style="font-size: 12px;">@(item.PartNumber ?? "-")</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">BIN Location:</span>
+                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px; border-radius: 0px !important;">@(item.Bin ?? "-")</span>
+                            </div>
+                            <div class="col-6 mt-1">
+                                <span class="text-muted d-block" style="font-size: 11px;">PIC Technician:</span>
+                                <span class="text-dark fw-medium" style="font-size: 12px;">@(item.Pic ?? "-")</span>
+                            </div>
+                            <div class="col-6 mt-1 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">Supplier:</span>
+                                <span class="text-secondary" style="font-size: 12px;">@(item.Supplier ?? "-")</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-1 border-top text-muted font-monospace text-end" style="font-size: 11px;">
+                            <i class="bi bi-clock me-1"></i>@item.Tanggal.ToString("yyyy-MM-dd HH:mm")
+                        </div>
                     </div>
                 }
             }
-            else if (tab == "keluar" && keluarModel != null)
+            else
             {
-                <table class="table-ems">
-                    <thead>
+                <div class="text-center text-muted py-4 bg-white border">
+                    Tidak ada log transaksi barang masuk ditemukan.
+                </div>
+            }
+        </div>
+
+        @if (masukModel.TotalPages > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top flex-wrap gap-2">
+                <span class="small text-muted" style="font-size: 11px;">Hal @masukModel.PageNumber dari @masukModel.TotalPages (@masukModel.TotalCount total)</span>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(masukModel.PageNumber <= 1 ? "disabled" : "")">
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    @for (int p = 1; p <= masukModel.TotalPages; p++)
+                    {
+                        if (p == 1 || p == masukModel.TotalPages || Math.Abs(p - masukModel.PageNumber) <= 2)
+                        {
+                            <li class="page-item @(p == masukModel.PageNumber ? "active" : "")">
+                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @(masukModel.PageNumber >= masukModel.TotalPages ? "disabled" : "")">
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                </ul>
+            </div>
+        }
+    }
+    else if (tab == "keluar" && keluarModel != null)
+    {
+        <div class="bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+            <div class="fw-bold text-dark small">
+                <i class="bi bi-box-arrow-up-right me-1 text-danger"></i> Log Transaksi Barang Keluar
+            </div>
+            <span class="text-muted small">@keluarModel.TotalCount.ToString("N0") Record(s)</span>
+        </div>
+
+        <!-- Desktop & Tablet View (Table) -->
+        <div class="d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                    <thead class="table-light text-secondary">
                         <tr>
-                            <th class="text-center bg-light text-secondary border-end" style="width: 60px; font-weight: 600;">NO</th>
-                            <th>DATE</th>
-                            <th>PART NUMBER</th>
-                            <th>BIN</th>
-                            <th>ITEM NAME</th>
-                            <th class="text-end">QTY ISSUED (-)</th>
-                            <th>LINE</th>
-                            <th>PIC</th>
-                            <th class="text-end">TOTAL COST</th>
-                            <th>STATUS</th>
+                            <th class="text-center bg-light text-secondary border-end" style="width: 50px; font-weight: 600;">NO</th>
+                            <th style="font-weight: 600;">DATE</th>
+                            <th style="font-weight: 600;">PART NUMBER</th>
+                            <th style="font-weight: 600;">BIN</th>
+                            <th style="font-weight: 600;">ITEM NAME</th>
+                            <th class="text-end" style="font-weight: 600;">QTY ISSUED (-)</th>
+                            <th style="font-weight: 600;">LINE</th>
+                            <th style="font-weight: 600;">MACHINE</th>
+                            <th style="font-weight: 600;">PIC</th>
+                            <th class="text-end" style="font-weight: 600;">TOTAL COST</th>
+                            <th style="font-weight: 600;">STATUS</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,24 +264,31 @@
                             int rowNoKeluar = ((keluarModel.PageNumber - 1) * keluarModel.PageSize) + 1;
                             foreach (var item in keluarModel.Items)
                             {
+                                string mNameDisplay = "-";
+                                if (item.MachineId.HasValue && machineMap.TryGetValue(item.MachineId.Value, out var mNameVal) && !string.IsNullOrWhiteSpace(mNameVal))
+                                {
+                                    mNameDisplay = mNameVal;
+                                }
+
                                 <tr>
-                                    <td class="text-center font-monospace small fw-medium text-dark border-end" style="background-color: #F8FAFC; width: 60px;">@(rowNoKeluar++)</td>
-                                    <td class="small text-muted">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td class="text-center font-monospace small text-muted border-end" style="background-color: #F8FAFC; width: 50px;">@(rowNoKeluar++)</td>
+                                    <td class="small text-muted font-monospace">@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td><span class="small text-secondary font-monospace">@(item.PartNumber ?? item.MasterDataId ?? "-")</span></td>
-                                    <td><span class="badge bg-light text-dark font-monospace border">@(item.Bin ?? "-")</span></td>
-                                    <td class="fw-semibold">@item.ItemName</td>
+                                    <td><span class="badge bg-light text-dark font-monospace border" style="border-radius: 0px !important;">@(item.Bin ?? "-")</span></td>
+                                    <td class="fw-semibold text-dark">@item.ItemName</td>
                                     <td class="text-end text-danger fw-bold">-@item.Qty</td>
-                                    <td><span class="badge bg-light text-dark border">@(item.Line ?? "-")</span></td>
+                                    <td><span class="badge bg-light text-dark border" style="border-radius: 0px !important;">@(item.Line ?? "-")</span></td>
+                                    <td><span class="badge bg-light text-dark border" style="border-radius: 0px !important;">@mNameDisplay</span></td>
                                     <td class="small">@(item.Pic ?? "-")</td>
                                     <td class="text-end font-monospace">Rp @((item.TotalCost ?? 0m).ToString("N0"))</td>
                                     <td>
                                         @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
                                         {
-                                            <span class="badge badge-ems-info">Approved</span>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="border-radius: 0px !important;">Approved</span>
                                         }
                                         else
                                         {
-                                            <span class="badge badge-ems-warning">@item.ApprovalStatus</span>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="border-radius: 0px !important;">@item.ApprovalStatus</span>
                                         }
                                     </td>
                                 </tr>
@@ -191,36 +297,108 @@
                         else
                         {
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-4">No outgoing transaction records found.</td>
+                                <td colspan="11" class="text-center text-muted py-4">Tidak ada log transaksi barang keluar ditemukan.</td>
                             </tr>
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
 
-                @if (keluarModel.TotalPages > 1)
+        <!-- Mobile Card View (<768px) -->
+        <div class="d-md-none p-2 bg-light">
+            @if (keluarModel.Items.Any())
+            {
+                int rowNoKeluarM = ((keluarModel.PageNumber - 1) * keluarModel.PageSize) + 1;
+                foreach (var item in keluarModel.Items)
                 {
-                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top">
-                        <span class="small text-muted">Showing page @keluarModel.PageNumber of @keluarModel.TotalPages (@keluarModel.TotalCount total records)</span>
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item @(keluarModel.PageNumber <= 1 ? "disabled" : "")">
-                                <a class="page-link" href="/History?tab=keluar&page=@(keluarModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
-                            </li>
-                            @for (int p = 1; p <= keluarModel.TotalPages; p++)
+                    string mNameDisplayMob = "-";
+                    if (item.MachineId.HasValue && machineMap.TryGetValue(item.MachineId.Value, out var mNameMobVal) && !string.IsNullOrWhiteSpace(mNameMobVal))
+                    {
+                        mNameDisplayMob = mNameMobVal;
+                    }
+
+                    <div class="hist-mobile-card shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                            <div>
+                                <span class="badge bg-secondary text-white font-monospace me-1" style="font-size: 10px; border-radius: 0px !important;">#@(rowNoKeluarM++)</span>
+                                <span class="fw-bold text-dark d-block mt-1" style="font-size: 13.5px;">@item.ItemName</span>
+                            </div>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold fs-6" style="border-radius: 0px !important;">-@item.Qty</span>
+                        </div>
+                        <div class="row g-1 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block" style="font-size: 11px;">Part Number:</span>
+                                <span class="font-monospace fw-semibold text-dark" style="font-size: 12px;">@(item.PartNumber ?? item.MasterDataId ?? "-")</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">BIN Location:</span>
+                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px; border-radius: 0px !important;">@(item.Bin ?? "-")</span>
+                            </div>
+                            <div class="col-6 mt-1">
+                                <span class="text-muted d-block" style="font-size: 11px;">Usage Line:</span>
+                                <span class="badge bg-light text-dark border" style="font-size: 11px; border-radius: 0px !important;">@(item.Line ?? "-")</span>
+                            </div>
+                            <div class="col-6 mt-1 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">Machine:</span>
+                                <span class="badge bg-light text-dark border" style="font-size: 11px; border-radius: 0px !important;">@mNameDisplayMob</span>
+                            </div>
+                            <div class="col-12 mt-1">
+                                <span class="text-muted d-block" style="font-size: 11px;">PIC Technician:</span>
+                                <span class="text-dark fw-medium" style="font-size: 12px;">@(item.Pic ?? "-")</span>
+                            </div>
+                            @if ((item.TotalCost ?? 0m) > 0)
                             {
-                                if (p == 1 || p == keluarModel.TotalPages || Math.Abs(p - keluarModel.PageNumber) <= 2)
-                                {
-                                    <li class="page-item @(p == keluarModel.PageNumber ? "active" : "")">
-                                        <a class="page-link" href="/History?tab=keluar&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
-                                    </li>
-                                }
+                                <div class="col-12 mt-1 pt-1 border-top d-flex justify-content-between align-items-center">
+                                    <span class="text-muted" style="font-size: 11px;">Total Cost:</span>
+                                    <span class="font-monospace fw-bold text-dark" style="font-size: 12px;">Rp @((item.TotalCost ?? 0m).ToString("N0"))</span>
+                                </div>
                             }
-                            <li class="page-item @(keluarModel.PageNumber >= keluarModel.TotalPages ? "disabled" : "")">
-                                <a class="page-link" href="/History?tab=keluar&page=@(keluarModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
-                            </li>
-                        </ul>
+                        </div>
+                        <div class="mt-2 pt-1 border-top d-flex justify-content-between align-items-center font-monospace" style="font-size: 11px;">
+                            <span class="text-muted"><i class="bi bi-clock me-1"></i>@item.Tanggal.ToString("yyyy-MM-dd HH:mm")</span>
+                            @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 10px; border-radius: 0px !important;">Approved</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 10px; border-radius: 0px !important;">@item.ApprovalStatus</span>
+                            }
+                        </div>
                     </div>
                 }
             }
+            else
+            {
+                <div class="text-center text-muted py-4 bg-white border">
+                    Tidak ada log transaksi barang keluar ditemukan.
+                </div>
+            }
         </div>
-    </div>
+
+        @if (keluarModel.TotalPages > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2 px-3 border-top flex-wrap gap-2">
+                <span class="small text-muted" style="font-size: 11px;">Hal @keluarModel.PageNumber dari @keluarModel.TotalPages (@keluarModel.TotalCount total)</span>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(keluarModel.PageNumber <= 1 ? "disabled" : "")">
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    @for (int p = 1; p <= keluarModel.TotalPages; p++)
+                    {
+                        if (p == 1 || p == keluarModel.TotalPages || Math.Abs(p - keluarModel.PageNumber) <= 2)
+                        {
+                            <li class="page-item @(p == keluarModel.PageNumber ? "active" : "")">
+                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @(keluarModel.PageNumber >= keluarModel.TotalPages ? "disabled" : "")">
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                </ul>
+            </div>
+        }
+    }
 </div>

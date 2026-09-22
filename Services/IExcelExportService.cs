@@ -8,6 +8,6 @@ namespace UPMS.Web.Services
     {
         byte[] ExportMasterDataToExcel(List<MasterData> data);
         byte[] ExportBarangMasukToExcel(List<BarangMasuk> data);
-        byte[] ExportBarangKeluarToExcel(List<BarangKeluar> data);
+        byte[] ExportBarangKeluarToExcel(List<BarangKeluar> data, Dictionary<int, string>? machineMap = null);
     }
 }

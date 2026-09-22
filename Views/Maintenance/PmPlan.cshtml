@@ -14,13 +14,13 @@
 <style>
     /* Microsoft Fluent Enterprise Theme Settings - Flat Theme (0 Border Radius) */
     :root {
-        --ms-primary: #0078d4;
-        --ms-primary-hover: #106ebe;
+        --ms-primary: #0F4C81;
+        --ms-primary-hover: #0b3c67;
         --ms-primary-light: #eff6fc;
         --ms-neutral-light: #f3f2f1;
         --ms-neutral-border: #e1dfdd;
         --ms-neutral-dark: #323130;
-        --ms-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+        --ms-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     /* Universal 0-radius reset for all UI elements in PmPlan */
@@ -41,14 +41,16 @@
     .btn,
     .badge,
     .alert,
-    .input-group-text {
+    .input-group-text,
+    .modal-content,
+    .pm-mobile-card {
         border-radius: 0 !important;
     }
 
     .plan-header-banner {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        background: #ffffff;
         border: 1px solid var(--ms-neutral-border);
-        border-radius: 0;
+        border-radius: 0 !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
 
@@ -56,7 +58,7 @@
         background: #ffffff;
         border: 1px solid var(--ms-neutral-border);
         border-top: 4px solid var(--ms-primary);
-        border-radius: 0;
+        border-radius: 0 !important;
         box-shadow: var(--ms-card-shadow);
         padding: 1.25rem 1.5rem;
         margin-bottom: 1.25rem;
@@ -67,7 +69,7 @@
     .plan-table-card {
         background: #ffffff;
         border: 1px solid var(--ms-neutral-border);
-        border-radius: 0;
+        border-radius: 0 !important;
         box-shadow: var(--ms-card-shadow);
         overflow: hidden;
     }
@@ -76,11 +78,6 @@
         padding: 0.85rem 1.25rem;
         border-bottom: 1px solid var(--ms-neutral-border);
         background: #faf9f8;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.75rem;
     }
 
     /* Microsoft Fluent Month Checklist Pills */
@@ -96,7 +93,7 @@
         justify-content: center;
         gap: 4px;
         padding: 6px 14px;
-        border-radius: 0;
+        border-radius: 0 !important;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
@@ -117,7 +114,7 @@
         background-color: var(--ms-primary);
         border-color: var(--ms-primary);
         color: #ffffff;
-        box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);
+        box-shadow: 0 2px 6px rgba(15, 76, 129, 0.25);
     }
 
     .fluent-month-pill.active:hover {
@@ -131,8 +128,8 @@
 
     .preset-btn-sm {
         font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 0;
+        padding: 4px 10px;
+        border-radius: 0 !important;
         border: 1px solid #d2d0ce;
         background: #ffffff;
         color: #323130;
@@ -155,7 +152,7 @@
         font-size: 11px;
         font-weight: 600;
         padding: 3px 8px;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
     .badge-fluent-q {
@@ -165,7 +162,7 @@
         font-size: 11px;
         font-weight: 600;
         padding: 3px 8px;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
     .badge-fluent-6m {
@@ -175,7 +172,7 @@
         font-size: 11px;
         font-weight: 600;
         padding: 3px 8px;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
     .month-chip-active {
@@ -184,7 +181,7 @@
         font-size: 9.5px;
         font-weight: 600;
         padding: 2px 5px;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
     .month-chip-inactive {
@@ -193,10 +190,10 @@
         border: 1px solid #e1dfdd;
         font-size: 9.5px;
         padding: 2px 5px;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
-    .freq-badge-monthly   { background: #0078d4 !important; color: #fff !important; }
+    .freq-badge-monthly   { background: #0F4C81 !important; color: #fff !important; }
     .freq-badge-quarterly { background: #008272 !important; color: #fff !important; }
     .freq-badge-6months   { background: #797775 !important; color: #fff !important; }
     .freq-badge-yearly    { background: #d13438 !important; color: #fff !important; }
@@ -205,56 +202,35 @@
     .plan-table th { font-size: 11.5px; font-weight: 600; color: #323130; white-space: nowrap; background: #faf9f8; }
     .plan-table td { font-size: 11.5px; vertical-align: middle; }
 
-    .multiselect-dropdown { position: relative; }
-    .multiselect-button {
-        background: #fff;
-        border: 1px solid #8a8886;
+    /* Mobile card styling */
+    .pm-mobile-card {
+        background: #ffffff;
+        border: 1px solid #e1dfdd;
         border-radius: 0 !important;
-        padding: 0.25rem 0.75rem;
-        width: 100%;
-        text-align: left;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        height: 32px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
-    .multiselect-menu {
-        display: none;
-        position: absolute;
-        z-index: 9999;
-        background: #fff;
-        border: 1px solid var(--ms-neutral-border);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.14);
-        border-radius: 0;
-        min-width: 280px;
-        max-height: 320px;
-        overflow-y: auto;
-    }
-    .multiselect-menu.show { display: block; }
-    .multiselect-option { cursor: pointer; font-size: 12px; }
-    .multiselect-option:hover { background: var(--ms-primary-light); }
 </style>
 
 <!-- Top Title Bar -->
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 plan-header-banner p-3">
-    <div>
-        <h4 class="page-title mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-calendar2-check-fill text-primary"></i>Preventive Maintenance Plan
-        </h4>
-        <p class="text-muted small mb-0 mt-1">Master template sparepart standar per Line &amp; Mesin, termasuk jadwal bulan aktif (Jan - Des)</p>
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3 plan-header-banner p-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center text-white" style="width: 44px; height: 44px; background-color: #0F4C81; border-radius: 0px !important; flex-shrink: 0;">
+            <i class="bi bi-card-checklist fs-4"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.05rem;">Preventive Maintenance Plan</h4>
+            <p class="text-muted small mb-0 mt-0.5">Master template sparepart standar per Line &amp; Mesin, termasuk jadwal bulan aktif (Jan - Des)</p>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        <a asp-controller="Maintenance" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1 shadow-sm">
+    <div class="d-flex gap-2 align-items-center w-100 w-sm-auto flex-wrap flex-sm-nowrap">
+        <a asp-controller="Maintenance" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 flex-fill flex-sm-grow-0 d-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 0px !important; white-space: nowrap;">
             <i class="bi bi-arrow-left me-1"></i>Kembali ke Manage PM
         </a>
         @if (canEditPm)
         {
-            <button type="button" class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1 shadow-sm" onclick="showAddForm()" style="background-color: var(--ms-primary); border-color: var(--ms-primary);">
+            <button type="button" class="btn btn-primary btn-sm px-3 flex-fill flex-sm-grow-0 d-flex align-items-center justify-content-center gap-1" onclick="showAddForm()" style="height: 38px; border-radius: 0px !important; white-space: nowrap; background-color: #0F4C81; border-color: #0F4C81;">
                 <i class="bi bi-plus-lg me-1"></i>Tambah Part Standar
             </button>
         }
@@ -275,11 +251,11 @@
         @Html.AntiForgeryToken()
         <input type="hidden" id="tplId" name="Id" value="0" />
         
-        <!-- Row 1: Line, Mesin, Sparepart, Qty, Satuan -->
+        <!-- Row 1: Line, Mesin, Sparepart -->
         <div class="row g-3 mb-3">
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-dark mb-1">Line <span class="text-danger">*</span></label>
-                <select id="tplFormLine" name="Line" class="form-select form-select-sm" required onchange="onTplLineChanged()">
+                <select id="tplFormLine" name="Line" class="form-select form-select-sm" style="border-radius: 0px !important;" required onchange="onTplLineChanged()">
                     <option value="">Pilih Line</option>
                     @foreach (var l in allLines)
                     {
@@ -289,7 +265,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-bold text-dark mb-1">Mesin PM (Opsional)</label>
-                <select id="tplFormMachine" name="MachineName" class="form-select form-select-sm">
+                <select id="tplFormMachine" name="MachineName" class="form-select form-select-sm" style="border-radius: 0px !important;">
                     <option value="">Semua Mesin di Line</option>
                     @foreach (var mc in machines)
                     {
@@ -297,14 +273,14 @@
                     }
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-7">
                 <label class="form-label small fw-bold text-dark mb-1">Sparepart (dari Katalog) <span class="text-danger">*</span></label>
                 <div class="mb-0">
                     <div class="input-group input-group-sm mb-1">
-                        <span class="input-group-text bg-light py-0"><i class="bi bi-search" style="font-size:11px;"></i></span>
-                        <input type="text" id="tplSparepartSearch" class="form-control form-control-sm py-0" placeholder="Ketik untuk filter sparepart..." onkeyup="filterSparepartSelect(this.value)" />
+                        <span class="input-group-text bg-light py-0" style="border-radius: 0px !important;"><i class="bi bi-search" style="font-size:11px;"></i></span>
+                        <input type="text" id="tplSparepartSearch" class="form-control form-control-sm py-0" style="border-radius: 0px !important;" placeholder="Ketik untuk filter sparepart..." onkeyup="filterSparepartSelect(this.value)" />
                     </div>
-                    <select id="tplFormSparepart" name="SparepartId" class="form-select form-select-sm" required onchange="onTemplateSparepartSelected(this)">
+                    <select id="tplFormSparepart" name="SparepartId" class="form-select form-select-sm" style="border-radius: 0px !important;" required onchange="onTemplateSparepartSelected(this)">
                         <option value="">Pilih Sparepart Catalog...</option>
                         @foreach (var sp in masterSparepartList)
                         {
@@ -321,11 +297,11 @@
         <div class="row g-2 mb-3 align-items-end">
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-dark mb-1">Default Qty <span class="text-danger">*</span></label>
-                <input type="number" id="tplFormQty" name="DefaultQuantity" class="form-control form-control-sm text-center fw-bold" value="1" min="0.1" step="0.1" required />
+                <input type="number" id="tplFormQty" name="DefaultQuantity" class="form-control form-control-sm text-center fw-bold" style="border-radius: 0px !important;" value="1" min="0.1" step="0.1" required />
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-dark mb-1">Satuan</label>
-                <select id="tplFormUnit" name="Unit" class="form-select form-select-sm">
+                <select id="tplFormUnit" name="Unit" class="form-select form-select-sm" style="border-radius: 0px !important;">
                     <option value="Pcs">Pcs</option>
                     <option value="Set">Set</option>
                     <option value="Roll">Roll</option>
@@ -336,7 +312,7 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-dark mb-1">Frekuensi PM</label>
-                <select id="tplFormFreq" name="Frequency" class="form-select form-select-sm">
+                <select id="tplFormFreq" name="Frequency" class="form-select form-select-sm" style="border-radius: 0px !important;">
                     <option value="Monthly">Monthly (Bulanan)</option>
                     <option value="Quarterly">Quarterly (3 Bulanan)</option>
                     <option value="6 Months">6 Months (6 Bulanan)</option>
@@ -346,16 +322,16 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold text-dark mb-1">Durasi Estimasi (Min)</label>
-                <input type="number" id="tplFormDuration" name="DurationMin" class="form-control form-control-sm text-center" value="30" min="5" step="5" />
+                <input type="number" id="tplFormDuration" name="DurationMin" class="form-control form-control-sm text-center" style="border-radius: 0px !important;" value="30" min="5" step="5" />
             </div>
             <div class="col-md-4">
                 <label class="form-label small fw-bold text-dark mb-1">Catatan / Detail Pekerjaan</label>
-                <input type="text" id="tplFormNotes" name="Notes" class="form-control form-control-sm" placeholder="Contoh: Cek V-Belt, Ganti Oli..." />
+                <input type="text" id="tplFormNotes" name="Notes" class="form-control form-control-sm" style="border-radius: 0px !important;" placeholder="Contoh: Cek V-Belt, Ganti Oli..." />
             </div>
         </div>
 
         <!-- Microsoft Fluent Style Target Month Selector -->
-        <div class="mb-3 p-2.5 border rounded-1 bg-white">
+        <div class="mb-3 p-3 border bg-white" style="border-radius: 0px !important;">
             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
                 <label class="form-label small fw-bold text-dark mb-0 d-flex align-items-center gap-1">
                     <i class="bi bi-calendar-check text-primary"></i>Pilih Bulan Aktif Pelaksanaan PM:
@@ -381,8 +357,8 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 pt-2 border-top">
-            <button type="button" class="btn btn-secondary btn-sm px-3" onclick="hideAddForm()">Batal</button>
-            <button type="submit" class="btn btn-primary btn-sm px-4">
+            <button type="button" class="btn btn-secondary btn-sm px-3" style="height: 38px; border-radius: 0px !important;" onclick="hideAddForm()">Batal</button>
+            <button type="submit" class="btn btn-primary btn-sm px-4" style="height: 38px; border-radius: 0px !important; background-color: #0F4C81; border-color: #0F4C81;">
                 <i class="bi bi-check-lg me-1"></i>Simpan Standard Part
             </button>
         </div>
@@ -392,10 +368,10 @@
 <!-- Filter + Table Card -->
 <div class="plan-table-card">
     <div class="plan-table-header">
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div style="min-width: 140px;">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
                 <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Filter Line</label>
-                <select id="filterLine" class="form-select form-select-sm" onchange="onFilterLineChanged()">
+                <select id="filterLine" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;" onchange="onFilterLineChanged()">
                     <option value="">Semua Line</option>
                     @foreach (var l in allLines)
                     {
@@ -403,9 +379,9 @@
                     }
                 </select>
             </div>
-            <div style="min-width: 180px;">
+            <div class="col-12 col-sm-6 col-md-3 col-lg-3">
                 <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Filter Mesin</label>
-                <select id="filterMachine" class="form-select form-select-sm" onchange="applyFilter()">
+                <select id="filterMachine" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;" onchange="applyFilter()">
                     <option value="">Semua Mesin</option>
                     @foreach (var mc in machines)
                     {
@@ -413,9 +389,9 @@
                     }
                 </select>
             </div>
-            <div style="min-width: 150px;">
+            <div class="col-12 col-sm-6 col-md-2 col-lg-2">
                 <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Frekuensi</label>
-                <select id="filterFreq" class="form-select form-select-sm" onchange="applyFilter()">
+                <select id="filterFreq" class="form-select form-select-sm" style="height: 38px; border-radius: 0px !important;" onchange="applyFilter()">
                     <option value="">Semua Frekuensi</option>
                     <option value="Monthly">Monthly</option>
                     <option value="Quarterly">Quarterly</option>
@@ -424,23 +400,24 @@
                     <option value="Custom">Custom</option>
                 </select>
             </div>
-            <div style="min-width: 220px; flex-grow: 1; max-width: 320px;">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <label class="form-label small fw-bold mb-1 text-dark" style="font-size:11px;">Cari Sparepart</label>
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search" style="font-size: 11px;"></i></span>
-                    <input type="text" id="filterSearch" class="form-control form-control-sm border-start-0" placeholder="Nama/kode sparepart..." oninput="applyFilter()" />
+                    <span class="input-group-text bg-light text-muted border-end-0" style="height: 38px; border-radius: 0px !important;"><i class="bi bi-search" style="font-size: 11px;"></i></span>
+                    <input type="text" id="filterSearch" class="form-control form-control-sm border-start-0" style="height: 38px; border-radius: 0px !important;" placeholder="Nama/kode sparepart..." oninput="applyFilter()" />
                 </div>
             </div>
-        </div>
-        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
-            <span class="badge bg-primary py-1.5 px-3 shadow-sm" id="partCountBadge" style="font-size:12px; background-color: var(--ms-primary) !important;">0 Part</span>
-            <button class="btn btn-outline-secondary btn-sm" onclick="loadPlanData()" title="Refresh data">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+            <div class="col-12 col-lg-2 d-flex align-items-center justify-content-lg-end gap-2 mt-2 mt-lg-0">
+                <span class="badge py-2 px-3 flex-grow-1 flex-lg-grow-0 text-center" id="partCountBadge" style="font-size:12px; height: 38px; line-height: 22px; background-color: #0F4C81 !important; border-radius: 0px !important; white-space: nowrap;">0 Part</span>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadPlanData()" title="Refresh data" style="height: 38px; width: 38px; border-radius: 0px !important; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="bi bi-arrow-clockwise fs-6"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="table-responsive" style="max-height: calc(100vh - 310px); overflow-y: auto;">
+    <!-- Desktop Table View -->
+    <div class="table-responsive d-none d-md-block" style="max-height: calc(100vh - 310px); overflow-y: auto;">
         <table class="table table-sm table-hover align-middle mb-0 plan-table">
             <thead>
                 <tr>
@@ -471,6 +448,13 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Mobile Card View -->
+    <div class="d-md-none p-3" id="planMobileCards">
+        <div class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -494,15 +478,15 @@
         var actives = (targetMonths || '1,2,3,4,5,6,7,8,9,10,11,12').split(',').map(m => m.trim()).filter(m => m.length > 0);
 
         if (actives.length === 12) {
-            return `<span class="badge-fluent-all" title="Aktif setiap bulan (Januari - Desember)"><i class="bi bi-check-circle-fill me-1"></i>Setiap Bulan (12 Bulan)</span>`;
+            return `<span class="badge-fluent-all" style="border-radius: 0px !important;" title="Aktif setiap bulan (Januari - Desember)"><i class="bi bi-check-circle-fill me-1"></i>Setiap Bulan (12 Bulan)</span>`;
         }
         
         var actStr = actives.sort((a,b) => parseInt(a)-parseInt(b)).join(',');
         if (actStr === '1,4,7,10') {
-            return `<span class="badge-fluent-q" title="Jan, Apr, Jul, Okt"><i class="bi bi-pie-chart-fill me-1"></i>Triwulan (Jan, Apr, Jul, Okt)</span>`;
+            return `<span class="badge-fluent-q" style="border-radius: 0px !important;" title="Jan, Apr, Jul, Okt"><i class="bi bi-pie-chart-fill me-1"></i>Triwulan (Jan, Apr, Jul, Okt)</span>`;
         }
         if (actStr === '1,7') {
-            return `<span class="badge-fluent-6m" title="Jan, Jul"><i class="bi bi-calendar2-range-fill me-1"></i>6 Bulanan (Jan, Jul)</span>`;
+            return `<span class="badge-fluent-6m" style="border-radius: 0px !important;" title="Jan, Jul"><i class="bi bi-calendar2-range-fill me-1"></i>6 Bulanan (Jan, Jul)</span>`;
         }
 
         // Render sleek mini chips
@@ -510,51 +494,125 @@
             var mNum = (i+1).toString();
             var isAct = actives.includes(mNum);
             var cls = isAct ? 'month-chip-active' : 'month-chip-inactive';
-            return `<span class="${cls}">${a}</span>`;
+            return `<span class="${cls}" style="border-radius: 0px !important;">${a}</span>`;
         }).join(' ');
     }
 
     function renderTable(items) {
         var tbody = document.getElementById('planTableBody');
+        var mobileCards = document.getElementById('planMobileCards');
         var badge = document.getElementById('partCountBadge');
+        
         if (!items || items.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" class="text-center py-5 text-muted">
-                <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
-                Belum ada data. Klik <strong>Tambah Part Standar</strong> untuk mulai mengisi.
-            </td></tr>`;
+            var emptyHtml = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                    <p class="mb-0 fw-semibold">Belum ada data template part standar.</p>
+                    <small class="text-muted">Klik <strong>Tambah Part Standar</strong> untuk mulai mengisi.</small>
+                </div>`;
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                    Belum ada data. Klik <strong>Tambah Part Standar</strong> untuk mulai mengisi.
+                </td></tr>`;
+            }
+            if (mobileCards) {
+                mobileCards.innerHTML = emptyHtml;
+            }
             if (badge) badge.textContent = '0 Part';
             return;
         }
+
         if (badge) badge.textContent = items.length + ' Part';
-        var html = '';
+        
+        var tableHtml = '';
+        var cardsHtml = '';
+
         items.forEach((item, idx) => {
             var freqCls = getFreqBadgeClass(item.frequency || 'Monthly');
             var monthBadges = buildMonthBadges(item.targetMonths);
-            html += `
+            var lineEsc = escapeHtml(item.line);
+            var machineEsc = escapeHtml(item.machineName || '-');
+            var codeEsc = escapeHtml(item.sparepartId);
+            var nameEsc = escapeHtml(item.sparepartName);
+            var binEsc = escapeHtml(item.bin || '-');
+            var qty = item.defaultQuantity || 1;
+            var unitEsc = escapeHtml(item.unit || 'Pcs');
+            var freqEsc = escapeHtml(item.frequency || 'Monthly');
+            var duration = item.durationMin || 30;
+            var notesEsc = escapeHtml(item.notes || '-');
+
+            // Desktop Row
+            tableHtml += `
                 <tr>
                     <td class="text-center text-muted small">${idx+1}</td>
-                    <td class="text-center"><span class="badge bg-dark">${escapeHtml(item.line)}</span></td>
-                    <td class="small fw-semibold text-dark">${escapeHtml(item.machineName || '-')}</td>
-                    <td><code class="text-primary fw-bold" style="font-size:11px;">${escapeHtml(item.sparepartId)}</code></td>
-                    <td class="fw-semibold text-dark">${escapeHtml(item.sparepartName)}</td>
-                    <td><span class="badge bg-light text-dark border" style="font-size:11px;">${escapeHtml(item.bin || '-')}</span></td>
-                    <td class="text-center fw-bold">${item.defaultQuantity || 1}</td>
-                    <td class="text-center text-muted">${escapeHtml(item.unit || 'Pcs')}</td>
-                    <td class="text-center"><span class="badge ${freqCls}" style="font-size:10px;">${escapeHtml(item.frequency || 'Monthly')}</span></td>
-                    <td class="text-center text-muted small">${item.durationMin || 30} min</td>
+                    <td class="text-center"><span class="badge bg-dark" style="border-radius: 0px !important;">${lineEsc}</span></td>
+                    <td class="small fw-semibold text-dark">${machineEsc}</td>
+                    <td><code class="text-primary fw-bold" style="font-size:11px;">${codeEsc}</code></td>
+                    <td class="fw-semibold text-dark">${nameEsc}</td>
+                    <td><span class="badge bg-light text-dark border" style="font-size:11px; border-radius: 0px !important;">${binEsc}</span></td>
+                    <td class="text-center fw-bold">${qty}</td>
+                    <td class="text-center text-muted">${unitEsc}</td>
+                    <td class="text-center"><span class="badge ${freqCls}" style="font-size:10px; border-radius: 0px !important;">${freqEsc}</span></td>
+                    <td class="text-center text-muted small">${duration} min</td>
                     <td><div class="d-flex flex-wrap gap-1 align-items-center">${monthBadges}</div></td>
-                    <td class="text-muted small" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(item.notes || '')}">${escapeHtml(item.notes || '-')}</td>
+                    <td class="text-muted small" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${notesEsc}">${notesEsc}</td>
                     ${canEditPmUser ? `
                     <td class="text-center">
-                        <button class="btn btn-xs btn-outline-danger py-0 px-1" onclick="deleteStandardPart(${item.id})" title="Hapus">
+                        <button class="btn btn-xs btn-outline-danger py-0 px-1" style="border-radius: 0px !important;" onclick="deleteStandardPart(${item.id})" title="Hapus">
                             <i class="bi bi-trash" style="font-size:12px;"></i>
                         </button>
                     </td>
                     ` : ''}
                 </tr>
             `;
+
+            // Mobile Card
+            cardsHtml += `
+                <div class="pm-mobile-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-dark" style="border-radius: 0px !important;">${lineEsc}</span>
+                            <span class="fw-bold text-dark small">${machineEsc}</span>
+                        </div>
+                        ${canEditPmUser ? `
+                        <button class="btn btn-sm btn-outline-danger px-2 py-0" style="border-radius: 0px !important;" onclick="deleteStandardPart(${item.id})" title="Hapus">
+                            <i class="bi bi-trash"></i> Hapus
+                        </button>
+                        ` : ''}
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <code class="text-primary fw-bold" style="font-size:12px;">${codeEsc}</code>
+                            <span class="badge bg-light text-dark border" style="font-size:11px; border-radius: 0px !important;">Bin: ${binEsc}</span>
+                        </div>
+                        <div class="fw-bold text-dark mb-1" style="font-size:13px;">${nameEsc}</div>
+                    </div>
+                    <div class="row g-2 mb-2 bg-light p-2 border align-items-center" style="font-size:12px;">
+                        <div class="col-6">
+                            <span class="text-muted d-block" style="font-size:10px;">QTY & SATUAN</span>
+                            <strong class="text-dark">${qty} ${unitEsc}</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block" style="font-size:10px;">FREKUENSI & DURASI</span>
+                            <span class="badge ${freqCls}" style="font-size:10px; border-radius: 0px !important;">${freqEsc}</span>
+                            <span class="text-muted ms-1">(${duration}m)</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted d-block mb-1" style="font-size:10px; font-weight:600;">BULAN AKTIF PELAKSANAAN:</span>
+                        <div class="d-flex flex-wrap gap-1 align-items-center">${monthBadges}</div>
+                    </div>
+                    ${notesEsc !== '-' ? `
+                    <div class="small text-muted border-top pt-2 mt-2">
+                        <i class="bi bi-info-circle me-1"></i>${notesEsc}
+                    </div>` : ''}
+                </div>
+            `;
         });
-        tbody.innerHTML = html;
+
+        if (tbody) tbody.innerHTML = tableHtml;
+        if (mobileCards) mobileCards.innerHTML = cardsHtml;
     }
 
     function applyFilter() {
@@ -577,7 +635,10 @@
 
     function loadPlanData() {
         var tbody = document.getElementById('planTableBody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</td></tr>`;
+        var mobileCards = document.getElementById('planMobileCards');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="13" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</td></tr>`;
+        if (mobileCards) mobileCards.innerHTML = `<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</div>`;
+
         fetch('/Maintenance/GetStandardTemplateParts?line=&machine=')
             .then(r => r.json())
             .then(items => {
@@ -586,7 +647,9 @@
             })
             .catch(err => {
                 console.error(err);
-                if (tbody) tbody.innerHTML = `<tr><td colspan="12" class="text-center py-3 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Gagal memuat data. Silakan refresh halaman.</td></tr>`;
+                var errHtml = `<div class="text-center py-3 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Gagal memuat data. Silakan refresh halaman.</div>`;
+                if (tbody) tbody.innerHTML = `<tr><td colspan="13" class="text-center py-3 text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Gagal memuat data. Silakan refresh halaman.</td></tr>`;
+                if (mobileCards) mobileCards.innerHTML = errHtml;
             });
     }
 
@@ -864,7 +927,7 @@
         }
         var toast = document.createElement('div');
         toast.className = `alert alert-${type} alert-dismissible py-2 px-3 mb-0 shadow-sm`;
-        toast.style.cssText = 'min-width:260px;border-radius:6px;font-size:13px;';
+        toast.style.cssText = 'min-width:260px;border-radius:0px !important;font-size:13px;';
         toast.innerHTML = `${escapeHtml(message)}<button type="button" class="btn-close btn-sm p-1" onclick="this.parentElement.remove()"></button>`;
         container.appendChild(toast);
         setTimeout(() => { if (toast.parentElement) toast.remove(); }, 3500);
@@ -878,3 +941,4 @@
 </script>
 @Html.AntiForgeryToken()
 }
+

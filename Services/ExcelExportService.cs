@@ -94,7 +94,7 @@ namespace UPMS.Web.Services
             return stream.ToArray();
         }
 
-        public byte[] ExportBarangKeluarToExcel(List<BarangKeluar> data)
+        public byte[] ExportBarangKeluarToExcel(List<BarangKeluar> data, Dictionary<int, string>? machineMap = null)
         {
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Barang Keluar");
@@ -106,11 +106,12 @@ namespace UPMS.Web.Services
             worksheet.Cell(1, 5).Value = "Nama Item";
             worksheet.Cell(1, 6).Value = "QTY";
             worksheet.Cell(1, 7).Value = "Line";
-            worksheet.Cell(1, 8).Value = "Maintenance Type";
-            worksheet.Cell(1, 9).Value = "PIC";
-            worksheet.Cell(1, 10).Value = "Unit Price";
-            worksheet.Cell(1, 11).Value = "Total Cost";
-            worksheet.Cell(1, 12).Value = "Status";
+            worksheet.Cell(1, 8).Value = "Machine";
+            worksheet.Cell(1, 9).Value = "Maintenance Type";
+            worksheet.Cell(1, 10).Value = "PIC";
+            worksheet.Cell(1, 11).Value = "Unit Price";
+            worksheet.Cell(1, 12).Value = "Total Cost";
+            worksheet.Cell(1, 13).Value = "Status";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -120,6 +121,8 @@ namespace UPMS.Web.Services
             int row = 2;
             foreach (var item in data)
             {
+                string machineVal = (item.MachineId.HasValue && machineMap != null && machineMap.TryGetValue(item.MachineId.Value, out var mName) && !string.IsNullOrWhiteSpace(mName)) ? mName : "";
+
                 worksheet.Cell(row, 1).Value = item.Id;
                 worksheet.Cell(row, 2).Value = item.Tanggal.ToString("yyyy-MM-dd");
                 worksheet.Cell(row, 3).Value = item.PartNumber ?? item.MasterDataId ?? "";
@@ -127,11 +130,12 @@ namespace UPMS.Web.Services
                 worksheet.Cell(row, 5).Value = item.ItemName;
                 worksheet.Cell(row, 6).Value = item.Qty;
                 worksheet.Cell(row, 7).Value = item.Line ?? "";
-                worksheet.Cell(row, 8).Value = item.MaintenanceType ?? "";
-                worksheet.Cell(row, 9).Value = item.Pic ?? "";
-                worksheet.Cell(row, 10).Value = item.UnitPrice ?? 0m;
-                worksheet.Cell(row, 11).Value = item.TotalCost ?? 0m;
-                worksheet.Cell(row, 12).Value = item.ApprovalStatus ?? "Approved";
+                worksheet.Cell(row, 8).Value = machineVal;
+                worksheet.Cell(row, 9).Value = item.MaintenanceType ?? "";
+                worksheet.Cell(row, 10).Value = item.Pic ?? "";
+                worksheet.Cell(row, 11).Value = item.UnitPrice ?? 0m;
+                worksheet.Cell(row, 12).Value = item.TotalCost ?? 0m;
+                worksheet.Cell(row, 13).Value = item.ApprovalStatus ?? "Approved";
                 row++;
             }
 

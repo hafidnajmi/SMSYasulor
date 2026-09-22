@@ -151,7 +151,7 @@
         <div class="row g-2 align-items-end">
             <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-1">Status PM</label>
-                <select name="status" class="form-select form-select-sm" onchange="submitPmFilterForm()">
+                <select name="status" class="form-select form-select-sm" onchange="submitPmFilterForm()" style="border-radius: 0px !important;">
                     <option value="">Semua Status</option>
                     <option value="P" selected="@(ViewBag.SelectedStatus == "P")">P - Planning</option>
                     <option value="E" selected="@(ViewBag.SelectedStatus == "E")">E - Execute</option>
@@ -162,16 +162,16 @@
 
             <div class="col-md-7 col-6">
                 <label class="form-label small text-muted mb-1">Cari Kata Kunci (Line / Mesin / Teknisi / Catatan)</label>
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Ketik pencarian kata kunci..." value="@ViewBag.SearchQuery" />
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Ketik pencarian kata kunci..." value="@ViewBag.SearchQuery" style="border-radius: 0px !important;" />
             </div>
 
             <div class="col-md-2 col-12 d-flex align-items-center gap-1">
-                <button type="submit" class="btn btn-secondary btn-sm flex-fill" title="Cari / Apply Filter">
+                <button type="submit" class="btn btn-ems-primary btn-sm flex-fill fw-semibold" title="Cari / Apply Filter" style="border-radius: 0px !important;">
                     <i class="bi bi-search me-1"></i>Cari
                 </button>
                 @if (selectedLines.Any() || selectedMachineNames.Any() || selectedTechnicians.Any() || !string.IsNullOrEmpty(ViewBag.SelectedStatus) || !string.IsNullOrEmpty(ViewBag.SearchQuery))
                 {
-                    <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-danger btn-sm" title="Reset Filter">
+                    <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-danger btn-sm" title="Reset Filter" style="border-radius: 0px !important;">
                         <i class="bi bi-x-lg"></i>
                     </a>
                 }
@@ -183,12 +183,12 @@
 <!-- View Mode Switch Tabs -->
 <ul class="nav nav-tabs mb-3" id="pmViewTab" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link @(ViewBag.CurrentView != "list" ? "active" : "")" id="calendar-tab" type="button" role="tab" onclick="switchPmTab('calendar-view')">
+        <button class="nav-link @(ViewBag.CurrentView != "list" ? "active fw-bold text-primary" : "text-secondary")" id="calendar-tab" type="button" role="tab" onclick="switchPmTab('calendar-view')" style="border-radius: 0px !important;">
             <i class="bi bi-calendar3 me-1"></i>Tampilan Kalender
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link @(ViewBag.CurrentView == "list" ? "active" : "")" id="list-tab" type="button" role="tab" onclick="switchPmTab('list-view')">
+        <button class="nav-link @(ViewBag.CurrentView == "list" ? "active fw-bold text-primary" : "text-secondary")" id="list-tab" type="button" role="tab" onclick="switchPmTab('list-view')" style="border-radius: 0px !important;">
             <i class="bi bi-list-task me-1"></i>Tampilan List Tabel (@Model.Count())
         </button>
     </li>

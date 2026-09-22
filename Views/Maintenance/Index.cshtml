@@ -385,28 +385,64 @@
             max-height: 300px !important;
             z-index: 100000 !important;
         }
-        .modal-dialog {
-            margin: 0.5rem !important;
+        .pm-mobile-actions .btn {
+            white-space: nowrap !important;
+        }
+        .pm-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pm-header-actions .btn {
+            height: 36px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+            font-size: 0.825rem !important;
+            border-radius: 0px !important;
+        }
+        @@media (max-width: 576px) {
+            .pm-header-actions {
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px !important;
+            }
+            .pm-btn-full {
+                grid-column: span 2;
+            }
+            .pm-header-actions .btn {
+                width: 100% !important;
+                height: 38px !important;
+                font-size: 0.8rem !important;
+            }
         }
     }
 </style>
 
-<div class="d-flex align-items-center justify-content-between mb-3 pm-header-flex">
-    <div>
-        <h4 class="page-title mb-0"><i class="bi bi-calendar-check text-primary me-2"></i>Manage PM (Preventive Maintenance)</h4>
-        <p class="text-muted small mb-0">Jadwal pemeliharaan berkala mesin & fasilitas produksi per Line</p>
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="d-inline-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-sm" style="background-color: #0F4C81; width: 32px; height: 32px; border-radius: 0px !important;">
+            <i class="bi bi-calendar-check fs-6" style="line-height: 1;"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em; font-size: 1.05rem;">Manage PM (Preventive Maintenance)</h5>
+            <p class="text-muted small mb-0" style="font-size: 11.5px;">Jadwal pemeliharaan berkala mesin &amp; fasilitas produksi per Line</p>
+        </div>
     </div>
-    <div class="d-flex align-items-center gap-2 pm-header-actions">
+    <div class="pm-header-actions">
         @if (canEditPm)
         {
-            <button type="button" class="btn btn-outline-primary btn-sm px-3" onclick="confirmCopyMonthPlan(@selectedYear, @selectedMonth)" title="Salin semua jadwal PM bulan ini ke bulan depan">
+            <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold pm-btn-full" onclick="confirmCopyMonthPlan(@selectedYear, @selectedMonth)" title="Salin semua jadwal PM bulan ini ke bulan depan">
                 <i class="bi bi-copy me-1"></i>Copy Plan Ke Bulan Depan
             </button>
-            <button type="button" class="btn btn-ems-primary btn-sm px-3" onclick="openAddModalForDate(new Date().toISOString().split('T')[0])">
+            <button type="button" class="btn btn-ems-primary btn-sm px-3 fw-semibold" onclick="openAddModalForDate(new Date().toISOString().split('T')[0])">
                 <i class="bi bi-plus-circle me-1"></i>Tambah PM
             </button>
         }
-        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportExcel", new { year = selectedYear, month = selectedMonth, status = ViewBag.SelectedStatus, technician = (selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : ""), search = ViewBag.SearchQuery })', 'Preventive Maintenance');" class="btn btn-outline-success btn-sm px-3">
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportExcel", new { year = selectedYear, month = selectedMonth, status = ViewBag.SelectedStatus, technician = (selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : ""), search = ViewBag.SearchQuery })', 'Preventive Maintenance');" class="btn btn-outline-success btn-sm px-3 fw-semibold">
             <i class="bi bi-file-earmark-excel me-1"></i>Export
         </a>
     </div>

@@ -23,16 +23,25 @@ namespace UPMS.Web.Models.ViewModels
         public int BiddingYear { get; set; }
         public string Line { get; set; } = "-";
         public string Bin { get; set; } = "-";
+        public string Category { get; set; } = "-";
+        public string Frequency { get; set; } = "-";
+        public string Machine { get; set; } = "-";
         public string ItemName { get; set; } = "-";
         public string Detail { get; set; } = "-";
+        public string Brand { get; set; } = "-";
+        public double TbmPerMonth { get; set; }
+        public double LtPerMonth { get; set; }
         public string BudgetCode { get; set; } = "-";
         public int QtyNeedYear { get; set; }
         public int SafetyStock { get; set; }
         public int CurrentStock { get; set; }
-        public int QtyBid => Math.Max(0, QtyNeedYear + SafetyStock - CurrentStock);
+        public decimal Price2025 { get; set; }
         public decimal Price { get; set; }
-        public decimal TotalValue => QtyBid * Price;
         public string? SupplierName { get; set; }
+        public string LineAllocation { get; set; } = "-";
+        public double QtyPerLine { get; set; }
+        public int QtyBid => Math.Max(0, QtyNeedYear + SafetyStock - CurrentStock);
+        public decimal TotalValue => QtyBid * Price;
         public string? BiddingStage { get; set; }
         public string? Status { get; set; }
     }
