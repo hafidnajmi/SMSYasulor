@@ -240,15 +240,16 @@ namespace UPMS.Web.Services
             SmtpClient smtp, string senderEmail, string[] recipients,
             List<MasterData> items, string freqLabel, int intervalDays)
         {
+            var nowWib = UPMS.Web.Helpers.TimeHelper.Now;
             string intervalText = intervalDays == FastAlertDays ? "setiap 2 minggu" : "setiap 1 bulan";
-            string subject = $"[SMS AUTO-ALERT] Stok Kritis {freqLabel} Parts - {DateTime.Now:dd MMM yyyy}";
+            string subject = $"[SMS AUTO-ALERT] Stok Kritis {freqLabel} Parts - {nowWib:dd MMM yyyy}";
 
             var body = new StringBuilder();
             body.Append(HtmlOpen());
             body.Append(HtmlHeader($"Auto-Alert Terjadwal - Stok Kritis [{freqLabel} Parts, {intervalText}]"));
             body.AppendLine("<div style='padding: 24px;'>");
             body.AppendLine($"<div style='font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; color: #0F4C81; margin-bottom: 12px;'>[AUTO-ALERT] Stok Kritis - {freqLabel} Parts (Low Safety Stock)</div>");
-            body.AppendLine($"<p style='font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #333; margin: 0 0 12px 0;'>Yth. Tim Ops / Logistik &amp; Maintenance,<br/><br/>Laporan otomatis terjadwal ({intervalText}) untuk <strong>Sparepart Frekuensi {freqLabel}</strong> yang berada di bawah batas Safety Stock per <strong>{DateTime.Now:dd MMMM yyyy HH:mm} WIB</strong>. Terdapat <strong>{items.Count:N0} item</strong> yang memerlukan tindak lanjut pengadaan.</p>");
+            body.AppendLine($"<p style='font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #333; margin: 0 0 12px 0;'>Yth. Tim Ops / Logistik &amp; Maintenance,<br/><br/>Laporan otomatis terjadwal ({intervalText}) untuk <strong>Sparepart Frekuensi {freqLabel}</strong> yang berada di bawah batas Safety Stock per <strong>{nowWib:dd MMMM yyyy HH:mm} WIB</strong>. Terdapat <strong>{items.Count:N0} item</strong> yang memerlukan tindak lanjut pengadaan.</p>");
             body.Append(HtmlSummaryBox($"Total Item {freqLabel} - Low Safety Stock", items.Count));
 
             body.AppendLine("<div style='overflow-x: auto;'>");
@@ -320,8 +321,9 @@ namespace UPMS.Web.Services
             List<MasterData> items,
             Dictionary<string, SupplierOffer> supplierLookup)
         {
+            var nowWib = UPMS.Web.Helpers.TimeHelper.Now;
             string subject = $"[DRAFT] Request for Quotation (RFQ) - Spare Part Supply - {supplierName}";
-            string refNo = $"Ref. RFQ/UPMS/{DateTime.Now:yyyyMMdd}/{DateTime.Now:HHmm}";
+            string refNo = $"Ref. RFQ/UPMS/{nowWib:yyyyMMdd}/{nowWib:HHmm}";
 
             var sb = new StringBuilder();
             sb.AppendLine("<!DOCTYPE html><html><head><meta charset='utf-8'></head>");

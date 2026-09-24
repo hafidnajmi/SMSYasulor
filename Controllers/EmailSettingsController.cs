@@ -238,6 +238,8 @@ namespace UPMS.Web.Controllers
                 body.AppendLine("<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; color: #222;'>");
                 body.AppendLine("<div style='max-width: 960px; margin: 0 auto; background-color: #ffffff; border: 1px solid #d0d0d0;'>");
 
+                var nowWib = UPMS.Web.Helpers.TimeHelper.Now;
+
                 // Header
                 body.AppendLine("<div style='background-color: #0F4C81; padding: 18px 24px;'>");
                 body.AppendLine("<div style='font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff;'>SMS - Sparepart Management System</div>");
@@ -247,7 +249,7 @@ namespace UPMS.Web.Controllers
                 // Body content
                 body.AppendLine("<div style='padding: 24px;'>");
                 body.AppendLine("<div style='font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; color: #0F4C81; margin-bottom: 12px;'>[AUTO-ALERT] Laporan Stok Kritis Sparepart - Low Safety Stock</div>");
-                body.AppendLine($"<p style='font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #333; margin: 0 0 12px 0;'>Yth. Tim Ops / Logistik &amp; Maintenance,<br/><br/>Berikut laporan otomatis <strong>Stok Kritis Sparepart (Low Safety Stock)</strong> per tanggal <strong>{DateTime.Now:dd MMMM yyyy HH:mm} WIB</strong>. Terdapat <strong>{lowStockItems.Count:N0} item</strong> yang telah mencapai atau berada di bawah batas minimum Safety Stock dan memerlukan tindak lanjut pengadaan.</p>");
+                body.AppendLine($"<p style='font-family: Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #333; margin: 0 0 12px 0;'>Yth. Tim Ops / Logistik &amp; Maintenance,<br/><br/>Berikut laporan otomatis <strong>Stok Kritis Sparepart (Low Safety Stock)</strong> per tanggal <strong>{nowWib:dd MMMM yyyy HH:mm} WIB</strong>. Terdapat <strong>{lowStockItems.Count:N0} item</strong> yang telah mencapai atau berada di bawah batas minimum Safety Stock dan memerlukan tindak lanjut pengadaan.</p>");
 
                 // Summary count
                 body.AppendLine("<table style='width: 100%; border-collapse: collapse; margin-bottom: 16px;'><tr>");
@@ -294,7 +296,7 @@ namespace UPMS.Web.Controllers
                 // Footer note
                 body.AppendLine("<div style='margin-top: 24px; padding-top: 14px; border-top: 1px solid #d0d0d0; font-family: Arial, sans-serif; font-size: 11px; color: #777;'>");
                 body.AppendLine("<p style='margin: 0;'>Email ini dibuat dan dikirim secara otomatis oleh sistem <strong>SMS (Sparepart Management System)</strong>. Mohon tidak membalas email ini secara langsung.</p>");
-                body.AppendLine($"<p style='margin: 4px 0 0 0;'>Waktu: {DateTime.Now:dd/MM/yyyy HH:mm:ss} WIB</p>");
+                body.AppendLine($"<p style='margin: 4px 0 0 0;'>Waktu: {nowWib:dd/MM/yyyy HH:mm:ss} WIB</p>");
                 body.AppendLine("</div></div></div></body></html>");
 
                 using var mail = new MailMessage();
@@ -305,7 +307,7 @@ namespace UPMS.Web.Controllers
                     mail.To.Add(r);
                 }
 
-                mail.Subject = $"[SMS AUTO-ALERT] Laporan Stok Kritis Sparepart - {DateTime.Now:dd MMM yyyy}";
+                mail.Subject = $"[SMS AUTO-ALERT] Laporan Stok Kritis Sparepart - {nowWib:dd MMM yyyy}";
                 mail.Body = body.ToString();
                 mail.IsBodyHtml = true;
 
