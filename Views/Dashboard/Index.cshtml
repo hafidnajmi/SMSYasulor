@@ -242,7 +242,6 @@
                 <div class="ems-kpi-card ems-kpi-amber dash-kpi-card">
                     <div class="ems-kpi-title">
                         <i class="bi bi-exclamation-triangle text-warning"></i>CRITICAL STOCK
-                        @if (belowCount > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
                     </div>
                     <div class="ems-kpi-value text-danger">@belowCount Items</div>
                     <div class="ems-kpi-sub"><i class="bi bi-arrow-repeat me-1 text-danger"></i>Replenish required</div>
@@ -255,7 +254,6 @@
                 <div class="ems-kpi-card ems-kpi-amber dash-kpi-card" style="opacity: 0.85;">
                     <div class="ems-kpi-title">
                         <i class="bi bi-exclamation-triangle text-warning"></i>CRITICAL STOCK <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i>
-                        @if (belowCount > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
                     </div>
                     <div class="ems-kpi-value text-danger">@belowCount Items</div>
                     <div class="ems-kpi-sub"><i class="bi bi-arrow-repeat me-1 text-danger"></i>Replenish required</div>
@@ -270,7 +268,6 @@
                 <div class="ems-kpi-card ems-kpi-cyan dash-kpi-card">
                     <div class="ems-kpi-title">
                         <i class="bi bi-hourglass-split text-info"></i>APPROVALS
-                        @if ((kpi?.PendingApprovals ?? 0) > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
                     </div>
                     <div class="ems-kpi-value text-dark">@(kpi?.PendingApprovals ?? 0) Pending</div>
                     <div class="ems-kpi-sub"><i class="bi bi-list-check me-1 text-info"></i>Transactions queue</div>
@@ -283,7 +280,6 @@
                 <div class="ems-kpi-card ems-kpi-cyan dash-kpi-card" style="opacity: 0.85;">
                     <div class="ems-kpi-title">
                         <i class="bi bi-hourglass-split text-info"></i>APPROVALS <i class="bi bi-lock-fill text-danger ms-1" title="Akses Ditolak"></i>
-                        @if ((kpi?.PendingApprovals ?? 0) > 0) { <span class="badge bg-danger rounded-pill ms-1">!</span> }
                     </div>
                     <div class="ems-kpi-value text-dark">@(kpi?.PendingApprovals ?? 0) Pending</div>
                     <div class="ems-kpi-sub"><i class="bi bi-list-check me-1 text-info"></i>Transactions queue</div>
