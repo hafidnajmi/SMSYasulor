@@ -143,21 +143,29 @@ namespace UPMS.Web.Services
             };
         }
 
+        public async Task<string> GetNextUpfIdAsync()
+        {
+            string candidateId;
+            do
+            {
+                candidateId = await _db.GenerateNextUpfIdAsync("seq_upf_master");
+            } while (await _db.MasterDatas.AnyAsync(m => m.Id == candidateId && !m.IsDeleted));
+            return candidateId;
+        }
+
         public async Task<string> CreateAsync(MasterData item, string username)
         {
             if (string.IsNullOrWhiteSpace(item.Id))
             {
-                do
-                {
-                    item.Id = await _db.GenerateNextUpfIdAsync("seq_upf_master");
-                } while (await _db.MasterDatas.AnyAsync(m => m.Id == item.Id));
+                item.Id = await GetNextUpfIdAsync();
             }
             else
             {
-                bool exists = await _db.MasterDatas.AnyAsync(m => m.Id == item.Id);
-                if (exists)
+                item.Id = item.Id.Trim();
+                var existingItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == item.Id && !m.IsDeleted);
+                if (existingItem != null)
                 {
-                    throw new InvalidOperationException($"Part Number (ID) '{item.Id}' is already registered in the system. Please specify a unique ID or leave it blank to auto-generate.");
+                    throw new InvalidOperationException($"Part Number (ID) '{item.Id}' sudah terdaftar pada sparepart '{existingItem.Item}'. Silakan gunakan Part Number yang unik.");
                 }
             }
 
@@ -181,12 +189,83 @@ namespace UPMS.Web.Services
             return item.Id;
         }
 
-        public async Task<bool> UpdateAsync(MasterData item, string username)
+        private async Task ExecuteUpdateIfTableExistsAsync(string tableName, string columnName, string newId, string oldId)
         {
-            var existing = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == item.Id && !m.IsDeleted);
+            var connection = _db.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            bool tableExists = false;
+            using (var checkCmd = connection.CreateCommand())
+            {
+                checkCmd.CommandText = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE lower(table_name) = lower(@tbl));";
+                var param = checkCmd.CreateParameter();
+                param.ParameterName = "tbl";
+                param.Value = tableName;
+                checkCmd.Parameters.Add(param);
+
+                var result = await checkCmd.ExecuteScalarAsync();
+                if (result != null && bool.TryParse(result.ToString(), out bool exists))
+                {
+                    tableExists = exists;
+                }
+            }
+
+            if (tableExists)
+            {
+                await _db.Database.ExecuteSqlRawAsync($"UPDATE \"{tableName}\" SET \"{columnName}\" = {{0}} WHERE \"{columnName}\" = {{1}}", newId, oldId);
+            }
+        }
+
+        public async Task<bool> UpdateAsync(MasterData item, string username, string? originalId = null)
+        {
+            string targetId = string.IsNullOrWhiteSpace(originalId) ? (item.Id ?? "").Trim() : originalId.Trim();
+            var existing = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == targetId && !m.IsDeleted);
             if (existing == null) return false;
 
             string oldDataJson = JsonSerializer.Serialize(existing);
+
+            // Handle Part Number (ID) rename/update if changed
+            if (!string.IsNullOrWhiteSpace(item.Id) && !string.Equals(targetId, item.Id.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                string newId = item.Id.Trim();
+                var duplicate = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == newId && m.Id != targetId && !m.IsDeleted);
+                if (duplicate != null)
+                {
+                    throw new InvalidOperationException($"Part Number (ID) '{newId}' sudah terdaftar pada sparepart '{duplicate.Item}'. Gagal memperbarui Part Number ganda.");
+                }
+
+                // Execute SQL cascade update across tables referencing MasterData ID safely
+                using var transaction = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    await ExecuteUpdateIfTableExistsAsync("Barang_Masuk", "part_number", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("Barang_Keluar", "master_data_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("sparepart_line_mapping", "sparepart_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("SPAREPART_PRICE_HISTORY", "master_data_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("Supplier_Offer", "master_data_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("Bidding_History", "master_data_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("Email_Supplier_Log", "master_data_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("pm_schedule_item", "sparepart_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("pm_standard_part", "sparepart_id", newId, targetId);
+                    await ExecuteUpdateIfTableExistsAsync("Audit_Log", "record_id", newId, targetId);
+
+                    await _db.Database.ExecuteSqlRawAsync("UPDATE \"Master_Data\" SET \"id\" = {0} WHERE \"id\" = {1}", newId, targetId);
+
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+
+                // Re-fetch existing with new ID after transaction
+                existing = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == newId && !m.IsDeleted);
+                if (existing == null) return false;
+            }
 
             existing.Item = item.Item;
             existing.Detail = item.Detail;
@@ -212,13 +291,10 @@ namespace UPMS.Web.Services
                 existing.Image = item.Image;
             }
 
-            // CurrentUnitPrice is managed exclusively in Admin Management Portal.
-            // Do not overwrite price during Master Data catalog updates.
-
             var auditLog = new AuditLog
             {
                 TableName = "Master_Data",
-                RecordId = item.Id,
+                RecordId = existing.Id,
                 Action = "UPDATE",
                 OldData = oldDataJson,
                 NewData = JsonSerializer.Serialize(existing),

@@ -294,7 +294,11 @@ namespace UPMS.Web.Services
                 try
                 {
                     item.UserId = user.Id;
-                    item.CreatedAt = DateTime.Now;
+                    item.CreatedAt = UPMS.Web.Helpers.TimeHelper.Now;
+                    if (item.Tanggal == default || item.Tanggal == DateTime.MinValue)
+                    {
+                        item.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
+                    }
 
                     MasterData? masterItem = null;
                     if (!string.IsNullOrWhiteSpace(item.MasterDataId))
@@ -333,7 +337,7 @@ namespace UPMS.Web.Services
                     {
                         item.ApprovalStatus = "Approved";
                         item.ApprovedBy = user.Username;
-                        item.ApprovedAt = DateTime.Now;
+                        item.ApprovedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
                         if (masterItem != null)
                         {
@@ -352,7 +356,7 @@ namespace UPMS.Web.Services
                             _db.SparepartLineMappings.Add(new SparepartLineMapping
                             {
                                 SparepartId = item.MasterDataId,
-                                CreatedAt = DateTime.Now
+                                CreatedAt = UPMS.Web.Helpers.TimeHelper.Now
                             });
                         }
                     }
@@ -364,7 +368,7 @@ namespace UPMS.Web.Services
                         Action = "INSERT",
                         NewData = JsonSerializer.Serialize(item),
                         ChangedBy = user.Username,
-                        ChangedAt = DateTime.Now
+                        ChangedAt = UPMS.Web.Helpers.TimeHelper.Now
                     };
                     _db.AuditLogs.Add(audit);
 
@@ -393,7 +397,7 @@ namespace UPMS.Web.Services
 
                     entry.ApprovalStatus = "Approved";
                     entry.ApprovedBy = adminUsername;
-                    entry.ApprovedAt = DateTime.Now;
+                    entry.ApprovedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
                     if (!string.IsNullOrWhiteSpace(entry.MasterDataId))
                     {
@@ -412,7 +416,7 @@ namespace UPMS.Web.Services
                         Action = "APPROVE",
                         NewData = JsonSerializer.Serialize(entry),
                         ChangedBy = adminUsername,
-                        ChangedAt = DateTime.Now
+                        ChangedAt = UPMS.Web.Helpers.TimeHelper.Now
                     };
                     _db.AuditLogs.Add(audit);
 
@@ -435,7 +439,7 @@ namespace UPMS.Web.Services
 
             entry.ApprovalStatus = "Rejected";
             entry.ApprovedBy = adminUsername;
-            entry.ApprovedAt = DateTime.Now;
+            entry.ApprovedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
             var audit = new AuditLog
             {
@@ -444,7 +448,7 @@ namespace UPMS.Web.Services
                 Action = "REJECT",
                 NewData = JsonSerializer.Serialize(entry),
                 ChangedBy = adminUsername,
-                ChangedAt = DateTime.Now
+                ChangedAt = UPMS.Web.Helpers.TimeHelper.Now
             };
             _db.AuditLogs.Add(audit);
 

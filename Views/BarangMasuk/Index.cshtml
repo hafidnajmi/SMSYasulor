@@ -130,7 +130,7 @@
                         <label class="form-label small fw-bold text-secondary mb-1">Tanggal &amp; Jam</label>
                         <div class="input-group input-group-sm bm-input-group">
                             <span class="input-group-text"><i class="bi bi-calendar-event text-primary"></i></span>
-                            <input type="datetime-local" name="Tanggal" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
+                            <input type="datetime-local" name="Tanggal" class="form-control form-control-sm" value="@UPMS.Web.Helpers.TimeHelper.Now.ToString("yyyy-MM-ddTHH:mm")" required />
                         </div>
                         <div class="form-text text-muted" style="font-size: 11px;">Otomatis terisi waktu penerimaan saat ini.</div>
                     </div>

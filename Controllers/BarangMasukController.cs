@@ -107,7 +107,11 @@ namespace UPMS.Web.Controllers
             {
                 if (model.Tanggal == default || model.Tanggal.TimeOfDay == TimeSpan.Zero)
                 {
-                    model.Tanggal = DateTime.Today.Add(DateTime.Now.TimeOfDay);
+                    model.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
+                }
+                else
+                {
+                    model.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(model.Tanggal);
                 }
 
                 int userId = 0;

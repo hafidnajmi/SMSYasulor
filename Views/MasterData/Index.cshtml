@@ -407,8 +407,9 @@
                 <div class="modal-body p-3">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID)</label>
-                            <input type="text" name="Id" class="form-control form-control-sm" placeholder="Auto-generated UPF-XXXXX if blank" />
+                            <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID) <span class="text-danger">*</span></label>
+                            <input type="text" name="Id" id="addPartNumberInput" class="form-control form-control-sm" required placeholder="Pre-filled auto UPF-XXXXX or edit manually" />
+                            <small class="text-muted" style="font-size:11px;"><i class="bi bi-info-circle me-1"></i>Otomatis terisi saran ID berikutnya. Anda dapat mengubahnya secara manual.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary mb-1">Item Name <span class="text-danger">*</span></label>
@@ -598,7 +599,7 @@
         <div class="modal-content" style="border-radius:0; border: 1px solid var(--color-border);">
             <form asp-action="Edit" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="Id" id="editId" />
+                <input type="hidden" name="originalId" id="editOriginalId" />
                 <input type="hidden" name="search" value="@ViewBag.Search" />
                 <input type="hidden" name="upAreaFilter" value="@ViewBag.UpArea" />
                 <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
@@ -619,8 +620,9 @@
                     <div id="editModalFormBody" style="display:none;">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID)</label>
-                                <input type="text" id="editIdDisplay" class="form-control form-control-sm" disabled style="background:#F8FAFC;" />
+                                <label class="form-label small fw-bold text-secondary mb-1">Part Number (ID) <span class="text-danger">*</span></label>
+                                <input type="text" name="Id" id="editIdInput" class="form-control form-control-sm" required />
+                                <small class="text-muted" style="font-size:11px;"><i class="bi bi-pencil me-1"></i>Dapat diubah secara manual jika ada penyesuaian label rak fisik.</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-secondary mb-1">Item Name <span class="text-danger">*</span></label>
@@ -838,8 +840,8 @@
                 if (!response.ok) throw new Error('Item not found');
                 const item = await response.json();
 
-                document.getElementById('editId').value = item.id;
-                document.getElementById('editIdDisplay').value = item.id;
+                document.getElementById('editOriginalId').value = item.id;
+                document.getElementById('editIdInput').value = item.id;
                 document.getElementById('editItem').value = item.item || '';
                 document.getElementById('editBin').value = item.bin || '';
                 document.getElementById('editLine').value = item.line || '';
@@ -1133,5 +1135,27 @@
                     window.location.href = url;
                 });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var addModalElem = document.getElementById('addModal');
+            if (addModalElem) {
+                addModalElem.addEventListener('show.bs.modal', async function () {
+                    var idInput = document.getElementById('addPartNumberInput');
+                    if (idInput && !idInput.value.trim()) {
+                        try {
+                            var res = await fetch('/MasterData/GetNextId');
+                            if (res.ok) {
+                                var data = await res.json();
+                                if (data && data.nextId) {
+                                    idInput.value = data.nextId;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error fetching next UPF ID:', e);
+                        }
+                    }
+                });
+            }
+        });
     </script>
 }

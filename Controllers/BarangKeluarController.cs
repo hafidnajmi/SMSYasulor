@@ -185,8 +185,13 @@ namespace UPMS.Web.Controllers
 
             if (model.Tanggal == default || model.Tanggal.TimeOfDay == TimeSpan.Zero)
             {
-                model.Tanggal = DateTime.Now;
+                model.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
             }
+            else
+            {
+                model.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(model.Tanggal);
+            }
+            model.CreatedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
             int userId = 0;
             int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
@@ -252,8 +257,14 @@ namespace UPMS.Web.Controllers
                 if (item.Qty <= 0 || string.IsNullOrWhiteSpace(item.ItemName)) continue;
                 if (item.Tanggal == default || item.Tanggal.TimeOfDay == TimeSpan.Zero)
                 {
-                    item.Tanggal = DateTime.Now;
+                    item.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
                 }
+                else
+                {
+                    item.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(item.Tanggal);
+                }
+                item.CreatedAt = UPMS.Web.Helpers.TimeHelper.Now;
+
                 await _inventoryService.CreateBarangKeluarAsync(item, user);
                 successCount++;
             }

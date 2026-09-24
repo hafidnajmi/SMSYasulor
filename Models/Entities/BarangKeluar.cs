@@ -13,7 +13,7 @@ namespace UPMS.Web.Models.Entities
         public int Id { get; set; }
 
         [Column("tanggal")]
-        public DateTime Tanggal { get; set; } = DateTime.Today;
+        public DateTime Tanggal { get; set; } = UPMS.Web.Helpers.TimeHelper.Today;
 
         [StringLength(50)]
         [Column("bin")]
@@ -75,6 +75,6 @@ namespace UPMS.Web.Models.Entities
         public int? UserId { get; set; }
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = UPMS.Web.Helpers.TimeHelper.Now;
     }
 }

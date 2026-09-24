@@ -69,6 +69,14 @@ namespace UPMS.Web.Controllers
             return Json(item);
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetNextId()
+        {
+            string nextId = await _sparepartService.GetNextUpfIdAsync();
+            return Json(new { nextId });
+        }
+
         [HttpPost]
         public async Task<IActionResult> ToggleAlert(string id)
         {
@@ -128,7 +136,7 @@ namespace UPMS.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(MasterData model, IFormFile? imageFile, decimal? ltMonths, string? search, string? upAreaFilter, string? categoryFilter, string? frequencyFilter, string? lineFilter, string? stockStatusFilter, int page = 1)
+        public async Task<IActionResult> Edit(MasterData model, string? originalId, IFormFile? imageFile, decimal? ltMonths, string? search, string? upAreaFilter, string? categoryFilter, string? frequencyFilter, string? lineFilter, string? stockStatusFilter, int page = 1)
         {
             decimal ltEdit = ltMonths ?? (model.LtPerMonth.HasValue ? (decimal)model.LtPerMonth.Value : 0m);
             if (!model.SafetyStock.HasValue || model.SafetyStock.Value == 0)
@@ -144,14 +152,21 @@ namespace UPMS.Web.Controllers
                 model.Image = await SaveUploadedImageAsync(imageFile);
             }
 
-            bool success = await _sparepartService.UpdateAsync(model, User.Identity?.Name ?? "system");
-            if (success)
+            try
             {
-                TempData["Success"] = $"Sparepart {model.Id} updated successfully.";
+                bool success = await _sparepartService.UpdateAsync(model, User.Identity?.Name ?? "system", originalId);
+                if (success)
+                {
+                    TempData["Success"] = $"Sparepart {model.Id} updated successfully.";
+                }
+                else
+                {
+                    TempData["Error"] = $"Failed to update sparepart {model.Id}. Data tidak ditemukan.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                TempData["Error"] = $"Failed to update sparepart {model.Id}.";
+                TempData["Error"] = ex.Message;
             }
 
             return RedirectToAction("Index", new { search, upArea = upAreaFilter, category = categoryFilter, frequency = frequencyFilter, line = lineFilter, stockStatus = stockStatusFilter, page });

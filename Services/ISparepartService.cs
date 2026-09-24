@@ -28,8 +28,9 @@ namespace UPMS.Web.Services
         Task<MasterData?> GetByBinAsync(string bin);
         Task<List<MasterData>> GetLowStockItemsAsync(int top = 5);
         Task<MasterDataKpiSummary> GetKpiSummaryAsync();
+        Task<string> GetNextUpfIdAsync();
         Task<string> CreateAsync(MasterData item, string username);
-        Task<bool> UpdateAsync(MasterData item, string username);
+        Task<bool> UpdateAsync(MasterData item, string username, string? originalId = null);
         Task<bool> SoftDeleteAsync(string id, string username);
         int CalculateSafetyStock(double qtyNeedYear, decimal ltMonths, string frequency);
         Task<List<string>> GetCategoriesAsync();
