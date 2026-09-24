@@ -321,23 +321,8 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                         RequireApprovalKeluar = false
                     };
                     db.Users.Add(adminUser);
+                    await db.SaveChangesAsync();
                 }
-                else
-                {
-                    // Ensure admin account is active and password is known (admin123)
-                    adminUser.IsActive = true;
-                    adminUser.PasswordHash = adminHash;
-                    adminUser.Role = "admin";
-                    adminUser.CanMasterData = 1;
-                    adminUser.CanAdminMgmt = 1;
-                    adminUser.CanSettings = 1;
-                    adminUser.CanBarangMasuk = 1;
-                    adminUser.CanBarangKeluar = 1;
-                    adminUser.CanRiwayat = 1;
-                    adminUser.CanManagePm = 1;
-                    adminUser.CanManagePmEdit = 1;
-                }
-                await db.SaveChangesAsync();
 
                 var techUser = await db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "technician");
                 string techHash = BCrypt.Net.BCrypt.HashPassword("technician123", workFactor: 12);
@@ -359,13 +344,8 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                         RequireApprovalKeluar = false
                     };
                     db.Users.Add(techUser);
+                    await db.SaveChangesAsync();
                 }
-                else
-                {
-                    techUser.IsActive = true;
-                    techUser.PasswordHash = techHash;
-                }
-                await db.SaveChangesAsync();
 
                 await SeedSuppliersAsync(db);
                 await SyncElectricalPartsToMasterDataAsync(db);
@@ -498,20 +478,19 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
         {
             try
             {
+                // Safety Guard: Only seed initial PM schedules if no schedules exist at all.
+                // Never delete or overwrite user-modified PM schedule data.
+                if (await db.PmSchedules.AnyAsync())
+                {
+                    return;
+                }
+
                 // Synchronize existing pm_schedule records with real-time current time timestamp
                 try
                 {
                     await db.Database.ExecuteSqlRawAsync("UPDATE pm_schedule SET scheduled_date = date_trunc('day', scheduled_date) + (COALESCE(created_at, CURRENT_TIMESTAMP)::time) WHERE EXTRACT(HOUR FROM scheduled_date) = 0 OR EXTRACT(HOUR FROM scheduled_date) = 8;");
                 }
                 catch { }
-
-                // Delete existing seed for UP1 2026 to ensure exact match with chart image
-                var existingUp1 = await db.PmSchedules.Where(p => p.UpArea == "UP1" && p.ScheduledDate.Year == 2026).ToListAsync();
-                if (existingUp1.Any())
-                {
-                    db.PmSchedules.RemoveRange(existingUp1);
-                    await db.SaveChangesAsync();
-                }
 
                 var up1Lines = new[] { "B5", "B10", "B15", "B16", "J3", "J4", "J5", "T1", "T3", "T5", "T8" };
                 var up2Lines = new[] { "B11", "B17", "B18", "B20", "B22", "S6", "S7", "S8", "S10", "S14", "S18" };
