@@ -23,7 +23,172 @@
     bool hideActionsAndAlerts = isTechnician || !isUserAdmin;
 }
 
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
 <style>
+    /* Barcode Label Card Design - Exact specification matching user screenshot sample */
+    .barcode-label-card {
+        width: 270px;
+        height: 115px;
+        border: 1.5px solid #000000;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif !important;
+        background-color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        margin: 6px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .barcode-label-header {
+        background-color: #B8D9F7;
+        border-bottom: 1.5px solid #000000;
+        text-align: center;
+        font-weight: 700;
+        font-size: 13px;
+        color: #000000;
+        padding: 2px 4px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .barcode-label-body {
+        display: flex;
+        flex: 1;
+        height: calc(100% - 25px);
+    }
+
+    .barcode-label-left {
+        width: 58%;
+        border-right: 1.5px solid #000000;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .barcode-label-item {
+        height: 50%;
+        border-bottom: 1.5px solid #000000;
+        font-weight: 700;
+        font-size: 11px;
+        color: #000000;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 4px;
+        line-height: 1.1;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    .barcode-label-detail {
+        height: 50%;
+        font-size: 10px;
+        color: #000000;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 4px;
+        line-height: 1.1;
+        overflow: hidden;
+        word-break: break-word;
+    }
+
+    .barcode-label-right {
+        width: 42%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .barcode-label-graphic {
+        height: 65%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+        overflow: hidden;
+    }
+
+    .barcode-label-graphic svg {
+        max-width: 100%;
+        max-height: 100%;
+        height: 38px;
+    }
+
+    .barcode-label-partno {
+        height: 35%;
+        border-top: 1.5px solid #000000;
+        font-weight: 700;
+        font-size: 11px;
+        color: #000000;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1px 2px;
+        white-space: nowrap;
+    }
+
+    @@media print {
+        body > *:not(#barcodeLabelModal) {
+            display: none !important;
+        }
+        #barcodeLabelModal {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+        }
+        #barcodeLabelModal .modal-dialog {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        #barcodeLabelModal .modal-content {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        #barcodeLabelModal .modal-header,
+        #barcodeLabelModal .modal-footer,
+        #barcodeLabelModal .alert,
+        #barcodeLabelModal .btn-close {
+            display: none !important;
+        }
+        #barcodeLabelModal .modal-body {
+            padding: 0 !important;
+            background: white !important;
+        }
+        #barcodePrintContainer {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        .barcode-label-card {
+            margin: 4px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .barcode-label-header {
+            background-color: #B8D9F7 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+
     /* Smooth EMS table transitions and consistent Arial styling */
     .table-ems tbody tr {
         transition: background-color 0.12s ease-in-out;
@@ -88,6 +253,9 @@
     @if (!hideActionsAndAlerts)
     {
         <div class="ems-page-actions">
+            <button type="button" class="btn btn-ems-outline btn-sm me-1" onclick="openBatchBarcodeModal()" title="Print Barcode Labels for checked items">
+                <i class="bi bi-qr-code-scan me-1 text-primary"></i>Print Barcodes (<span id="batchCountBadge">0</span>)
+            </button>
             <a href="#" onclick="return executeSecureExport('/MasterData/ExportExcel?search=@ViewBag.Search&upArea=@ViewBag.UpArea&category=@ViewBag.Category&frequency=@ViewBag.Frequency&line=@ViewBag.Line&stockStatus=@ViewBag.StockStatus', 'Spareparts Catalog');" class="btn btn-ems-outline btn-sm">
                 <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
             </a>
@@ -211,6 +379,7 @@
         <table class="table-ems mb-0">
             <thead>
                 <tr>
+                    <th class="text-center text-nowrap" style="width: 30px;"><input type="checkbox" id="selectAllPartsChk" class="form-check-input" onclick="toggleSelectAllParts(this)" title="Select all for barcode print" /></th>
                     <th class="text-nowrap text-center" style="width: 35px;">NO</th>
                     <th class="text-center text-nowrap" style="width: 40px;">IMG</th>
                     <th class="text-nowrap">UP AREA</th>
@@ -252,6 +421,14 @@
                         else { stkTextClass = "text-dark"; }
 
                         <tr>
+                            <td class="text-center align-middle">
+                                <input type="checkbox" class="form-check-input part-select-chk" 
+                                       data-id="@item.Id" 
+                                       data-bin="@(item.Bin ?? "-")" 
+                                       data-item="@(item.Item.Replace("\"", "&quot;"))" 
+                                       data-detail="@((item.Detail ?? "-").Replace("\"", "&quot;"))" 
+                                       onchange="updateBatchBarcodeCount()" />
+                            </td>
                             <td class="col-mono text-muted text-center text-nowrap">@rowNo</td>
                             <td class="text-center align-middle text-nowrap">
                                 @if (!string.IsNullOrEmpty(item.Image))
@@ -311,6 +488,13 @@
                                 </td>
                                 <td class="text-center align-middle text-nowrap">
                                     <div class="d-inline-flex align-items-center gap-1">
+                                        <!-- Barcode Label Icon -->
+                                        <button type="button" class="btn-ems-icon-action text-dark" 
+                                                onclick="openSingleBarcodeModal('@item.Id', '@(item.Bin?.Replace("'", "\\'") ?? "-")', '@item.Item.Replace("'", "\\'")', '@(item.Detail?.Replace("'", "\\'") ?? "-")')" 
+                                                title="Generate Barcode Label (Part Number, BIN, Item &amp; Detail)">
+                                            <i class="bi bi-qr-code-scan"></i>
+                                        </button>
+
                                         <!-- View Detail Icon -->
                                         <button type="button" class="btn-ems-icon-action text-info" onclick="openDetailModal('@item.Id')" title="View Detail">
                                             <i class="bi bi-eye"></i>
@@ -344,7 +528,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="@(hideActionsAndAlerts ? 19 : 21)" class="text-center text-muted py-5">
+                        <td colspan="@(hideActionsAndAlerts ? 20 : 22)" class="text-center text-muted py-5">
                             <i class="bi bi-boxes d-block fs-3 mb-2 opacity-25"></i>
                             No master data items match your search criteria.
                         </td>
@@ -1146,3 +1330,162 @@
         });
     </script>
 }
+
+<!-- Barcode Label Modal -->
+<div class="modal fade" id="barcodeLabelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 0px !important;">
+            <div class="modal-header bg-light py-2">
+                <h6 class="modal-title fw-bold text-dark mb-0"><i class="bi bi-qr-code-scan me-2 text-primary"></i>Barcode Label Print Preview</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="alert alert-info py-2 px-3 small mb-3">
+                    <i class="bi bi-info-circle me-1"></i> Preview label sesuai spesifikasi sticker bin: <strong>BIN (Header Blue)</strong>, <strong>Item &amp; Detail (Kiri)</strong>, <strong>Barcode &amp; Part Number (Kanan)</strong>.
+                </div>
+
+                <!-- Printable Container -->
+                <div id="barcodePrintContainer" class="d-flex flex-wrap gap-2 justify-content-center p-3 bg-white border" style="min-height: 200px; max-height: 60vh; overflow-y: auto;">
+                    <!-- Dynamically generated barcode cards -->
+                </div>
+            </div>
+            <div class="modal-footer py-2 justify-content-between">
+                <div class="small text-muted font-monospace">Total Labels: <span id="modalTotalLabelsCount" class="fw-bold text-primary">0</span></div>
+                <div>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-ems-primary btn-sm px-3" onclick="triggerBarcodePrint()">
+                        <i class="bi bi-printer me-1"></i>Cetak / Print Label
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function toggleSelectAllParts(masterChk) {
+        var chks = document.querySelectorAll('.part-select-chk');
+        chks.forEach(function(c) {
+            c.checked = masterChk.checked;
+        });
+        updateBatchBarcodeCount();
+    }
+
+    function updateBatchBarcodeCount() {
+        var chks = document.querySelectorAll('.part-select-chk:checked');
+        var badge = document.getElementById('batchCountBadge');
+        if (badge) {
+            badge.textContent = chks.length;
+        }
+    }
+
+    function createSingleLabelCard(id, bin, item, detail, index) {
+        var safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+        var svgId = 'svg_bc_' + safeId + '_' + index + '_' + Math.floor(Math.random() * 10000);
+        
+        var cardHtml = `
+        <div class="barcode-label-card">
+            <div class="barcode-label-header">${escapeHtml(bin || '-')}</div>
+            <div class="barcode-label-body">
+                <div class="barcode-label-left">
+                    <div class="barcode-label-item">${escapeHtml(item || '-')}</div>
+                    <div class="barcode-label-detail">${escapeHtml(detail || '-')}</div>
+                </div>
+                <div class="barcode-label-right">
+                    <div class="barcode-label-graphic">
+                        <svg id="${svgId}"></svg>
+                    </div>
+                    <div class="barcode-label-partno">${escapeHtml(id || '-')}</div>
+                </div>
+            </div>
+        </div>`;
+
+        return { html: cardHtml, svgId: svgId, code: id };
+    }
+
+    function renderLabelBarcodes(items) {
+        var container = document.getElementById('barcodePrintContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        var counter = document.getElementById('modalTotalLabelsCount');
+        if (counter) counter.textContent = items.length;
+
+        var tasks = [];
+        items.forEach(function(it, idx) {
+            var res = createSingleLabelCard(it.id, it.bin, it.item, it.detail, idx);
+            container.insertAdjacentHTML('beforeend', res.html);
+            tasks.push(res);
+        });
+
+        setTimeout(function() {
+            tasks.forEach(function(t) {
+                try {
+                    if (typeof JsBarcode === 'function') {
+                        JsBarcode('#' + t.svgId, t.code, {
+                            format: 'CODE128',
+                            width: 1.4,
+                            height: 35,
+                            displayValue: false,
+                            margin: 0
+                        });
+                    }
+                } catch (e) {
+                    console.error('JsBarcode error for ' + t.code, e);
+                }
+            });
+        }, 120);
+    }
+
+    function openSingleBarcodeModal(id, bin, item, detail) {
+        var items = [{ id: id, bin: bin, item: item, detail: detail }];
+        renderLabelBarcodes(items);
+        var modalElem = document.getElementById('barcodeLabelModal');
+        if (modalElem) {
+            var modal = new bootstrap.Modal(modalElem);
+            modal.show();
+        }
+    }
+
+    function openBatchBarcodeModal() {
+        var chks = document.querySelectorAll('.part-select-chk:checked');
+        if (!chks || chks.length === 0) {
+            if (typeof showEmsToast === 'function') {
+                showEmsToast('warning', 'Pilih minimal 1 sparepart (centang tabel) untuk mencetak barcode.');
+            } else {
+                alert('Pilih minimal 1 sparepart (centang tabel) untuk mencetak barcode.');
+            }
+            return;
+        }
+
+        var items = [];
+        chks.forEach(function(c) {
+            items.push({
+                id: c.getAttribute('data-id'),
+                bin: c.getAttribute('data-bin'),
+                item: c.getAttribute('data-item'),
+                detail: c.getAttribute('data-detail')
+            });
+        });
+
+        renderLabelBarcodes(items);
+        var modalElem = document.getElementById('barcodeLabelModal');
+        if (modalElem) {
+            var modal = new bootstrap.Modal(modalElem);
+            modal.show();
+        }
+    }
+
+    function triggerBarcodePrint() {
+        window.print();
+    }
+</script>
