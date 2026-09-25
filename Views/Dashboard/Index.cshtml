@@ -148,7 +148,12 @@
         <p class="page-subtitle mb-0">Here’s what’s happening with your sparepart inventory today.</p>
     </div>
     <div class="d-flex align-items-center gap-2 flex-wrap dashboard-controls">
-        <span class="text-muted small me-2 d-none d-lg-inline-block"><i class="bi bi-calendar3 me-1"></i>@DateTime.Now.ToString("dddd, dd MMMM yyyy | hh:mm tt")</span>
+        <span class="text-muted small me-2 d-none d-lg-inline-block">
+            <i class="bi bi-calendar3 me-1"></i>
+            <span id="dashboardClockText" data-server-time="@UPMS.Web.Helpers.TimeHelper.Now.ToString("yyyy-MM-ddTHH:mm:ss")">
+                @UPMS.Web.Helpers.TimeHelper.Now.ToString("dddd, dd MMMM yyyy | hh:mm:ss tt")
+            </span>
+        </span>
         
         <!-- Clean Auto Refresh Checkbox matching form-select style -->
         <label class="d-inline-flex align-items-center gap-1.5 px-2 py-1 bg-white border rounded-0 me-1" style="font-size: 13px; font-weight: 400; color: var(--color-text); border-color: var(--color-border) !important; cursor: pointer; user-select: none; height: 31px;">
@@ -167,7 +172,7 @@
             </select>
             <select name="year" class="form-select form-select-sm" style="width: 90px;" onchange="this.form.submit()">
                 <option value="0" selected="@(selYear == 0 ? "selected" : null)">All Years</option>
-                @for (int y = DateTime.Now.Year; y >= 2020; y--)
+                @for (int y = UPMS.Web.Helpers.TimeHelper.Now.Year; y >= 2020; y--)
                 {
                     <option value="@y" selected="@(selYear == y ? "selected" : null)">@y</option>
                 }
@@ -660,6 +665,41 @@
                     }
                 });
             }
+
+            // Live Ticking Clock in Configured System Timezone
+            (function () {
+                var clockElem = document.getElementById('dashboardClockText');
+                if (!clockElem) return;
+
+                var serverTimeAttr = clockElem.getAttribute('data-server-time');
+                if (!serverTimeAttr) return;
+
+                var currentServerTime = new Date(serverTimeAttr);
+                var startTimeLocal = Date.now();
+
+                function updateLiveClock() {
+                    var elapsed = Date.now() - startTimeLocal;
+                    var now = new Date(currentServerTime.getTime() + elapsed);
+
+                    var optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    var dateStr = now.toLocaleDateString('en-US', optionsDate);
+
+                    var hours = now.getHours();
+                    var minutes = now.getMinutes();
+                    var seconds = now.getSeconds();
+                    var ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    var hoursStr = hours < 10 ? '0' + hours : hours;
+                    var minutesStr = minutes < 10 ? '0' + minutes : minutes;
+                    var secondsStr = seconds < 10 ? '0' + seconds : seconds;
+
+                    clockElem.textContent = dateStr + ' | ' + hoursStr + ':' + minutesStr + ':' + secondsStr + ' ' + ampm;
+                }
+
+                updateLiveClock();
+                setInterval(updateLiveClock, 1000);
+            })();
         });
     </script>
 }

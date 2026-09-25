@@ -19,7 +19,7 @@ namespace UPMS.Web.Services
 
         public async Task<KpiSummary> GetKpiSummaryAsync(int? year = null, int? month = null)
         {
-            var now = DateTime.Now;
+            var now = UPMS.Web.Helpers.TimeHelper.Now;
             int totalParts = await _db.MasterDatas.CountAsync(m => !m.IsDeleted);
             int lowStock = await _db.MasterDatas.CountAsync(m => !m.IsDeleted && (m.SafetyStock ?? 0) > 0 && (m.CurrentStock ?? 0) < (m.SafetyStock ?? 0));
             int pending = await _db.BarangKeluars.CountAsync(b => b.ApprovalStatus == "Pending");
@@ -215,7 +215,7 @@ namespace UPMS.Web.Services
 
         public async Task<CostInsights> GetCostInsightsAsync(int? year = null, int? month = null)
         {
-            var now = DateTime.Now;
+            var now = UPMS.Web.Helpers.TimeHelper.Now;
             var query = _db.BarangKeluars
                 .Where(b => b.ApprovalStatus != "Rejected")
                 .AsNoTracking();
