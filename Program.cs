@@ -210,5 +210,33 @@ _ = Task.Run(async () =>
     }
 });
 
+// Load saved timezone setting from App_Settings on startup
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await Task.Delay(3000); // wait for DB to be ready
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<UpmsDbContext>();
+        var setting = await db.AppSettings.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.SettingKey == "app_timezone");
+        if (setting != null && !string.IsNullOrWhiteSpace(setting.SettingValue))
+        {
+            bool applied = UPMS.Web.Helpers.TimeHelper.SetTimezone(setting.SettingValue);
+            Console.WriteLine(applied
+                ? $"[Startup] Timezone loaded from DB: {setting.SettingValue}"
+                : $"[Startup Warning] Invalid timezone ID in DB: {setting.SettingValue}, using default WIB.");
+        }
+        else
+        {
+            Console.WriteLine("[Startup] No timezone setting found in DB, using default WIB (Asia/Jakarta).");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Startup Warning] Timezone load failed: {ex.Message}");
+    }
+});
+
 app.Run();
 // Trigger full process restart for DbSeeder column drop migration

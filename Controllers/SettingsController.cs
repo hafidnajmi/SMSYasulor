@@ -45,11 +45,19 @@ namespace UPMS.Web.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.SettingKey == "delete_protection_password");
 
+            var tzSetting = await _db.AppSettings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SettingKey == "app_timezone");
+
             ViewBag.DeleteProtectionPassword = deleteSetting?.SettingValue ?? "123456";
             ViewBag.PicListMasuk = string.Join(", ", await UPMS.Web.Helpers.PicHelper.GetPicsBarangMasukAsync(_db));
             ViewBag.PicListKeluar = string.Join(", ", await UPMS.Web.Helpers.PicHelper.GetPicsBarangKeluarAsync(_db));
             ViewBag.TechUser = users.FirstOrDefault(u => u.Username.ToLower() == "technician") 
                                ?? users.FirstOrDefault(u => u.Role?.ToLower() == "technician");
+
+            ViewBag.CurrentTimezone = tzSetting?.SettingValue ?? UPMS.Web.Helpers.TimeHelper.CurrentTimezoneId;
+            ViewBag.CurrentTimezoneLabel = UPMS.Web.Helpers.TimeHelper.TimezoneLabel;
+            ViewBag.CurrentTimeNow = UPMS.Web.Helpers.TimeHelper.Now.ToString("dd MMMM yyyy | HH:mm:ss");
 
             return View(users);
         }
@@ -247,6 +255,40 @@ namespace UPMS.Web.Controllers
 
             await _db.SaveChangesAsync();
             TempData["Success"] = "Password proteksi hapus data berhasil disimpan.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveTimezone(string timezoneId)
+        {
+            if (string.IsNullOrWhiteSpace(timezoneId))
+            {
+                TempData["Error"] = "Zona waktu tidak boleh kosong.";
+                return RedirectToAction("Index");
+            }
+
+            timezoneId = timezoneId.Trim();
+            bool applied = UPMS.Web.Helpers.TimeHelper.SetTimezone(timezoneId);
+            if (!applied)
+            {
+                TempData["Error"] = $"Zona waktu '{timezoneId}' tidak valid di server ini.";
+                return RedirectToAction("Index");
+            }
+
+            var setting = await _db.AppSettings.FirstOrDefaultAsync(s => s.SettingKey == "app_timezone");
+            if (setting == null)
+            {
+                _db.AppSettings.Add(new AppSetting { SettingKey = "app_timezone", SettingValue = timezoneId });
+            }
+            else
+            {
+                setting.SettingValue = timezoneId;
+            }
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Zona waktu sistem berhasil diperbarui ke {UPMS.Web.Helpers.TimeHelper.TimezoneLabel}.";
             return RedirectToAction("Index");
         }
 
