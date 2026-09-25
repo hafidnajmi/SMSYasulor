@@ -28,8 +28,8 @@
 <style>
     /* Barcode Label Card Design - Exact specification matching user screenshot sample */
     .barcode-label-card {
-        width: 270px;
-        height: 115px;
+        width: 280px;
+        height: 100px;
         border: 1.5px solid #000000;
         box-sizing: border-box;
         font-family: Arial, Helvetica, sans-serif !important;
@@ -49,6 +49,8 @@
         font-size: 13px;
         color: #000000;
         padding: 2px 4px;
+        height: 22px;
+        line-height: 18px;
         letter-spacing: 0.5px;
         white-space: nowrap;
         overflow: hidden;
@@ -58,7 +60,7 @@
     .barcode-label-body {
         display: flex;
         flex: 1;
-        height: calc(100% - 25px);
+        height: calc(100% - 22px);
     }
 
     .barcode-label-left {
@@ -78,7 +80,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2px 4px;
+        padding: 1px 3px;
         line-height: 1.1;
         overflow: hidden;
         word-break: break-word;
@@ -86,13 +88,13 @@
 
     .barcode-label-detail {
         height: 50%;
-        font-size: 10px;
+        font-size: 9.5px;
         color: #000000;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2px 4px;
+        padding: 1px 3px;
         line-height: 1.1;
         overflow: hidden;
         word-break: break-word;
@@ -105,38 +107,32 @@
     }
 
     .barcode-label-graphic {
-        height: 65%;
+        height: 64%;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2px;
+        padding: 1px;
         overflow: hidden;
     }
 
     .barcode-label-graphic svg {
         max-width: 100%;
         max-height: 100%;
-        height: 38px;
+        height: 32px;
     }
 
     .barcode-label-partno {
-        height: 35%;
+        height: 36%;
         border-top: 1.5px solid #000000;
         font-weight: 700;
-        font-size: 11px;
+        font-size: 10.5px;
         color: #000000;
         text-align: center;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 1px 2px;
+        padding: 1px;
         white-space: nowrap;
-    }
-
-    @@media print {
-        body {
-            visibility: hidden !important;
-        }
     }
 
     /* Smooth EMS table transitions and consistent Arial styling */
@@ -1439,28 +1435,19 @@
         var container = document.getElementById('barcodePrintContainer');
         if (!container || !container.innerHTML.trim()) return;
 
-        var iframe = document.getElementById('barcodePrintFrame');
-        if (iframe) {
-            iframe.remove();
+        var labelsHtml = container.innerHTML;
+
+        var printWin = window.open('', '_blank', 'width=900,height=700');
+        if (!printWin) {
+            alert('Harap izinkan popup di browser Anda untuk membuka jendela pencetakan barcode.');
+            return;
         }
 
-        iframe = document.createElement('iframe');
-        iframe.id = 'barcodePrintFrame';
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.style.opacity = '0';
-        document.body.appendChild(iframe);
-
-        var doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(`<!DOCTYPE html>
+        printWin.document.open();
+        printWin.document.write(`<!DOCTYPE html>
 <html>
 <head>
-    <title>Barcode Label Printing</title>
+    <title>Cetak Barcode Label Sparepart</title>
     <style>
         @@page {
             size: A4 portrait;
@@ -1473,7 +1460,7 @@
         }
         body {
             margin: 0;
-            padding: 0;
+            padding: 10px;
             background-color: #ffffff;
             font-family: Arial, Helvetica, sans-serif !important;
         }
@@ -1487,7 +1474,7 @@
         }
         .barcode-label-card {
             width: 61mm;
-            height: 27mm;
+            height: 23.5mm;
             border: 1.5px solid #000000;
             font-family: Arial, Helvetica, sans-serif !important;
             background-color: #ffffff;
@@ -1502,19 +1489,22 @@
             border-bottom: 1.5px solid #000000;
             text-align: center;
             font-weight: bold;
-            font-size: 10pt;
+            font-size: 9.5pt;
             color: #000000;
-            padding: 2px 4px;
+            padding: 1px 3px;
             letter-spacing: 0.5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            line-height: 1.2;
+            height: 5.2mm;
+            line-height: 5mm;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         .barcode-label-body {
             display: flex;
             flex: 1;
-            height: calc(100% - 20px);
+            height: calc(100% - 5.2mm);
         }
         .barcode-label-left {
             width: 58%;
@@ -1526,26 +1516,26 @@
             height: 50%;
             border-bottom: 1.5px solid #000000;
             font-weight: bold;
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: #000000;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1px 3px;
+            padding: 1px 2px;
             line-height: 1.1;
             overflow: hidden;
             word-break: break-word;
         }
         .barcode-label-detail {
             height: 50%;
-            font-size: 7.5pt;
+            font-size: 7pt;
             color: #000000;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1px 3px;
+            padding: 1px 2px;
             line-height: 1.1;
             overflow: hidden;
             word-break: break-word;
@@ -1556,7 +1546,7 @@
             flex-direction: column;
         }
         .barcode-label-graphic {
-            height: 65%;
+            height: 64%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1566,13 +1556,14 @@
         .barcode-label-graphic svg {
             max-width: 100%;
             max-height: 100%;
-            height: 30px;
+            height: 25px;
+            display: block;
         }
         .barcode-label-partno {
-            height: 35%;
+            height: 36%;
             border-top: 1.5px solid #000000;
             font-weight: bold;
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: #000000;
             text-align: center;
             display: flex;
@@ -1582,18 +1573,40 @@
             white-space: nowrap;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
 </head>
 <body>
     <div class="print-grid">
-        ${container.innerHTML}
+        ${labelsHtml}
     </div>
+    <script>
+        window.onload = function() {
+            var svgElems = document.querySelectorAll('.barcode-label-graphic svg');
+            svgElems.forEach(function(svg) {
+                var card = svg.closest('.barcode-label-card');
+                var partNoElem = card ? card.querySelector('.barcode-label-partno') : null;
+                var code = partNoElem ? partNoElem.textContent.trim() : '';
+                if (code && code !== '-') {
+                    try {
+                        JsBarcode(svg, code, {
+                            format: 'CODE128',
+                            width: 1.4,
+                            height: 35,
+                            displayValue: false,
+                            margin: 0
+                        });
+                    } catch(e) {}
+                }
+            });
+
+            setTimeout(function() {
+                window.focus();
+                window.print();
+            }, 300);
+        };
+    <\/script>
 </body>
 </html>`);
-        doc.close();
-
-        setTimeout(function() {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        }, 250);
+        printWin.document.close();
     }
 </script>
