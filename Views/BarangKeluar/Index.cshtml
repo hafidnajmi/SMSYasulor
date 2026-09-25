@@ -90,11 +90,8 @@
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Barang Keluar</h4>
-                <span class="badge bg-primary px-2 py-1 fw-bold" style="font-size: 10px; border-radius: 0px !important;">
-                    @currentDept.ToUpper()
-                </span>
             </div>
-            <p class="text-muted small mb-0" style="font-size: 12px;">Record &amp; Riwayat Pengeluaran Sparepart — UP @currentDept.ToUpper()</p>
+            <p class="text-muted small mb-0" style="font-size: 12px;">Record &amp; Riwayat Pengeluaran Sparepart</p>
         </div>
     </div>
     <span class="badge rounded-pill bg-light text-secondary border px-3 py-2 d-none d-sm-inline-block" style="border-radius: 0px !important;">
@@ -320,6 +317,7 @@
                         <th style="font-weight: 600;">MAINT. TYPE</th>
                         <th style="font-weight: 600;">PIC</th>
                         <th style="font-weight: 600;">STATUS</th>
+                        <th class="text-center" style="font-weight: 600;">AKSI</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -347,9 +345,31 @@
                                     {
                                         <span class="badge bg-warning text-dark">Pending</span>
                                     }
+                                    else if (item.ApprovalStatus == "Returned")
+                                    {
+                                        <span class="badge bg-secondary">Returned</span>
+                                    }
                                     else
                                     {
                                         <span class="badge bg-danger">Rejected</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (item.ApprovalStatus != "Returned" && item.ApprovalStatus != "Rejected")
+                                    {
+                                        <button type="button" class="btn btn-outline-warning btn-xs px-2 py-0 text-nowrap" style="font-size: 11px;"
+                                                onclick="openReturnBkModal(@item.Id, '@item.ItemName.Replace("'", "\\'")', @item.Qty)"
+                                                title="Return part (mengembalikan stok & membatalkan cost)">
+                                            <i class="bi bi-arrow-return-left me-1"></i>Return
+                                        </button>
+                                    }
+                                    else if (item.ApprovalStatus == "Returned")
+                                    {
+                                        <span class="badge bg-secondary text-white" style="font-size: 10px; border-radius: 0px !important;">Returned</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
                                     }
                                 </td>
                             </tr>
@@ -358,7 +378,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox fs-3 d-block text-secondary opacity-50 mb-1"></i>
                                 Belum ada riwayat transaksi barang keluar.
                             </td>
@@ -1583,5 +1603,56 @@
             }
         }
     });
+
+    function openReturnBkModal(id, itemName, qty) {
+        document.getElementById('returnBkId').value = id;
+        document.getElementById('returnBkItemNameDisplay').textContent = itemName;
+        document.getElementById('returnBkQtyDisplay').textContent = qty;
+        var modal = new bootstrap.Modal(document.getElementById('returnBkModal'));
+        modal.show();
+    }
     </script>
 }
+
+<!-- Return Modal for Barang Keluar -->
+<div class="modal fade" id="returnBkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 0px !important;">
+            <div class="modal-header bg-warning text-dark py-2">
+                <h6 class="modal-title fw-bold text-dark mb-0"><i class="bi bi-arrow-return-left me-2"></i>Return Part / Kembalikan Barang Keluar</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="ReturnItem" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="returnBkId" name="id" />
+                <div class="modal-body">
+                    <p class="small text-secondary mb-2">
+                        Anda akan mengembalikan transaksi pengeluaran sparepart ini:
+                    </p>
+                    <div class="p-2 bg-light border mb-3">
+                        <div class="fw-bold text-dark" id="returnBkItemNameDisplay"></div>
+                        <div class="small text-muted font-monospace mt-1">Jumlah: <span id="returnBkQtyDisplay" class="fw-bold text-danger"></span> unit</div>
+                    </div>
+                    <div class="alert alert-warning py-2 px-3 small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <strong>Efek Return Transaksi:</strong>
+                        <ul class="mb-0 ps-3 mt-1">
+                            <li>Stok sparepart di Master Data akan <strong>bertambah kembali (+Qty)</strong>.</li>
+                            <li>Biaya pada Cost per Line &amp; Machine <strong>dibatalkan / tidak bertambah</strong> (seakan tidak ada yang pernah input).</li>
+                        </ul>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary">Alasan Return (Opsional):</label>
+                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Contoh: Salah ambil part / sisa pekerjaan / part cacat..." />
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-3 fw-semibold text-dark">
+                        <i class="bi bi-arrow-return-left me-1"></i>Proses Return Part
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

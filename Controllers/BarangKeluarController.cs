@@ -271,5 +271,51 @@ namespace UPMS.Web.Controllers
 
             return Json(new { success = true, count = successCount, message = $"{successCount} transaksi barang keluar berhasil diproses." });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnItem(int id, string? reason, string? returnUrl)
+        {
+            string username = User.Identity?.Name ?? "system";
+            bool success = await _inventoryService.ReturnBarangKeluarAsync(id, username, reason ?? "");
+            if (success)
+            {
+                TempData["Success"] = $"Transaksi Barang Keluar #{id} berhasil di-return. Qty stok telah dikembalikan & cost per line/machine tidak bertambah (seakan tidak ada yang pernah input).";
+            }
+            else
+            {
+                TempData["Error"] = $"Gagal memproses return transaksi Barang Keluar #{id}. Transaksi mungkin sudah di-return/reject sebelumnya.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReturnItemJson([FromBody] ReturnRequestModel model)
+        {
+            if (model == null || model.Id <= 0)
+            {
+                return Json(new { success = false, message = "ID transaksi tidak valid." });
+            }
+
+            string username = User.Identity?.Name ?? "system";
+            bool success = await _inventoryService.ReturnBarangKeluarAsync(model.Id, username, model.Reason ?? "");
+            if (success)
+            {
+                return Json(new { success = true, message = $"Transaksi #{model.Id} berhasil di-return. Qty stok dikembalikan & cost tidak bertambah." });
+            }
+            return Json(new { success = false, message = $"Gagal memproses return transaksi #{model.Id}." });
+        }
+    }
+
+    public class ReturnRequestModel
+    {
+        public int Id { get; set; }
+        public string? Reason { get; set; }
     }
 }

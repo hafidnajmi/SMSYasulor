@@ -25,7 +25,7 @@ namespace UPMS.Web.Services
             int pending = await _db.BarangKeluars.CountAsync(b => b.ApprovalStatus == "Pending");
 
             var costQuery = _db.BarangKeluars
-                .Where(b => b.ApprovalStatus != "Rejected")
+                .Where(b => b.ApprovalStatus == null || b.ApprovalStatus == "Approved")
                 .AsNoTracking();
 
             if (year.HasValue && year.Value > 0)
@@ -217,7 +217,7 @@ namespace UPMS.Web.Services
         {
             var now = UPMS.Web.Helpers.TimeHelper.Now;
             var query = _db.BarangKeluars
-                .Where(b => b.ApprovalStatus != "Rejected")
+                .Where(b => b.ApprovalStatus == null || b.ApprovalStatus == "Approved")
                 .AsNoTracking();
 
             if (year.HasValue && year.Value > 0)

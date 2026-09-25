@@ -14,6 +14,7 @@ namespace UPMS.Web.Services
         Task<int> CreateBarangKeluarAsync(BarangKeluar item, User user);
         Task<bool> ApproveBarangKeluarAsync(int id, string adminUsername);
         Task<bool> RejectBarangKeluarAsync(int id, string adminUsername);
+        Task<bool> ReturnBarangKeluarAsync(int id, string username, string reason = "");
         Task<List<BarangKeluar>> GetPendingApprovalsAsync();
         Task<PagedResult<BarangKeluar>> GetBarangKeluarHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50);
     }

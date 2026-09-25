@@ -456,6 +456,82 @@ namespace UPMS.Web.Services
             return true;
         }
 
+        public async Task<bool> ReturnBarangKeluarAsync(int id, string username, string reason = "")
+        {
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    var entry = await _db.BarangKeluars.FirstOrDefaultAsync(b => b.Id == id);
+                    if (entry == null) return false;
+
+                    // Cannot return if already returned or rejected
+                    if (string.Equals(entry.ApprovalStatus, "Returned", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(entry.ApprovalStatus, "Rejected", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    bool wasDeducted = string.Equals(entry.ApprovalStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
+                                       string.IsNullOrEmpty(entry.ApprovalStatus);
+
+                    entry.ApprovalStatus = "Returned";
+                    entry.ApprovedBy = username;
+                    entry.ApprovedAt = UPMS.Web.Helpers.TimeHelper.Now;
+
+                    if (!string.IsNullOrWhiteSpace(reason))
+                    {
+                        entry.ActionNote = string.IsNullOrWhiteSpace(entry.ActionNote)
+                            ? $"[RETURN: {reason.Trim()}]"
+                            : $"{entry.ActionNote} [RETURN: {reason.Trim()}]";
+                    }
+
+                    // 1. Restore stock in MasterData if quantity was previously deducted
+                    if (wasDeducted)
+                    {
+                        MasterData? masterItem = null;
+                        if (!string.IsNullOrWhiteSpace(entry.MasterDataId))
+                        {
+                            masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == entry.MasterDataId && !m.IsDeleted);
+                        }
+                        if (masterItem == null && !string.IsNullOrWhiteSpace(entry.PartNumber))
+                        {
+                            masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == entry.PartNumber && !m.IsDeleted);
+                        }
+
+                        if (masterItem != null)
+                        {
+                            // Restore stock back to MasterData
+                            masterItem.CurrentStock = (masterItem.CurrentStock ?? 0) + entry.Qty;
+                        }
+                    }
+
+                    // 2. Audit log
+                    var audit = new AuditLog
+                    {
+                        TableName = "Barang_Keluar",
+                        RecordId = id.ToString(),
+                        Action = "RETURN",
+                        NewData = JsonSerializer.Serialize(entry),
+                        ChangedBy = username,
+                        ChangedAt = UPMS.Web.Helpers.TimeHelper.Now
+                    };
+                    _db.AuditLogs.Add(audit);
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+        }
+
         public async Task<List<BarangKeluar>> GetPendingApprovalsAsync()
         {
             return await _db.BarangKeluars

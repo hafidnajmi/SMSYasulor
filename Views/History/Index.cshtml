@@ -256,6 +256,7 @@
                             <th style="font-weight: 600;">PIC</th>
                             <th class="text-end" style="font-weight: 600;">TOTAL COST</th>
                             <th style="font-weight: 600;">STATUS</th>
+                            <th class="text-center" style="font-weight: 600;">AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -286,9 +287,31 @@
                                         {
                                             <span class="badge bg-success-subtle text-success border border-success-subtle" style="border-radius: 0px !important;">Approved</span>
                                         }
+                                        else if (item.ApprovalStatus == "Returned")
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary" style="border-radius: 0px !important;">Returned</span>
+                                        }
                                         else
                                         {
                                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="border-radius: 0px !important;">@item.ApprovalStatus</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.ApprovalStatus != "Returned" && item.ApprovalStatus != "Rejected")
+                                        {
+                                            <button type="button" class="btn btn-outline-warning btn-xs px-2 py-0 text-nowrap" style="font-size: 11px;"
+                                                    onclick="openReturnModal(@item.Id, '@item.ItemName.Replace("'", "\\'")', @item.Qty)"
+                                                    title="Return part (mengembalikan stok & membatalkan cost)">
+                                                <i class="bi bi-arrow-return-left me-1"></i>Return
+                                            </button>
+                                        }
+                                        else if (item.ApprovalStatus == "Returned")
+                                        {
+                                            <span class="badge bg-secondary text-white" style="font-size: 10px; border-radius: 0px !important;">Returned</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">-</span>
                                         }
                                     </td>
                                 </tr>
@@ -297,7 +320,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="11" class="text-center text-muted py-4">Tidak ada log transaksi barang keluar ditemukan.</td>
+                                <td colspan="12" class="text-center text-muted py-4">Tidak ada log transaksi barang keluar ditemukan.</td>
                             </tr>
                         }
                     </tbody>
@@ -402,3 +425,57 @@
         }
     }
 </div>
+
+<!-- Return Modal for Transaction Logs -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 0px !important;">
+            <div class="modal-header bg-warning text-dark py-2">
+                <h6 class="modal-title fw-bold text-dark mb-0"><i class="bi bi-arrow-return-left me-2"></i>Return Part / Kembalikan Barang Keluar</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="ReturnBarangKeluar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="returnTxId" name="id" />
+                <input type="hidden" name="tab" value="keluar" />
+                <div class="modal-body">
+                    <p class="small text-secondary mb-2">
+                        Anda akan mengembalikan transaksi pengeluaran sparepart ini:
+                    </p>
+                    <div class="p-2 bg-light border mb-3">
+                        <div class="fw-bold text-dark" id="returnItemNameDisplay"></div>
+                        <div class="small text-muted font-monospace mt-1">Jumlah: <span id="returnQtyDisplay" class="fw-bold text-danger"></span> unit</div>
+                    </div>
+                    <div class="alert alert-warning py-2 px-3 small mb-3">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <strong>Efek Return Transaksi:</strong>
+                        <ul class="mb-0 ps-3 mt-1">
+                            <li>Stok sparepart di Master Data akan <strong>bertambah kembali (+Qty)</strong>.</li>
+                            <li>Biaya pada Cost per Line &amp; Machine <strong>dibatalkan / tidak bertambah</strong> (seakan tidak ada yang pernah input).</li>
+                        </ul>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-secondary">Alasan Return (Opsional):</label>
+                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Contoh: Salah ambil part / sisa pekerjaan / part cacat..." />
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-3 fw-semibold text-dark">
+                        <i class="bi bi-arrow-return-left me-1"></i>Proses Return Part
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReturnModal(id, itemName, qty) {
+        document.getElementById('returnTxId').value = id;
+        document.getElementById('returnItemNameDisplay').textContent = itemName;
+        document.getElementById('returnQtyDisplay').textContent = qty;
+        var modal = new bootstrap.Modal(document.getElementById('returnModal'));
+        modal.show();
+    }
+</script>
