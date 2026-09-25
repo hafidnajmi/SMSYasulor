@@ -108,10 +108,6 @@
         <div class="ems-kpi-card ems-kpi-danger h-100 d-flex flex-column justify-content-between @(currentStatus == "below" ? "border border-2 border-danger shadow-sm bg-white" : "")" onclick="filterByStockStatus('below')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Below Safety Stock">
             <div class="ems-kpi-title text-danger text-nowrap d-flex justify-content-between align-items-center">
                 <span class="text-truncate"><i class="bi bi-exclamation-triangle me-1"></i> BELOW SAFETY</span>
-                @if (currentStatus == "below")
-                {
-                    <span class="badge bg-danger text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
-                }
             </div>
             <div class="ems-kpi-value text-danger mt-1">
                 @kpis.BelowSafetyStock.ToString("N0")
@@ -122,10 +118,6 @@
         <div class="ems-kpi-card ems-kpi-warning h-100 d-flex flex-column justify-content-between @(currentStatus == "near" ? "border border-2 border-warning shadow-sm bg-white" : "")" onclick="filterByStockStatus('near')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Near Safety Stock">
             <div class="ems-kpi-title text-warning text-nowrap d-flex justify-content-between align-items-center">
                 <span class="text-truncate"><i class="bi bi-exclamation-circle me-1"></i> NEAR SAFETY</span>
-                @if (currentStatus == "near")
-                {
-                    <span class="badge bg-warning text-dark ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
-                }
             </div>
             <div class="ems-kpi-value text-warning mt-1">
                 @kpis.NearSafetyStock.ToString("N0")
@@ -136,10 +128,6 @@
         <div class="ems-kpi-card ems-kpi-success h-100 d-flex flex-column justify-content-between @(currentStatus == "normal" ? "border border-2 border-success shadow-sm bg-white" : "")" onclick="filterByStockStatus('normal')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Normal Stock">
             <div class="ems-kpi-title text-success text-nowrap d-flex justify-content-between align-items-center">
                 <span class="text-truncate"><i class="bi bi-check-circle me-1"></i> NORMAL STOCK</span>
-                @if (currentStatus == "normal")
-                {
-                    <span class="badge bg-success text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
-                }
             </div>
             <div class="ems-kpi-value text-success mt-1">
                 @kpis.NormalStock.ToString("N0")
@@ -150,10 +138,6 @@
         <div class="ems-kpi-card ems-kpi-blue h-100 d-flex flex-column justify-content-between @(string.IsNullOrEmpty(currentStatus) ? "border border-2 border-primary shadow-sm bg-white" : "")" onclick="filterByStockStatus('')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan Semua Sparepart">
             <div class="ems-kpi-title text-primary text-nowrap d-flex justify-content-between align-items-center">
                 <span class="text-truncate"><i class="bi bi-boxes me-1"></i> TOTAL ITEMS</span>
-                @if (string.IsNullOrEmpty(currentStatus))
-                {
-                    <span class="badge bg-primary text-white ms-1" style="font-size: 9px; padding: 2px 5px;">Active</span>
-                }
             </div>
             <div class="ems-kpi-value text-primary mt-1">
                 @kpis.TotalSpareparts.ToString("N0")
