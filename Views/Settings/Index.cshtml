@@ -1,4 +1,5 @@
 @model IEnumerable<UPMS.Web.Models.Entities.User>
+@using UPMS.Web.Helpers
 
 @{
     ViewData["Title"] = "Settings & User Management";
@@ -126,7 +127,13 @@
         <h4 class="fw-semibold mb-1" style="color: #0F172A;">Settings &amp; User Management</h4>
         <p class="text-secondary small mb-0">Role-Based Access Control (RBAC), user accounts, and system configuration.</p>
     </div>
-    <div class="ems-page-actions">
+    <div class="ems-page-actions d-flex align-items-center gap-2">
+        <span class="text-muted small me-1 d-none d-md-inline-flex align-items-center bg-white border px-2 py-1" style="font-size: 12px; height: 31px; border-color: #CBD5E1 !important;">
+            <i class="bi bi-calendar3 me-1.5 text-primary"></i>
+            <span id="settingsClockText" data-server-time="@UPMS.Web.Helpers.TimeHelper.Now.ToString("yyyy-MM-ddTHH:mm:ss")">
+                @UPMS.Web.Helpers.TimeHelper.Now.ToString("dddd, dd MMMM yyyy | hh:mm:ss tt")
+            </span>
+        </span>
         <button type="button" class="btn btn-ems-primary btn-sm px-3" onclick="openAddUserModal()">
             <i class="bi bi-person-plus me-1"></i>Tambah User Baru
         </button>
@@ -243,8 +250,60 @@
                                     <span class="text-secondary font-monospace text-nowrap" style="font-size: 11px;">Inactive</span>
                                 }
                             </td>
-                            <td class="small text-muted font-monospace text-nowrap">
-                                @(u.LastLogin.HasValue ? u.LastLogin.Value.ToString("dd MMM yyyy HH:mm") : "Never")
+                            <td class="text-nowrap" style="min-width: 175px;">
+                                @if (u.LastLogin.HasValue)
+                                {
+                                    var configuredLogin = u.LastLogin.Value.ToConfiguredTime();
+                                    var diff = UPMS.Web.Helpers.TimeHelper.Now - configuredLogin;
+                                    string relativeBadge;
+                                    string badgeStyle;
+
+                                    if (diff.TotalMinutes < 5 && diff.TotalMinutes >= 0)
+                                    {
+                                        relativeBadge = "Online / Active now";
+                                        badgeStyle = "background-color: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;";
+                                    }
+                                    else if (diff.TotalHours < 1 && diff.TotalHours >= 0)
+                                    {
+                                        int mins = Math.Max(1, (int)diff.TotalMinutes);
+                                        relativeBadge = $"{mins} min{(mins > 1 ? "s" : "")} ago";
+                                        badgeStyle = "background-color: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;";
+                                    }
+                                    else if (diff.TotalHours < 24 && diff.TotalHours >= 0 && configuredLogin.Date == UPMS.Web.Helpers.TimeHelper.Today)
+                                    {
+                                        int hrs = (int)diff.TotalHours;
+                                        relativeBadge = $"{hrs} hr{(hrs > 1 ? "s" : "")} ago";
+                                        badgeStyle = "background-color: #F8FAFC; color: #334155; border: 1px solid #CBD5E1;";
+                                    }
+                                    else if (diff.TotalDays < 7 && diff.TotalDays >= 0)
+                                    {
+                                        int days = (int)diff.TotalDays;
+                                        relativeBadge = $"{days} day{(days > 1 ? "s" : "")} ago";
+                                        badgeStyle = "background-color: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0;";
+                                    }
+                                    else
+                                    {
+                                        relativeBadge = configuredLogin.ToString("dd MMM yyyy");
+                                        badgeStyle = "background-color: #F8FAFC; color: #94A3B8; border: 1px solid #E2E8F0;";
+                                    }
+
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="font-monospace fw-semibold text-dark" style="font-size: 12px; letter-spacing: -0.01em;">
+                                            <i class="bi bi-clock-history me-1 text-primary" style="font-size: 11px;"></i>@configuredLogin.ToString("dd MMM yyyy | HH:mm:ss")
+                                        </span>
+                                        <div>
+                                            <span class="badge font-monospace" style="font-size: 10px; font-weight: 500; border-radius: 2px; padding: 2px 6px; @badgeStyle">
+                                                @relativeBadge
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-muted border font-monospace" style="font-size: 10px; border-radius: 2px; padding: 3px 6px;">
+                                        <i class="bi bi-dash-circle me-1"></i>Never logged in
+                                    </span>
+                                }
                             </td>
                             <td class="text-center text-nowrap">
                                 <div class="d-flex align-items-center justify-content-center gap-1 text-nowrap">
@@ -504,7 +563,7 @@
             </div>
             <div class="form-text text-muted mt-2 d-flex justify-content-between align-items-center" style="font-size:11px;">
                 <span><i class="bi bi-info-circle me-1"></i>Zona waktu ini digunakan untuk seluruh transaksi, tanggal laporan, alert email, dan header dashboard.</span>
-                <span class="fw-semibold text-dark font-monospace"><i class="bi bi-calendar-event me-1"></i>Waktu Sistem: @ViewBag.CurrentTimeNow</span>
+                <span class="fw-semibold text-dark font-monospace"><i class="bi bi-calendar-event me-1"></i>Waktu Sistem: <span id="settingsSystemTimeText">@ViewBag.CurrentTimeNow</span></span>
             </div>
         </form>
     </div>
@@ -930,6 +989,49 @@
             setCbChecked('cbSettings', set);
             setCbChecked('cbEmailSettings', emailSet);
         }
+        // Live Ticking Real-Time Clock in Configured System Timezone (Matches Dashboard)
+        (function () {
+            var clockElem = document.getElementById('settingsClockText');
+            var systemTimeElem = document.getElementById('settingsSystemTimeText');
+            if (!clockElem && !systemTimeElem) return;
+
+            var serverTimeAttr = clockElem ? clockElem.getAttribute('data-server-time') : null;
+            if (!serverTimeAttr) return;
+
+            var currentServerTime = new Date(serverTimeAttr);
+            var startTimeLocal = Date.now();
+
+            function updateLiveClock() {
+                var elapsed = Date.now() - startTimeLocal;
+                var now = new Date(currentServerTime.getTime() + elapsed);
+
+                var optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                var dateStr = now.toLocaleDateString('en-US', optionsDate);
+
+                var hours = now.getHours();
+                var minutes = now.getMinutes();
+                var seconds = now.getSeconds();
+                var ampm = hours >= 12 ? 'PM' : 'AM';
+                var hours12 = hours % 12;
+                hours12 = hours12 ? hours12 : 12;
+                var hoursStr12 = hours12 < 10 ? '0' + hours12 : hours12;
+                var hoursStr24 = hours < 10 ? '0' + hours : hours;
+                var minutesStr = minutes < 10 ? '0' + minutes : minutes;
+                var secondsStr = seconds < 10 ? '0' + seconds : seconds;
+
+                if (clockElem) {
+                    clockElem.textContent = dateStr + ' | ' + hoursStr12 + ':' + minutesStr + ':' + secondsStr + ' ' + ampm;
+                }
+                if (systemTimeElem) {
+                    var optionsDateId = { day: '2-digit', month: 'long', year: 'numeric' };
+                    var dateStrId = now.toLocaleDateString('id-ID', optionsDateId);
+                    systemTimeElem.textContent = dateStrId + ' | ' + hoursStr24 + ':' + minutesStr + ':' + secondsStr;
+                }
+            }
+
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+        })();
     </script>
 }
 

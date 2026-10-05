@@ -112,13 +112,15 @@ namespace UPMS.Web.Helpers
             TimeZoneInfo tz;
             lock (_lock) { tz = _currentTimeZone; }
 
-            return dt.Kind switch
+            DateTime utcDt = dt.Kind switch
             {
-                DateTimeKind.Utc => TimeZoneInfo.ConvertTimeFromUtc(dt, tz),
-                DateTimeKind.Unspecified => TimeZoneInfo.ConvertTimeFromUtc(
-                    DateTime.SpecifyKind(dt, DateTimeKind.Utc), tz),
-                _ => TimeZoneInfo.ConvertTime(dt, tz)
+                DateTimeKind.Utc => dt,
+                DateTimeKind.Local => dt.ToUniversalTime(),
+                // Database timestamps (PostgreSQL / SQL Server) are stored in UTC without timezone
+                _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
             };
+
+            return TimeZoneInfo.ConvertTimeFromUtc(utcDt, tz);
         }
 
         /// <summary>

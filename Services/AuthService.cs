@@ -77,7 +77,7 @@ namespace UPMS.Web.Services
             var user = await _db.Users.FindAsync(userId);
             if (user != null)
             {
-                user.LastLogin = DateTime.Now;
+                user.LastLogin = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
             }
         }
