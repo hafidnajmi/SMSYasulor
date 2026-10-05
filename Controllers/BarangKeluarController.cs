@@ -157,14 +157,17 @@ namespace UPMS.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(query)) return Json(null);
             string term = query.Trim();
+            string termClean = term.Replace(" ", "");
 
-            var itemByBin = await _sparepartService.GetByBinAsync(term);
+            var itemByBin = await _sparepartService.GetByBinAsync(term)
+                         ?? (term != termClean ? await _sparepartService.GetByBinAsync(termClean) : null);
             if (itemByBin != null)
             {
                 return Json(new { MasterDataId = itemByBin.Id, itemByBin.Bin, ItemName = itemByBin.Item, itemByBin.CurrentStock, itemByBin.CurrentUnitPrice });
             }
 
-            var itemById = await _sparepartService.GetByIdAsync(term);
+            var itemById = await _sparepartService.GetByIdAsync(term)
+                        ?? (term != termClean ? await _sparepartService.GetByIdAsync(termClean) : null);
             if (itemById != null)
             {
                 return Json(new { MasterDataId = itemById.Id, Bin = itemById.Bin ?? "", ItemName = itemById.Item, itemById.CurrentStock, itemById.CurrentUnitPrice });

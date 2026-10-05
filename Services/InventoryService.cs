@@ -235,6 +235,86 @@ namespace UPMS.Web.Services
             });
         }
 
+        public async Task<bool> ReturnBarangMasukAsync(int id, string username, string reason = "")
+        {
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    var entry = await _db.BarangMasuks.FirstOrDefaultAsync(b => b.Id == id);
+                    if (entry == null) return false;
+
+                    // Cannot return if already returned or rejected
+                    if (string.Equals(entry.ApprovalStatus, "Returned", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(entry.ApprovalStatus, "Rejected", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    bool wasAdded = string.Equals(entry.ApprovalStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
+                                    string.IsNullOrEmpty(entry.ApprovalStatus);
+
+                    entry.ApprovalStatus = "Returned";
+                    entry.ApprovedBy = username;
+                    entry.ApprovedAt = UPMS.Web.Helpers.TimeHelper.Now;
+
+                    if (!string.IsNullOrWhiteSpace(reason))
+                    {
+                        entry.ActionNote = string.IsNullOrWhiteSpace(entry.ActionNote)
+                            ? $"[RETURN: {reason.Trim()}]"
+                            : $"{entry.ActionNote} [RETURN: {reason.Trim()}]";
+                    }
+
+                    // 1. Deduct stock from MasterData if quantity was previously added
+                    if (wasAdded)
+                    {
+                        MasterData? masterItem = null;
+                        if (!string.IsNullOrWhiteSpace(entry.PartNumber))
+                        {
+                            masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Id == entry.PartNumber && !m.IsDeleted);
+                        }
+                        if (masterItem == null && !string.IsNullOrWhiteSpace(entry.Bin))
+                        {
+                            masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Bin == entry.Bin && !m.IsDeleted);
+                        }
+                        if (masterItem == null && !string.IsNullOrWhiteSpace(entry.ItemName))
+                        {
+                            masterItem = await _db.MasterDatas.FirstOrDefaultAsync(m => m.Item.ToLower() == entry.ItemName.Trim().ToLower() && !m.IsDeleted);
+                        }
+
+                        if (masterItem != null)
+                        {
+                            masterItem.CurrentStock = Math.Max(0, (masterItem.CurrentStock ?? 0) - entry.Qty);
+                            masterItem.LastUpdatedBy = string.IsNullOrWhiteSpace(username) ? "system" : username;
+                        }
+                    }
+
+                    // 2. Audit log
+                    var audit = new AuditLog
+                    {
+                        TableName = "Barang_Masuk",
+                        RecordId = id.ToString(),
+                        Action = "RETURN",
+                        NewData = JsonSerializer.Serialize(entry),
+                        ChangedBy = username,
+                        ChangedAt = UPMS.Web.Helpers.TimeHelper.Now
+                    };
+                    _db.AuditLogs.Add(audit);
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+        }
+
         public async Task<PagedResult<BarangMasuk>> GetBarangMasukHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50)
         {
             var query = _db.BarangMasuks.AsNoTracking();

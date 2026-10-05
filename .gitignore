@@ -24,5 +24,19 @@ assets/
 migrations/
 logs/
 
-# Local Environment Settings
+# Local Environment Settings & Secrets
 appsettings.Local.json
+appsettings.*.Local.json
+appsettings.Production.local.json
+*.local.json
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+secrets/
+credentials.json
+

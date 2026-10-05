@@ -67,6 +67,8 @@ namespace UPMS.Web.Services
             worksheet.Cell(1, 6).Value = "QTY";
             worksheet.Cell(1, 7).Value = "PIC";
             worksheet.Cell(1, 8).Value = "Supplier";
+            worksheet.Cell(1, 9).Value = "Status";
+            worksheet.Cell(1, 10).Value = "Catatan";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -84,6 +86,8 @@ namespace UPMS.Web.Services
                 worksheet.Cell(row, 6).Value = item.Qty;
                 worksheet.Cell(row, 7).Value = item.Pic ?? "";
                 worksheet.Cell(row, 8).Value = item.Supplier ?? "";
+                worksheet.Cell(row, 9).Value = item.ApprovalStatus ?? "Approved";
+                worksheet.Cell(row, 10).Value = item.ActionNote ?? item.Remarks ?? "";
                 row++;
             }
 

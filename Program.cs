@@ -11,6 +11,9 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load local developer settings if present (git-ignored for security)
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // Fix: Dewacloud may run app from bin/Debug/net10.0/ OR from the project root.
 // Probe multiple candidate locations until we find where wwwroot actually lives.
 if (!Directory.Exists(builder.Environment.WebRootPath))
@@ -44,13 +47,18 @@ if (builder.Environment.IsDevelopment())
 
 // Listen on appropriate ports for Local Development vs Dewa Cloud Production
 var envPort = Environment.GetEnvironmentVariable("PORT");
+var configuredUrls = builder.Configuration["urls"] ?? builder.Configuration["ASPNETCORE_URLS"];
 if (!string.IsNullOrEmpty(envPort))
 {
     builder.WebHost.UseUrls($"http://*:{envPort}");
 }
+else if (!string.IsNullOrEmpty(configuredUrls))
+{
+    builder.WebHost.UseUrls(configuredUrls);
+}
 else if (builder.Environment.IsDevelopment())
 {
-    builder.WebHost.UseUrls("http://localhost:5000");
+    builder.WebHost.UseUrls("http://localhost:5182");
 }
 else
 {
@@ -61,11 +69,41 @@ else
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Connection string reads from environment, appsettings, or defaults to Dewa Cloud PostgreSQL
-string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(connectionString))
+// Connection string reads dynamically from:
+// 1. Environment variable 'DATABASE_URL' / 'POSTGRES_CONNECTION_STRING' (cloud PaaS)
+// 2. Environment variable 'ConnectionStrings__DefaultConnection'
+// 3. appsettings.Local.json (git-ignored for local developer machines)
+// 4. appsettings.Production.json / appsettings.json
+string? rawConnStr = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Support PostgreSQL URI format (postgres://user:pass@host:port/db) if provided by PaaS
+string connectionString;
+if (!string.IsNullOrWhiteSpace(rawConnStr) && 
+    (rawConnStr.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) || 
+     rawConnStr.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
 {
-    connectionString = "Host=node79737-sms-yasulor.user.cloudjkt01.com;Port=5432;Database=postgres;Username=webadmin;Password=KrKUiDqUuP;";
+    var uri = new Uri(rawConnStr);
+    var userInfo = uri.UserInfo.Split(':');
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var database = uri.AbsolutePath.TrimStart('/');
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    connectionString = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};";
+}
+else
+{
+    connectionString = rawConnStr ?? string.Empty;
+}
+
+if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("YOUR_"))
+{
+    throw new InvalidOperationException(
+        "CRITICAL SECURITY: Database connection string is not configured. " +
+        "Never commit real database credentials to Git! " +
+        "Please provide the connection string via Environment Variable 'ConnectionStrings__DefaultConnection' " +
+        "(in your Dewa Cloud / hosting environment) or inside 'appsettings.Local.json' (git-ignored) for local development.");
 }
 
 builder.Services.AddDbContext<UpmsDbContext>(options =>

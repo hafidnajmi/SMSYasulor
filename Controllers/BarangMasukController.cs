@@ -51,14 +51,17 @@ namespace UPMS.Web.Controllers
         {
             if (string.IsNullOrWhiteSpace(query)) return Json(null);
             string q = query.Trim().ToUpper();
+            string qClean = q.Replace(" ", "");
 
-            var item = await _sparepartService.GetByBinAsync(q);
+            var item = await _sparepartService.GetByBinAsync(q)
+                    ?? (q != qClean ? await _sparepartService.GetByBinAsync(qClean) : null);
             if (item != null)
             {
                 return Json(new { Bin = item.Bin ?? "", ItemName = item.Item, PartNumber = item.Id, item.CurrentStock, item.CurrentUnitPrice });
             }
 
-            var itemById = await _sparepartService.GetByIdAsync(q);
+            var itemById = await _sparepartService.GetByIdAsync(q)
+                       ?? (q != qClean ? await _sparepartService.GetByIdAsync(qClean) : null);
             if (itemById != null)
             {
                 return Json(new { Bin = itemById.Bin ?? "", ItemName = itemById.Item, PartNumber = itemById.Id, itemById.CurrentStock, itemById.CurrentUnitPrice });
@@ -177,5 +180,51 @@ namespace UPMS.Web.Controllers
             }
             return RedirectToAction("Index");
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnItem(int id, string? reason, string? returnUrl)
+        {
+            string username = User.Identity?.Name ?? "system";
+            bool success = await _inventoryService.ReturnBarangMasukAsync(id, username, reason ?? "");
+            if (success)
+            {
+                TempData["Success"] = $"Transaksi Barang Masuk #{id} berhasil di-return. Qty stok telah disesuaikan kembali (-Qty) di Master Data.";
+            }
+            else
+            {
+                TempData["Error"] = $"Gagal memproses return transaksi Barang Masuk #{id}. Transaksi mungkin sudah di-return sebelumnya.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReturnItemJson([FromBody] ReturnMasukRequestModel model)
+        {
+            if (model == null || model.Id <= 0)
+            {
+                return Json(new { success = false, message = "ID transaksi tidak valid." });
+            }
+
+            string username = User.Identity?.Name ?? "system";
+            bool success = await _inventoryService.ReturnBarangMasukAsync(model.Id, username, model.Reason ?? "");
+            if (success)
+            {
+                return Json(new { success = true, message = $"Transaksi #{model.Id} berhasil di-return. Qty stok telah disesuaikan kembali (-Qty) di Master Data." });
+            }
+            return Json(new { success = false, message = $"Gagal memproses return transaksi #{model.Id}." });
+        }
+    }
+
+    public class ReturnMasukRequestModel
+    {
+        public int Id { get; set; }
+        public string? Reason { get; set; }
     }
 }

@@ -9,6 +9,7 @@ namespace UPMS.Web.Services
         Task<int> CreateBarangMasukAsync(BarangMasuk item, string username);
         Task<int> CreateBarangMasukBatchAsync(List<BarangMasuk> items, string username);
         Task<bool> DeleteBarangMasukAsync(int id, string username);
+        Task<bool> ReturnBarangMasukAsync(int id, string username, string reason = "");
         Task<PagedResult<BarangMasuk>> GetBarangMasukHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50);
 
         Task<int> CreateBarangKeluarAsync(BarangKeluar item, User user);

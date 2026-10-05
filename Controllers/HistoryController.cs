@@ -141,5 +141,30 @@ namespace UPMS.Web.Controllers
 
             return RedirectToAction("Index", new { tab });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnBarangMasuk(int id, string? reason, string tab = "masuk")
+        {
+            var username = User.Identity?.Name ?? "system";
+            bool canRiwayat = await RbacHelper.HasPermissionAsync(_db, username, u => u.CanRiwayat);
+            if (!canRiwayat)
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk melakukan Return transaksi.";
+                return RedirectToAction("Index");
+            }
+
+            bool success = await _inventoryService.ReturnBarangMasukAsync(id, username, reason ?? "");
+            if (success)
+            {
+                TempData["Success"] = $"Transaksi Barang Masuk #{id} berhasil di-return. Qty stok telah disesuaikan kembali (-Qty) di Master Data.";
+            }
+            else
+            {
+                TempData["Error"] = $"Gagal memproses return transaksi Barang Masuk #{id}. Transaksi mungkin sudah di-return sebelumnya.";
+            }
+
+            return RedirectToAction("Index", new { tab });
+        }
     }
 }

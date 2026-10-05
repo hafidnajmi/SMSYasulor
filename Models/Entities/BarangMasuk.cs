@@ -49,6 +49,21 @@ namespace UPMS.Web.Models.Entities
         [Column("remarks")]
         public string? Remarks { get; set; }
 
+        [StringLength(50)]
+        [Column("approval_status")]
+        public string? ApprovalStatus { get; set; } = "Approved";
+
+        [StringLength(100)]
+        [Column("approved_by")]
+        public string? ApprovedBy { get; set; }
+
+        [Column("approved_at")]
+        public DateTime? ApprovedAt { get; set; }
+
+        [StringLength(500)]
+        [Column("action_note")]
+        public string? ActionNote { get; set; }
+
         [Column("user_id")]
         public int? UserId { get; set; }
 

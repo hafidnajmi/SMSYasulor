@@ -169,6 +169,11 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS po_number VARCHAR(100);");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS unit_price NUMERIC(18,2);");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS remarks TEXT;");
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS approval_status VARCHAR(50) DEFAULT 'Approved';");
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS approved_by VARCHAR(100);");
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP;");
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS action_note VARCHAR(500);");
+                    await db.Database.ExecuteSqlRawAsync(@"UPDATE ""Barang_Masuk"" SET approval_status = 'Approved' WHERE approval_status IS NULL;");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Audit_Log"" ALTER COLUMN action TYPE VARCHAR(100);");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""pm_schedule"" ADD COLUMN IF NOT EXISTS up_area VARCHAR(100);");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""pm_standard_part"" ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT 'Monthly';");
