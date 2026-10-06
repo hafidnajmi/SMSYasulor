@@ -508,17 +508,48 @@ namespace UPMS.Web.Controllers
                 }).ToList();
             }
 
-            var result = actualList.Select(b => new
+            var now = UPMS.Web.Helpers.TimeHelper.Now;
+            var result = actualList.Select(b =>
             {
-                id = b.Id,
-                partNumber = !string.IsNullOrWhiteSpace(b.PartNumber) ? b.PartNumber : (!string.IsNullOrWhiteSpace(b.MasterDataId) ? b.MasterDataId : "-"),
-                itemName = !string.IsNullOrWhiteSpace(b.ItemName) ? b.ItemName : "-",
-                bin = !string.IsNullOrWhiteSpace(b.Bin) ? b.Bin : "-",
-                qty = b.Qty,
-                pic = !string.IsNullOrWhiteSpace(b.Pic) ? b.Pic : "-",
-                tanggal = b.Tanggal.ToString("dd/MM/yyyy HH:mm"),
-                status = !string.IsNullOrWhiteSpace(b.ApprovalStatus) ? b.ApprovalStatus : "Approved",
-                line = b.Line ?? "-"
+                var displayTime = b.Tanggal;
+                // Auto-correct any legacy record where Tanggal was saved with +7h future shift compared to current time / CreatedAt
+                if (b.CreatedAt != default && displayTime > now && Math.Abs((displayTime - b.CreatedAt).TotalHours - 7.0) < 1.0)
+                {
+                    displayTime = b.CreatedAt;
+                }
+                else if (displayTime > now && (displayTime - now).TotalHours >= 4.0)
+                {
+                    displayTime = displayTime.AddHours(-7);
+                }
+
+                var diff = now - displayTime;
+                string timeAgo = "";
+                if (diff.TotalMinutes < 5 && diff.TotalMinutes >= 0)
+                {
+                    timeAgo = "Baru saja";
+                }
+                else if (diff.TotalHours < 1 && diff.TotalHours >= 0)
+                {
+                    timeAgo = $"{(int)diff.TotalMinutes} mnt lalu";
+                }
+                else if (diff.TotalHours < 24 && diff.TotalHours >= 0 && displayTime.Date == now.Date)
+                {
+                    timeAgo = $"{(int)diff.TotalHours} jam lalu";
+                }
+
+                return new
+                {
+                    id = b.Id,
+                    partNumber = !string.IsNullOrWhiteSpace(b.PartNumber) ? b.PartNumber : (!string.IsNullOrWhiteSpace(b.MasterDataId) ? b.MasterDataId : "-"),
+                    itemName = !string.IsNullOrWhiteSpace(b.ItemName) ? b.ItemName : "-",
+                    bin = !string.IsNullOrWhiteSpace(b.Bin) ? b.Bin : "-",
+                    qty = b.Qty,
+                    pic = !string.IsNullOrWhiteSpace(b.Pic) ? b.Pic : "-",
+                    tanggal = displayTime.ToString("dd/MM/yyyy HH:mm:ss"),
+                    timeAgo = timeAgo,
+                    status = !string.IsNullOrWhiteSpace(b.ApprovalStatus) ? b.ApprovalStatus : "Approved",
+                    line = b.Line ?? "-"
+                };
             }).ToList();
 
             return Json(result);

@@ -108,13 +108,13 @@ namespace UPMS.Web.Controllers
 
             try
             {
-                if (model.Tanggal == default || model.Tanggal.TimeOfDay == TimeSpan.Zero)
+                if (model.Tanggal == default)
                 {
                     model.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
                 }
-                else
+                else if (model.Tanggal.TimeOfDay == TimeSpan.Zero)
                 {
-                    model.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(model.Tanggal);
+                    model.Tanggal = model.Tanggal.Date.Add(UPMS.Web.Helpers.TimeHelper.Now.TimeOfDay);
                 }
 
                 int userId = 0;

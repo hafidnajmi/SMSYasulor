@@ -601,7 +601,7 @@
                                         <th width="80">BIN</th>
                                         <th width="50" class="text-center">QTY</th>
                                         <th width="100">PIC / Teknisi</th>
-                                        <th width="110" class="text-center">Waktu</th>
+                                        <th width="135" class="text-center">Waktu Transaksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="addActualSparepartTableBody">
@@ -775,7 +775,7 @@
                                         <th width="80">BIN</th>
                                         <th width="50" class="text-center">QTY</th>
                                         <th width="100">PIC / Teknisi</th>
-                                        <th width="110" class="text-center">Waktu</th>
+                                        <th width="135" class="text-center">Waktu Transaksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="editActualSparepartTableBody">
@@ -1859,7 +1859,7 @@
                                 <td class="font-monospace">${escapeHtml(item.bin)}</td>
                                 <td class="text-center fw-bold text-success">${item.qty}</td>
                                 <td>${escapeHtml(item.pic)}</td>
-                                <td class="text-center text-muted font-monospace" style="font-size: 10px;">${escapeHtml(item.tanggal)}</td>
+                                <td class="text-center text-nowrap">${escapeHtml(item.tanggal)}</td>
                             `;
                             tbody.appendChild(tr);
                         });

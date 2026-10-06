@@ -186,13 +186,13 @@ namespace UPMS.Web.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (model.Tanggal == default || model.Tanggal.TimeOfDay == TimeSpan.Zero)
+            if (model.Tanggal == default)
             {
                 model.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
             }
-            else
+            else if (model.Tanggal.TimeOfDay == TimeSpan.Zero)
             {
-                model.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(model.Tanggal);
+                model.Tanggal = model.Tanggal.Date.Add(UPMS.Web.Helpers.TimeHelper.Now.TimeOfDay);
             }
             model.CreatedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
@@ -258,13 +258,13 @@ namespace UPMS.Web.Controllers
             foreach (var item in items)
             {
                 if (item.Qty <= 0 || string.IsNullOrWhiteSpace(item.ItemName)) continue;
-                if (item.Tanggal == default || item.Tanggal.TimeOfDay == TimeSpan.Zero)
+                if (item.Tanggal == default)
                 {
                     item.Tanggal = UPMS.Web.Helpers.TimeHelper.Now;
                 }
-                else
+                else if (item.Tanggal.TimeOfDay == TimeSpan.Zero)
                 {
-                    item.Tanggal = UPMS.Web.Helpers.TimeHelper.ToJakartaTime(item.Tanggal);
+                    item.Tanggal = item.Tanggal.Date.Add(UPMS.Web.Helpers.TimeHelper.Now.TimeOfDay);
                 }
                 item.CreatedAt = UPMS.Web.Helpers.TimeHelper.Now;
 
