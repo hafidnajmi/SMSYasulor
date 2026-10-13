@@ -192,9 +192,15 @@ namespace UPMS.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> ExportExcel(string? search, string? upArea, string? category, string? frequency, string? line, string? stockStatus)
         {
-            var pagedResult = await _sparepartService.GetPagedAsync(search, upArea, category, frequency, line, null, stockStatus, 1, 10000);
+            if (!await RbacHelper.HasPermissionAsync(_db, User.Identity?.Name, u => u.CanMasterData))
+            {
+                TempData["Error"] = "Akses Ditolak: Anda tidak memiliki wewenang untuk mengekspor Catalog Sparepart.";
+                return RedirectToAction("Index", "MasterData");
+            }
+
+            var pagedResult = await _sparepartService.GetPagedAsync(search, upArea, category, frequency, line, null, stockStatus, 1, 100000);
             byte[] fileBytes = _excelService.ExportMasterDataToExcel(pagedResult.Items);
-            string fileName = $"MasterData_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            string fileName = $"Spareparts_Catalog_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
             return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
