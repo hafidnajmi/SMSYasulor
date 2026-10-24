@@ -48,7 +48,20 @@ namespace UPMS.Web.Controllers
             ViewBag.Category = category;
             ViewBag.Frequency = frequency;
             ViewBag.Line = line;
-            ViewBag.StockStatus = stockStatus;
+            // BUG-07 FIX: Perform role & permission query asynchronously here in controller
+            // instead of doing a blocking synchronous DbContext query inside the Razor View.
+            var curUser = User.Identity?.Name;
+            var userEntity = !string.IsNullOrEmpty(curUser)
+                ? await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username.ToLower() == curUser.ToLower())
+                : null;
+
+            bool isUserAdmin = (userEntity?.Role?.ToLower() == "admin") || string.Equals(curUser, "admin", StringComparison.OrdinalIgnoreCase);
+            bool isTechnician = (userEntity?.Role?.ToLower() == "technician") || string.Equals(curUser, "technician", StringComparison.OrdinalIgnoreCase);
+            bool hideActionsAndAlerts = isTechnician || !isUserAdmin;
+
+            ViewBag.IsUserAdmin = isUserAdmin;
+            ViewBag.IsTechnician = isTechnician;
+            ViewBag.HideActionsAndAlerts = hideActionsAndAlerts;
 
             return View(pagedResult);
         }
@@ -70,7 +83,9 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        // BUG-01 FIX: Removed [AllowAnonymous] — endpoint now requires authentication
+        // (inherits [Authorize] from class-level attribute). Previously, any unauthenticated
+        // request could call this endpoint to discover internal ID patterns (e.g., UPF-XXXXX).
         public async Task<IActionResult> GetNextId()
         {
             string nextId = await _sparepartService.GetNextUpfIdAsync();
@@ -78,6 +93,8 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        // BUG-03 FIX: Added [ValidateAntiForgeryToken] to protect against CSRF attacks.
         public async Task<IActionResult> ToggleAlert(string id)
         {
             if (string.IsNullOrEmpty(id)) return Json(new { success = false, message = "Invalid ID" });
@@ -247,21 +264,48 @@ namespace UPMS.Web.Controllers
             return null;
         }
 
-        private async Task<string> SaveUploadedImageAsync(IFormFile file)
+        private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        private const long MaxImageFileSizeBytes = 5 * 1024 * 1024; // 5 MB
 
+        // BUG-06 FIX: Validates file existence, size, extension, MIME type, and generates
+        // a pure GUID filename to prevent path traversal and arbitrary file upload vulnerabilities.
+        private async Task<string> SaveUploadedImageAsync(IFormFile file)
         {
+            if (file == null || file.Length == 0)
+            {
+                throw new InvalidOperationException("File gambar tidak valid atau kosong.");
+            }
+
+            if (file.Length > MaxImageFileSizeBytes)
+            {
+                throw new InvalidOperationException("Ukuran gambar melebihi batas maksimum 5MB.");
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (string.IsNullOrEmpty(extension) || !AllowedImageExtensions.Contains(extension))
+            {
+                throw new InvalidOperationException($"Format gambar '{extension}' tidak didukung. Format yang diizinkan: JPG, JPEG, PNG, GIF, WEBP.");
+            }
+
+            if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Tipe konten file bukan merupakan gambar yang valid.");
+            }
+
             string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "spareparts");
             if (!Directory.Exists(uploadsFolder))
             {
                 Directory.CreateDirectory(uploadsFolder);
             }
-            string uniqueFileName = $"{Guid.NewGuid().ToString().Substring(0, 8)}_{Path.GetFileName(file.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            // Gunakan purely generated GUID filename tanpa nama asli untuk mencegah Path Traversal
+            string safeFileName = $"{Guid.NewGuid():N}{extension}";
+            string filePath = Path.Combine(uploadsFolder, safeFileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
-            return $"/uploads/spareparts/{uniqueFileName}";
+            return $"/uploads/spareparts/{safeFileName}";
         }
     }
 }

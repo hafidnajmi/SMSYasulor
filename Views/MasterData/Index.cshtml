@@ -1,7 +1,6 @@
 @using Microsoft.EntityFrameworkCore
 @model UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.MasterData>
 
-@inject UPMS.Web.Data.UpmsDbContext DbContext
 @{
     ViewData["Title"] = "Spareparts Catalog";
     var categories = ViewBag.Categories as List<string> ?? new List<string>();
@@ -12,15 +11,15 @@
     int pageSize = Model?.PageSize ?? 50;
     int startRowNo = (pageNum - 1) * pageSize + 1;
 
-    var curUser = User.Identity?.Name;
-    var userEntity = !string.IsNullOrEmpty(curUser) 
-        ? DbContext.Users.AsNoTracking().FirstOrDefault(u => u.Username.ToLower() == curUser.ToLower()) 
-        : null;
+    // BUG-07 FIX: Role and permissions are evaluated asynchronously in MasterDataController.Index
+    // and passed via ViewBag, avoiding synchronous blocking DB queries during Razor view rendering.
+    bool isUserAdmin = ViewBag.IsUserAdmin is bool adminVal ? adminVal : User.IsInRole("admin") || string.Equals(User.Identity?.Name, "admin", StringComparison.OrdinalIgnoreCase);
+    bool isTechnician = ViewBag.IsTechnician is bool techVal ? techVal : User.IsInRole("technician") || string.Equals(User.Identity?.Name, "technician", StringComparison.OrdinalIgnoreCase);
+    bool hideActionsAndAlerts = ViewBag.HideActionsAndAlerts is bool hideVal ? hideVal : (!isUserAdmin || isTechnician);
 
-    bool isUserAdmin = (userEntity?.Role?.ToLower() == "admin") || string.Equals(curUser, "admin", StringComparison.OrdinalIgnoreCase);
-    bool isTechnician = (userEntity?.Role?.ToLower() == "technician") || string.Equals(curUser, "technician", StringComparison.OrdinalIgnoreCase);
-
-    bool hideActionsAndAlerts = isTechnician || !isUserAdmin;
+    // BUG-13 FIX: Single source of truth for table column count
+    const int baseTableColumns = 20;
+    int totalTableColumns = hideActionsAndAlerts ? baseTableColumns : (baseTableColumns + 2);
 }
 
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -207,7 +206,26 @@
             <button type="button" class="btn btn-ems-outline btn-sm me-1" onclick="openBatchBarcodeModal()" title="Print Barcode Labels for checked items">
                 <i class="bi bi-qr-code-scan me-1 text-primary"></i>Print Barcodes (<span id="batchCountBadge">0</span>)
             </button>
-            <a href="#" onclick="return executeSecureExport('/MasterData/ExportExcel?search=@ViewBag.Search&upArea=@ViewBag.UpArea&category=@ViewBag.Category&frequency=@ViewBag.Frequency&line=@ViewBag.Line&stockStatus=@ViewBag.StockStatus', 'Spareparts Catalog');" class="btn btn-ems-outline btn-sm">
+            @{
+                // BUG-02 FIX: Build export URL server-side using Url.Action() instead of
+                // inline string concatenation inside onclick="...". Previously, ViewBag values
+                // were interpolated directly into JavaScript strings without encoding — any
+                // special chars like ', ", ) in search/filter values could break out of the JS
+                // string context causing XSS. Url.Action() properly URL-encodes all parameters
+                // and keeps the URL in an href attribute, not embedded in JS code.
+                var exportUrl = Url.Action("ExportExcel", "MasterData", new
+                {
+                    search      = ViewBag.Search      as string,
+                    upArea      = ViewBag.UpArea      as string,
+                    category    = ViewBag.Category    as string,
+                    frequency   = ViewBag.Frequency   as string,
+                    line        = ViewBag.Line        as string,
+                    stockStatus = ViewBag.StockStatus as string
+                });
+            }
+            <a href="@exportUrl"
+               onclick="return executeSecureExport(this.href, 'Spareparts Catalog');"
+               class="btn btn-ems-outline btn-sm">
                 <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
             </a>
             <button type="button" class="btn btn-ems-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
@@ -368,7 +386,7 @@
 
                         string stkTextClass = "text-dark";
                         if (safe > 0 && curr < safe) { stkTextClass = "text-danger"; }
-                        else if (safe > 0 && curr == safe) { stkTextClass = "text-warning"; }
+                        else if (safe > 0 && curr >= safe && curr <= (safe * 1.2m + 1)) { stkTextClass = "text-warning"; }
                         else { stkTextClass = "text-dark"; }
 
                         <tr>
@@ -479,7 +497,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="@(hideActionsAndAlerts ? 20 : 22)" class="text-center text-muted py-5">
+                        <td colspan="@totalTableColumns" class="text-center text-muted py-5">
                             <i class="bi bi-boxes d-block fs-3 mb-2 opacity-25"></i>
                             No master data items match your search criteria.
                         </td>
@@ -495,11 +513,11 @@
         <nav>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item @(Model == null || Model.PageNumber <= 1 ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) - 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line">Previous</a>
+                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) - 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line" asp-route-stockStatus="@ViewBag.StockStatus">Previous</a>
                 </li>
                 <li class="page-item disabled"><span class="page-link">@(Model?.PageNumber ?? 1)</span></li>
                 <li class="page-item @(Model == null || Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) + 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line">Next</a>
+                    <a class="page-link" asp-action="Index" asp-route-page="@((Model?.PageNumber ?? 1) + 1)" asp-route-search="@ViewBag.Search" asp-route-upArea="@ViewBag.UpArea" asp-route-category="@ViewBag.Category" asp-route-frequency="@ViewBag.Frequency" asp-route-line="@ViewBag.Line" asp-route-stockStatus="@ViewBag.StockStatus">Next</a>
                 </li>
             </ul>
         </nav>
@@ -877,10 +895,10 @@
 
 @section Scripts {
     <script>
-        // High-performance AJAX dynamic detail modal loader
+        // BUG-08 FIX: Use getOrCreateInstance instead of new bootstrap.Modal to prevent memory leaks and stacked backdrops
         async function openDetailModal(id) {
             const modalElem = document.getElementById('dynamicDetailModal');
-            const bsModal = new bootstrap.Modal(modalElem);
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalElem);
             
             document.getElementById('detailModalIdHeader').innerText = id;
             document.getElementById('detailModalSpinner').style.display = 'block';
@@ -942,14 +960,23 @@
             if (!src) return;
             document.getElementById('previewModalImage').src = src;
             const modalElem = document.getElementById('imagePreviewModal');
-            const bsModal = new bootstrap.Modal(modalElem);
+            // BUG-08 FIX: Reuse instance
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalElem);
             bsModal.show();
         }
+
+        // BUG-12: Track manual override flags for safety stock fields
+        var addSafetyStockManualOverride = false;
+        var editSafetyStockManualOverride = false;
 
         // High-performance AJAX dynamic edit modal loader
         async function openEditModal(id) {
             const modalElem = document.getElementById('dynamicEditModal');
-            const bsModal = new bootstrap.Modal(modalElem);
+            // BUG-08 FIX: Reuse instance
+            const bsModal = bootstrap.Modal.getOrCreateInstance(modalElem);
+
+            // BUG-12 FIX: Reset override flag for freshly opened item
+            editSafetyStockManualOverride = false;
 
             document.getElementById('editModalIdHeader').innerText = id;
             document.getElementById('editModalSpinner').style.display = 'block';
@@ -994,12 +1021,22 @@
         async function toggleAlertSelected(id, btnElem) {
             try {
                 btnElem.style.pointerEvents = 'none';
+                
+                // BUG-03 FIX: Retrieve Anti-Forgery Token from hidden input
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
                 const formData = new URLSearchParams();
                 formData.append('id', id);
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
 
                 const response = await fetch('/MasterData/ToggleAlert', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        ...(token ? { 'RequestVerificationToken': token } : {})
+                    },
                     body: formData.toString()
                 });
                 const data = await response.json();
@@ -1033,18 +1070,26 @@
             return Math.round(leadTimeNeed * safetyFactor);
         }
 
-        function recalcAddSafetyStock() {
-            var need = document.getElementById("addQtyNeedYear").value;
-            var lt = document.getElementById("addLtPerMonth").value;
-            var freq = document.getElementById("addFrequency").value;
-            document.getElementById("addSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+        // BUG-12 FIX: Only recalculate safety stock if user has not manually overwritten the value
+        function recalcAddSafetyStock(force) {
+            if (!addSafetyStockManualOverride || force) {
+                var need = document.getElementById("addQtyNeedYear").value;
+                var lt = document.getElementById("addLtPerMonth").value;
+                var freq = document.getElementById("addFrequency").value;
+                document.getElementById("addSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+                if (force) addSafetyStockManualOverride = false;
+            }
         }
 
-        function recalcEditSafetyStock() {
-            var need = document.getElementById("editQtyNeedYear").value;
-            var lt = document.getElementById("editLtPerMonth").value;
-            var freq = document.getElementById("editFrequency").value;
-            document.getElementById("editSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+        // BUG-12 FIX: Only recalculate safety stock if user has not manually overwritten the value
+        function recalcEditSafetyStock(force) {
+            if (!editSafetyStockManualOverride || force) {
+                var need = document.getElementById("editQtyNeedYear").value;
+                var lt = document.getElementById("editLtPerMonth").value;
+                var freq = document.getElementById("editFrequency").value;
+                document.getElementById("editSafetyStock").value = calcSafetyStockFormula(need, lt, freq);
+                if (force) editSafetyStockManualOverride = false;
+            }
         }
 
         const availableProductionLines = [
@@ -1249,6 +1294,13 @@
                         card.innerHTML = newCard.innerHTML;
                     }
 
+                    // BUG-09 FIX: Resync batch barcode selection badge & master checkbox after AJAX reload
+                    if (typeof updateBatchBarcodeCount === 'function') {
+                        updateBatchBarcodeCount();
+                    }
+                    var masterChk = document.getElementById('selectAllPartsChk');
+                    if (masterChk) masterChk.checked = false;
+
                     card.style.opacity = '1';
                     history.pushState(null, '', url);
                 })
@@ -1259,9 +1311,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // BUG-12 FIX: Track manual safety stock inputs so auto-recalculation doesn't overwrite user edits
+            var addSafeElem = document.getElementById("addSafetyStock");
+            if (addSafeElem) {
+                addSafeElem.addEventListener('input', function() {
+                    addSafetyStockManualOverride = true;
+                });
+            }
+            var editSafeElem = document.getElementById("editSafetyStock");
+            if (editSafeElem) {
+                editSafeElem.addEventListener('input', function() {
+                    editSafetyStockManualOverride = true;
+                });
+            }
+
             var addModalElem = document.getElementById('addModal');
             if (addModalElem) {
                 addModalElem.addEventListener('show.bs.modal', async function () {
+                    addSafetyStockManualOverride = false;
                     var idInput = document.getElementById('addPartNumberInput');
                     if (idInput && !idInput.value.trim()) {
                         try {
@@ -1458,7 +1525,8 @@
         renderLabelBarcodes(items);
         var modalElem = document.getElementById('barcodeLabelModal');
         if (modalElem) {
-            var modal = new bootstrap.Modal(modalElem);
+            // BUG-08 FIX: Reuse existing instance to prevent backdrop stacking and memory leaks
+            var modal = bootstrap.Modal.getOrCreateInstance(modalElem);
             modal.show();
         }
     }
@@ -1487,7 +1555,8 @@
         renderLabelBarcodes(items);
         var modalElem = document.getElementById('barcodeLabelModal');
         if (modalElem) {
-            var modal = new bootstrap.Modal(modalElem);
+            // BUG-08 FIX: Reuse existing instance to prevent backdrop stacking and memory leaks
+            var modal = bootstrap.Modal.getOrCreateInstance(modalElem);
             modal.show();
         }
     }

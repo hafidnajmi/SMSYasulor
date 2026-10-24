@@ -121,6 +121,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.Name = "UPMS.Antiforgery";
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.HeaderName = "RequestVerificationToken";
 });
 
 // Cookie Authentication
