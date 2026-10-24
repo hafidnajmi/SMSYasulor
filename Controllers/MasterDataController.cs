@@ -48,6 +48,7 @@ namespace UPMS.Web.Controllers
             ViewBag.Category = category;
             ViewBag.Frequency = frequency;
             ViewBag.Line = line;
+            ViewBag.StockStatus = stockStatus;
             // BUG-07 FIX: Perform role & permission query asynchronously here in controller
             // instead of doing a blocking synchronous DbContext query inside the Razor View.
             var curUser = User.Identity?.Name;

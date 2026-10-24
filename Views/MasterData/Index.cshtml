@@ -223,7 +223,8 @@
                     stockStatus = ViewBag.StockStatus as string
                 });
             }
-            <a href="@exportUrl"
+            <a id="exportExcelBtn"
+               href="@exportUrl"
                onclick="return executeSecureExport(this.href, 'Spareparts Catalog');"
                class="btn btn-ems-outline btn-sm">
                 <i class="bi bi-file-earmark-excel me-1 text-success"></i>Export Excel
@@ -240,7 +241,7 @@
 }
 
 <!-- Header KPI Cards (EMS Theme Responsive 2x2 Mobile Grid - Consistent Heights) -->
-<div class="row g-2 g-md-3 mb-4">
+<div class="row g-2 g-md-3 mb-4" id="kpi-cards-row">
     <div class="col-6 col-md-3">
         <div class="ems-kpi-card ems-kpi-danger h-100 d-flex flex-column justify-content-between @(currentStatus == "below" ? "border border-2 border-danger shadow-sm bg-white" : "")" onclick="filterByStockStatus('below')" style="cursor:pointer; transition: all 0.2s ease; min-height:86px;" title="Klik untuk menampilkan sparepart Below Safety Stock">
             <div class="ems-kpi-title text-danger text-nowrap d-flex justify-content-between align-items-center">
@@ -287,7 +288,7 @@
 <div class="ems-filter-card mb-4">
     <div class="ems-filter-header">
         <span><i class="bi bi-funnel me-1 text-primary"></i>Filter &amp; Search Spareparts</span>
-        <span class="text-muted small">@Model?.TotalCount.ToString("N0") items</span>
+        <span class="text-muted small" id="filter-items-count">@Model?.TotalCount.ToString("N0") items</span>
     </div>
     <div class="p-3">
         <form method="get" asp-action="Index" class="row g-2 align-items-end" id="filterForm">
@@ -482,6 +483,7 @@
                                             <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
                                             <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
                                             <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                                            <input type="hidden" name="stockStatusFilter" value="@ViewBag.StockStatus" />
                                             <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
                                             <button type="submit" class="btn-ems-icon-action text-danger" title="Delete">
                                                 <i class="bi bi-trash"></i>
@@ -539,6 +541,7 @@
                 <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
                 <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
                 <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                <input type="hidden" name="stockStatusFilter" value="@ViewBag.StockStatus" />
                 <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
                 <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
                     <h6 class="modal-title fw-normal mb-0" style="font-size:13px;"><i class="bi bi-plus-circle me-2"></i>Add New Sparepart</h6>
@@ -745,6 +748,7 @@
                 <input type="hidden" name="categoryFilter" value="@ViewBag.Category" />
                 <input type="hidden" name="frequencyFilter" value="@ViewBag.Frequency" />
                 <input type="hidden" name="lineFilter" value="@ViewBag.Line" />
+                <input type="hidden" name="stockStatusFilter" value="@ViewBag.StockStatus" />
                 <input type="hidden" name="page" value="@(Model?.PageNumber ?? 1)" />
                 <div class="modal-header py-2 px-3" style="background:#0F4C81; color:#fff; border-radius:0;">
                     <h6 class="modal-title fw-normal mb-0" style="font-size:13px;">
@@ -1292,6 +1296,34 @@
                     var newCard = doc.getElementById('spareparts-table-card');
                     if (newCard) {
                         card.innerHTML = newCard.innerHTML;
+                    }
+
+                    // Sync KPI cards row active border & values
+                    var newKpi = doc.getElementById('kpi-cards-row');
+                    var oldKpi = document.getElementById('kpi-cards-row');
+                    if (newKpi && oldKpi) {
+                        oldKpi.innerHTML = newKpi.innerHTML;
+                    }
+
+                    // Sync items count badge in filter card header
+                    var newCount = doc.getElementById('filter-items-count');
+                    var oldCount = document.getElementById('filter-items-count');
+                    if (newCount && oldCount) {
+                        oldCount.innerHTML = newCount.innerHTML;
+                    }
+
+                    // Sync stockStatus input in filterForm
+                    var newStockStatus = doc.getElementById('stockStatusInput');
+                    var oldStockStatus = document.getElementById('stockStatusInput');
+                    if (newStockStatus && oldStockStatus) {
+                        oldStockStatus.value = newStockStatus.value;
+                    }
+
+                    // Sync Export Excel button href
+                    var newExport = doc.getElementById('exportExcelBtn');
+                    var oldExport = document.getElementById('exportExcelBtn');
+                    if (newExport && oldExport) {
+                        oldExport.href = newExport.href;
                     }
 
                     // BUG-09 FIX: Resync batch barcode selection badge & master checkbox after AJAX reload
