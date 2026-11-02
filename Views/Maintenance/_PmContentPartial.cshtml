@@ -25,7 +25,7 @@
 
 <!-- Status Summary KPI Cards -->
 <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="P" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-p shadow-sm @(ViewBag.SelectedStatus == "P" ? "border-dark border-2" : "")"
            title="Klik untuk filter status Planning">
@@ -33,7 +33,7 @@
             <span class="pm-kpi-count">@ViewBag.PlanningCount</span>
         </a>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="E" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-e shadow-sm @(ViewBag.SelectedStatus == "E" ? "border-success border-2" : "")"
            title="Klik untuk filter status Execute">
@@ -41,7 +41,7 @@
             <span class="pm-kpi-count">@ViewBag.ExecuteCount</span>
         </a>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="R" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-r shadow-sm @(ViewBag.SelectedStatus == "R" ? "border-info border-2" : "")"
            title="Klik untuk filter status Revision">
@@ -49,12 +49,20 @@
             <span class="pm-kpi-count">@ViewBag.RevisionCount</span>
         </a>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="M" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-m shadow-sm @(ViewBag.SelectedStatus == "M" ? "border-warning border-2" : "")"
            title="Klik untuk filter status Missed">
             <span class="pm-kpi-title">Missed</span>
             <span class="pm-kpi-count">@ViewBag.MissedCount</span>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="O" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+           class="card pm-kpi-card pm-kpi-card-o shadow-sm @(ViewBag.SelectedStatus == "O" ? "border-dark border-2" : "")"
+           title="Klik untuk filter status Overhoul">
+            <span class="pm-kpi-title">Overhoul</span>
+            <span class="pm-kpi-count">@ViewBag.OverhaulCount</span>
         </a>
     </div>
 </div>
@@ -153,10 +161,12 @@
                 <label class="form-label small text-muted mb-1">Status PM</label>
                 <select name="status" class="form-select form-select-sm" onchange="submitPmFilterForm()" style="border-radius: 0px !important;">
                     <option value="">Semua Status</option>
-                    <option value="P" selected="@(ViewBag.SelectedStatus == "P")">P - Planning</option>
-                    <option value="E" selected="@(ViewBag.SelectedStatus == "E")">E - Execute</option>
-                    <option value="R" selected="@(ViewBag.SelectedStatus == "R")">R - Revision</option>
-                    <option value="M" selected="@(ViewBag.SelectedStatus == "M")">M - Missed</option>
+                    <option value="P" selected="@(ViewBag.SelectedStatus == "P")">Plan</option>
+                    <option value="R" selected="@(ViewBag.SelectedStatus == "R")">Revision</option>
+                    <option value="E_R" selected="@(ViewBag.SelectedStatus == "E_R")">Revision / Execute</option>
+                    <option value="M" selected="@(ViewBag.SelectedStatus == "M")">Plan / Missed</option>
+                    <option value="E_P" selected="@(ViewBag.SelectedStatus == "E_P")">Plan / Execute</option>
+                    <option value="O" selected="@(ViewBag.SelectedStatus == "O")">Overhoul</option>
                 </select>
             </div>
 
@@ -216,6 +226,29 @@
                 </div>
             </div>
 
+            <!-- Legend Bar for PM Status Colors with User's Exact Palette (50/50 Slanted Divider) -->
+            <div class="px-3 py-2 bg-light border-bottom d-flex flex-wrap align-items-center gap-2" style="font-size: 11px;">
+                <span class="fw-bold text-secondary me-1"><i class="bi bi-info-circle me-1"></i>Status PM:</span>
+                <span class="pm-tag pm-tag-p m-0" style="cursor:default; min-width: 90px; height: 25px;" title="Plan (Abu-Abu #e5e2de)">
+                    <span class="pm-legend-title">Plan</span>
+                </span>
+                <span class="pm-tag pm-tag-r m-0" style="cursor:default; min-width: 105px; height: 25px;" title="Revision (Biru #005497)">
+                    <span class="pm-legend-title">Revision</span>
+                </span>
+                <span class="pm-tag pm-tag-e-r m-0" style="cursor:default; min-width: 155px; height: 25px;" title="Revision / Execute (Biru - Hijau)">
+                    <span class="pm-legend-title">Revision / Execute</span>
+                </span>
+                <span class="pm-tag pm-tag-m-p m-0" style="cursor:default; min-width: 135px; height: 25px;" title="Plan / Missed (Abu-Abu - Merah)">
+                    <span class="pm-legend-title">Plan / Missed</span>
+                </span>
+                <span class="pm-tag pm-tag-e-p m-0" style="cursor:default; min-width: 135px; height: 25px;" title="Plan / Execute (Abu-Abu - Hijau)">
+                    <span class="pm-legend-title">Plan / Execute</span>
+                </span>
+                <span class="pm-tag pm-tag-o m-0" style="cursor:default; min-width: 110px; height: 25px;" title="Overhoul (Kuning #FFD300)">
+                    <span class="pm-legend-title">Overhoul</span>
+                </span>
+            </div>
+
             <!-- Calendar Grid (With Mobile Scroll Wrapper) -->
             <div class="pm-calendar-wrapper">
                 <div class="pm-calendar-grid">
@@ -260,33 +293,23 @@
                             <!-- Render PM Tags on Date -->
                             @foreach (var pm in dayEvents)
                             {
-                                string statusClass = pm.Status.ToUpper() switch
-                                {
-                                    "P" => "pm-tag-p",
-                                    "E" => "pm-tag-e",
-                                    "R" => "pm-tag-r",
-                                    "M" => "pm-tag-m",
-                                    _ => "pm-tag-p"
-                                };
-
+                                string statusClass = pm.StatusBadgeCssClass;
                                 int spCount = sparepartCounts.TryGetValue(pm.Id, out int cnt) ? cnt : 0;
 
-                                <div class="pm-tag @statusClass d-flex align-items-center justify-content-between" 
+                                <div class="pm-tag @statusClass" 
                                      draggable="@(canEditPm ? "true" : "false")"
                                      ondragstart="@(canEditPm ? $"onPmDragStart(event, {pm.Id}, '{JavaScriptEncoder.Default.Encode(pm.Title)}', '{pm.ScheduledDate.ToString("yyyy-MM-dd")}')" : "return false;")"
-                                     onclick="openEditModal(@pm.Id, '@JavaScriptEncoder.Default.Encode(pm.Title)', '@pm.ScheduledDate.ToString("yyyy-MM-dd")', '@pm.Status', '@pm.MachineId', '@JavaScriptEncoder.Default.Encode(pm.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(pm.UpArea ?? "")')"
+                                     onclick="openEditModal(@pm.Id, '@JavaScriptEncoder.Default.Encode(pm.Title)', '@pm.ScheduledDate.ToString("yyyy-MM-dd")', '@pm.Status', '@pm.MachineId', '@JavaScriptEncoder.Default.Encode(pm.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(pm.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(pm.UpArea ?? "")', '@pm.SourceStatus')"
                                      style="cursor: pointer;"
-                                     title="@(canEditPm ? "Seret kartu ini ke tanggal lain untuk memindahkan/duplikasi | " : "Klik untuk melihat detail PM | ")Line: @pm.Title | Mesin: @pm.MachineName @(spCount > 0 ? $"| Sparepart: {spCount} Part" : "")">
-                                    <div class="d-flex align-items-center text-truncate">
-                                        @if (canEditPm)
-                                        {
-                                            <i class="bi bi-grip-vertical text-secondary me-1 opacity-75" style="font-size:11px;"></i>
-                                        }
-                                        <span class="text-truncate">@pm.Title</span>
-                                    </div>
+                                     title="@(canEditPm ? "Seret kartu ini ke tanggal lain untuk revisi/pindah/duplikasi | " : "Klik untuk melihat detail PM | ")Line: @pm.Title | Mesin: @pm.MachineName | Status: @pm.StatusDisplayLabel @(spCount > 0 ? $"| Sparepart: {spCount} Part" : "")">
+                                    @if (canEditPm)
+                                    {
+                                        <i class="bi bi-grip-vertical opacity-40 position-absolute start-0 ms-1" style="font-size:10px; z-index:2;"></i>
+                                    }
+                                    <span class="pm-tag-center-title text-truncate">@pm.Title</span>
                                     @if (spCount > 0)
                                     {
-                                        <span class="badge bg-dark text-white rounded-pill px-1 ms-1 flex-shrink-0" style="font-size:9px;" title="@spCount sparepart terdaftar">
+                                        <span class="badge bg-dark text-white rounded-pill px-1 position-absolute end-0 me-1" style="font-size:8px; line-height:1; z-index:2;" title="@spCount sparepart terdaftar">
                                             <i class="bi bi-box-seam"></i> @spCount
                                         </span>
                                     }
@@ -341,32 +364,24 @@
                             int no = 1;
                             foreach (var item in Model)
                             {
-                                string statusBadgeClass = item.Status.ToUpper() switch
-                                {
-                                    "P" => "pm-tag-p",
-                                    "E" => "pm-tag-e",
-                                    "R" => "pm-tag-r",
-                                    "M" => "pm-tag-m",
-                                    _ => "pm-tag-p"
-                                };
-
                                 <tr>
                                     <td>@(no++)</td>
                                     <td class="fw-bold">@item.ScheduledDate.ToString("yyyy-MM-dd")</td>
                                     <td class="fw-bold text-primary">@item.Title</td>
                                     <td>@(item.MachineName ?? "-")</td>
                                     <td class="text-center">
-                                        <span class="pm-tag @statusBadgeClass d-inline-block px-3 py-1 text-center">
-                                            <span>
-                                                @(item.Status.ToUpper() switch {
-                                                    "P" => "Planning",
-                                                    "E" => "Execute",
-                                                    "R" => "Revision",
-                                                    "M" => "Missed",
-                                                    _ => item.Status
-                                                })
-                                            </span>
-                                        </span>
+                                        @if (item.IsDualStatus)
+                                        {
+                                            <div class="pm-tag @item.StatusBadgeCssClass mx-auto" style="max-width: 170px; height: 25px;" title="@item.StatusDisplayLabel">
+                                                <span class="pm-tag-center-title text-truncate">@item.StatusDisplayLabel</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="pm-tag @item.StatusBadgeCssClass mx-auto" style="max-width: 130px; height: 25px;" title="@item.StatusDisplayLabel">
+                                                <span class="pm-tag-center-title text-truncate">@item.StatusDisplayLabel</span>
+                                            </div>
+                                        }
                                     </td>
                                     <td>@(item.Technician ?? "-")</td>
                                     <td>@(item.Notes ?? "-")</td>
@@ -374,7 +389,7 @@
                                         @if (canEditPm)
                                         {
                                             <button class="btn btn-outline-primary btn-sm p-1 px-2" title="Edit"
-                                                    onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(item.UpArea ?? "")')">
+                                                    onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(item.UpArea ?? "")', '@item.SourceStatus')">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                             <button class="btn btn-outline-danger btn-sm p-1 px-2 ms-1" title="Hapus"
@@ -385,7 +400,7 @@
                                         else
                                         {
                                             <button class="btn btn-outline-info btn-sm p-1 px-2" title="Lihat Detail PM"
-                                                    onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(item.UpArea ?? "")')">
+                                                    onclick="openEditModal(@item.Id, '@JavaScriptEncoder.Default.Encode(item.Title)', '@item.ScheduledDate.ToString("yyyy-MM-dd")', '@item.Status', '@item.MachineId', '@JavaScriptEncoder.Default.Encode(item.MachineName ?? "")', '@JavaScriptEncoder.Default.Encode(item.Technician ?? "")', '@JavaScriptEncoder.Default.Encode(item.Notes ?? "")', '@JavaScriptEncoder.Default.Encode(item.UpArea ?? "")', '@item.SourceStatus')">
                                                 <i class="bi bi-eye"></i> Detail
                                             </button>
                                         }
@@ -430,28 +445,28 @@
                                 <input class="form-check-input chk-series-UP1" type="checkbox" id="chk_UP1_0" checked onchange="togglePmSeries('UP1', 0, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP1_0">
                                     <span>Planning</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#64748B; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#e5e2de; border:1px solid #b8b4ae; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP1" type="checkbox" id="chk_UP1_1" checked onchange="togglePmSeries('UP1', 1, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP1_1">
                                     <span>Execute / Realization</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#10B981; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#00e436; border:1px solid #00b82b; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP1" type="checkbox" id="chk_UP1_2" checked onchange="togglePmSeries('UP1', 2, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP1_2">
                                     <span>Missed</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#EF4444; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#fd4800; border:1px solid #c93900; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP1" type="checkbox" id="chk_UP1_3" checked onchange="togglePmSeries('UP1', 3, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP1_3">
                                     <span>Revision</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#3B82F6; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#005497; border:1px solid #003e70; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
@@ -508,28 +523,28 @@
                                 <input class="form-check-input chk-series-UP2" type="checkbox" id="chk_UP2_0" checked onchange="togglePmSeries('UP2', 0, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP2_0">
                                     <span>Planning</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#64748B; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#e5e2de; border:1px solid #b8b4ae; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP2" type="checkbox" id="chk_UP2_1" checked onchange="togglePmSeries('UP2', 1, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP2_1">
                                     <span>Execute / Realization</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#10B981; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#00e436; border:1px solid #00b82b; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP2" type="checkbox" id="chk_UP2_2" checked onchange="togglePmSeries('UP2', 2, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP2_2">
                                     <span>Missed</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#EF4444; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#fd4800; border:1px solid #c93900; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
                                 <input class="form-check-input chk-series-UP2" type="checkbox" id="chk_UP2_3" checked onchange="togglePmSeries('UP2', 3, this.checked)" />
                                 <label class="form-check-label d-flex align-items-center justify-content-between" for="chk_UP2_3">
                                     <span>Revision</span>
-                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#3B82F6; display:inline-block;"></span>
+                                    <span style="width:10px; height:10px; border-radius:50%; background-color:#005497; border:1px solid #003e70; display:inline-block;"></span>
                                 </label>
                             </div>
                             <div class="multiselect-option option-item">
@@ -635,16 +650,16 @@
             const revisionData = rawData.map(d => d.Revision);
             const complianceData = rawData.map(d => {
                 if (d.CompliancePct !== null && d.CompliancePct !== undefined) return d.CompliancePct;
-                const denom = d.Planning > 0 ? d.Planning : d.TotalPlanned;
+                const denom = d.TotalPlanned > 0 ? d.TotalPlanned : (d.Planning + (d.Revision || 0));
                 return denom > 0 ? Math.round((d.Execute / denom) * 100 * 10) / 10 : null;
             });
             const targetData = Array(12).fill(90);
 
             return [
-                { type: 'bar', label: 'PLANNING', data: planData, backgroundColor: '#64748B', borderColor: '#475569', borderWidth: 1.5, yAxisID: 'y' },
-                { type: 'bar', label: 'EXECUTE', data: executeData, backgroundColor: '#10B981', borderColor: '#059669', borderWidth: 1.5, yAxisID: 'y' },
-                { type: 'bar', label: 'MISSED', data: missedData, backgroundColor: '#EF4444', borderColor: '#DC2626', borderWidth: 1.5, yAxisID: 'y' },
-                { type: 'bar', label: 'REVISION', data: revisionData, backgroundColor: '#3B82F6', borderColor: '#2563EB', borderWidth: 1.5, yAxisID: 'y' },
+                { type: 'bar', label: 'PLANNING', data: planData, backgroundColor: '#e5e2de', borderColor: '#b8b4ae', borderWidth: 1.5, yAxisID: 'y' },
+                { type: 'bar', label: 'EXECUTE', data: executeData, backgroundColor: '#00e436', borderColor: '#00b82b', borderWidth: 1.5, yAxisID: 'y' },
+                { type: 'bar', label: 'MISSED', data: missedData, backgroundColor: '#fd4800', borderColor: '#c93900', borderWidth: 1.5, yAxisID: 'y' },
+                { type: 'bar', label: 'REVISION', data: revisionData, backgroundColor: '#005497', borderColor: '#003e70', borderWidth: 1.5, yAxisID: 'y' },
                 { type: 'line', id: 'complianceLine', label: 'COMPLIANCE', data: complianceData, borderColor: '#D97706', backgroundColor: '#F59E0B', borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#D97706', pointBorderWidth: 2, yAxisID: 'y1', tension: 0.1 },
                 { type: 'line', label: 'TARGET (90%)', data: targetData, borderColor: '#DC2626', borderWidth: 2.5, borderDash: [6,3], pointRadius: 0, fill: false, yAxisID: 'y1' }
             ];

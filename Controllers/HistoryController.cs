@@ -26,7 +26,7 @@ namespace UPMS.Web.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(string tab = "masuk", int? year = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1)
+        public async Task<IActionResult> Index(string tab = "masuk", int? year = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null, string? line = null, int page = 1)
         {
             var username = User.Identity?.Name;
             bool canRiwayat = await RbacHelper.HasPermissionAsync(_db, username, u => u.CanRiwayat);
@@ -42,10 +42,69 @@ namespace UPMS.Web.Controllers
             ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
             ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.Search = search;
+            ViewBag.Line = line;
+
+            var rawLines = await _db.MasterDatas
+                .Where(m => !m.IsDeleted && !string.IsNullOrEmpty(m.Line))
+                .Select(m => m.Line!)
+                .ToListAsync();
+
+            var lineSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var r in rawLines)
+            {
+                if (string.IsNullOrWhiteSpace(r)) continue;
+                var parts = r.Split(new[] { ',', ';', '/', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
+                {
+                    var trimmed = part.Trim();
+                    if (!string.IsNullOrEmpty(trimmed)) lineSet.Add(trimmed);
+                }
+            }
+
+            var machineLines = await _db.MachineMasters
+                .Where(m => !string.IsNullOrEmpty(m.Line))
+                .Select(m => m.Line!)
+                .ToListAsync();
+
+            foreach (var ml in machineLines)
+            {
+                if (string.IsNullOrWhiteSpace(ml)) continue;
+                var parts = ml.Split(new[] { ',', ';', '/', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
+                {
+                    var trimmed = part.Trim();
+                    if (!string.IsNullOrEmpty(trimmed)) lineSet.Add(trimmed);
+                }
+            }
+
+            var bkLines = await _db.BarangKeluars
+                .Where(b => !string.IsNullOrEmpty(b.Line))
+                .Select(b => b.Line!)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var bkl in bkLines)
+            {
+                if (string.IsNullOrWhiteSpace(bkl)) continue;
+                var parts = bkl.Split(new[] { ',', ';', '/', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
+                {
+                    var trimmed = part.Trim();
+                    if (!string.IsNullOrEmpty(trimmed)) lineSet.Add(trimmed);
+                }
+            }
+
+            var lines = lineSet.OrderBy(l => l).ToList();
+            if (!lines.Any())
+            {
+                lines = new List<string> { "B01", "B02", "B03", "B04", "B05", "B06", "B24", "B25", "PACKING", "UTILITY" };
+            }
+            ViewBag.Lines = lines;
 
             if (tab.ToLower() == "keluar")
             {
-                var keluarHistory = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, page, 50);
+                var keluarHistory = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, page, 50, line);
 
                 var machineIds = keluarHistory.Items
                     .Where(b => b.MachineId.HasValue)
@@ -73,7 +132,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportExcel(string tab = "masuk", int? year = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null)
+        public async Task<IActionResult> ExportExcel(string tab = "masuk", int? year = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null, string? line = null)
         {
             var username = User.Identity?.Name;
             bool canRiwayat = await RbacHelper.HasPermissionAsync(_db, username, u => u.CanRiwayat);
@@ -86,7 +145,7 @@ namespace UPMS.Web.Controllers
 
             if (tab.ToLower() == "keluar")
             {
-                var paged = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, 1, 10000);
+                var paged = await _inventoryService.GetBarangKeluarHistoryAsync(year, startDate, endDate, search, 1, 10000, line);
 
                 var machineIds = paged.Items
                     .Where(b => b.MachineId.HasValue)

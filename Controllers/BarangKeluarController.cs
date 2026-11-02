@@ -108,7 +108,7 @@ namespace UPMS.Web.Controllers
             }
             ViewBag.Lines = lines;
 
-            ViewBag.MaintenanceTypes = new List<string> { "PM", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
+            ViewBag.MaintenanceTypes = new List<string> { "PM", "Overhoul", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
 
             return View(history);
         }

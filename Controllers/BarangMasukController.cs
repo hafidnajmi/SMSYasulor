@@ -89,7 +89,8 @@ namespace UPMS.Web.Controllers
                     x.Id,
                     x.Item,
                     Bin = x.Bin ?? "-",
-                    Brand = x.Brand ?? "-"
+                    Brand = x.Brand ?? "-",
+                    UnitPrice = x.CurrentUnitPrice ?? 0m
                 })
                 .ToListAsync();
 

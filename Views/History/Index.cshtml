@@ -47,7 +47,7 @@
         </div>
     </div>
     <div>
-        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&search=@ViewBag.Search', 'Transaction Logs');" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-radius: 0px !important;">
+        <a href="#" onclick="return executeSecureExport('/History/ExportExcel?tab=@tab&year=@ViewBag.Year&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&search=@ViewBag.Search&line=@ViewBag.Line', 'Transaction Logs');" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-radius: 0px !important;">
             <i class="bi bi-file-earmark-excel me-1 text-success"></i> Export Excel
         </a>
     </div>
@@ -56,12 +56,12 @@
 <!-- Navigation Tabs -->
 <ul class="nav nav-tabs mb-3" style="border-bottom: 2px solid #E2E8F0;">
     <li class="nav-item">
-        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
+        <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search&line=@ViewBag.Line">
             <i class="bi bi-box-arrow-in-down text-success me-1"></i> Barang Masuk History
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search">
+        <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search&line=@ViewBag.Line">
             <i class="bi bi-box-arrow-up-right text-danger me-1"></i> Barang Keluar History
         </a>
     </li>
@@ -74,19 +74,19 @@
     </div>
     <form method="get" asp-action="Index" class="row g-2 align-items-end">
         <input type="hidden" name="tab" value="@tab" />
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-lg-3 col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1">Search Query</label>
             <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Item name, BIN, PIC..." style="border-radius: 0px !important;" />
         </div>
-        <div class="col-6 col-md-2">
+        <div class="col-6 col-lg-2 col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>From Date</label>
             <input type="date" name="startDate" value="@ViewBag.StartDate" class="form-control form-control-sm" style="border-radius: 0px !important;" />
         </div>
-        <div class="col-6 col-md-2">
+        <div class="col-6 col-lg-2 col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1"><i class="bi bi-calendar-event me-1"></i>To Date</label>
             <input type="date" name="endDate" value="@ViewBag.EndDate" class="form-control form-control-sm" style="border-radius: 0px !important;" />
         </div>
-        <div class="col-6 col-md-2">
+        <div class="col-6 col-lg-1 col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1">Filter Year</label>
             <select name="year" class="form-select form-select-sm" style="border-radius: 0px !important;">
                 <option value="">[All Years]</option>
@@ -96,7 +96,20 @@
                 }
             </select>
         </div>
-        <div class="col-6 col-md-3 d-flex gap-1 hist-filter-btn-group">
+        <div class="col-6 col-lg-2 col-md-4">
+            <label class="form-label small fw-bold text-secondary mb-1">Filter Line</label>
+            <select name="line" class="form-select form-select-sm" style="border-radius: 0px !important;" @(tab == "masuk" ? "disabled title=\"Filter Line hanya berlaku untuk Barang Keluar\"" : "")>
+                <option value="">@(tab == "masuk" ? "[N/A for Masuk]" : "[All Lines]")</option>
+                @if (tab != "masuk" && ViewBag.Lines is List<string> lines)
+                {
+                    foreach (var l in lines)
+                    {
+                        <option value="@l" selected="@(ViewBag.Line == l ? "selected" : null)">@l</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-6 col-lg-2 col-md-4 d-flex gap-1 hist-filter-btn-group">
             <button type="submit" class="btn btn-ems-primary btn-sm flex-fill fw-semibold" style="border-radius: 0px !important;"><i class="bi bi-search me-1"></i>Filter</button>
             <a href="/History?tab=@tab" class="btn btn-outline-secondary btn-sm" title="Reset Filter" style="border-radius: 0px !important;"><i class="bi bi-arrow-counterclockwise"></i></a>
         </div>
@@ -126,6 +139,9 @@
                             <th style="font-weight: 600;">BIN</th>
                             <th style="font-weight: 600;">ITEM NAME</th>
                             <th class="text-end" style="font-weight: 600;">QTY RECEIVED (+)</th>
+                            <th style="font-weight: 600;">PU / PO NUMBER</th>
+                            <th class="text-end" style="font-weight: 600;">HARGA SATUAN</th>
+                            <th class="text-end" style="font-weight: 600;">TOTAL HARGA</th>
                             <th style="font-weight: 600;">PIC</th>
                             <th style="font-weight: 600;">SUPPLIER</th>
                             <th style="font-weight: 600;">STATUS</th>
@@ -145,6 +161,9 @@
                                     <td><span class="badge bg-light text-dark font-monospace border" style="border-radius: 0px !important;">@(item.Bin ?? "-")</span></td>
                                     <td class="fw-semibold text-dark">@item.ItemName</td>
                                     <td class="text-end text-success fw-bold">+@item.Qty</td>
+                                    <td><span class="badge bg-light text-dark font-monospace border" style="border-radius: 0px !important;">@(!string.IsNullOrEmpty(item.PuNumber) ? item.PuNumber : (!string.IsNullOrEmpty(item.PoNumber) ? item.PoNumber : "-"))</span></td>
+                                    <td class="text-end font-monospace">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + item.UnitPrice.Value.ToString("N0") : "-")</td>
+                                    <td class="text-end font-monospace fw-bold text-success">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + (item.UnitPrice.Value * item.Qty).ToString("N0") : "-")</td>
                                     <td class="small">@(item.Pic ?? "-")</td>
                                     <td class="small text-secondary">@(item.Supplier ?? "-")</td>
                                     <td>
@@ -185,7 +204,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-4">Tidak ada log transaksi barang masuk ditemukan.</td>
+                                <td colspan="13" class="text-center text-muted py-4">Tidak ada log transaksi barang masuk ditemukan.</td>
                             </tr>
                         }
                     </tbody>
@@ -218,10 +237,22 @@
                                 <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px; border-radius: 0px !important;">@(item.Bin ?? "-")</span>
                             </div>
                             <div class="col-6 mt-1">
+                                <span class="text-muted d-block" style="font-size: 11px;">PU / PO Number:</span>
+                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px; border-radius: 0px !important;">@(!string.IsNullOrEmpty(item.PuNumber) ? item.PuNumber : (!string.IsNullOrEmpty(item.PoNumber) ? item.PoNumber : "-"))</span>
+                            </div>
+                            <div class="col-6 mt-1 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">Harga Satuan:</span>
+                                <span class="font-monospace text-dark" style="font-size: 12px;">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + item.UnitPrice.Value.ToString("N0") : "-")</span>
+                            </div>
+                            <div class="col-6 mt-1">
                                 <span class="text-muted d-block" style="font-size: 11px;">PIC Technician:</span>
                                 <span class="text-dark fw-medium" style="font-size: 12px;">@(item.Pic ?? "-")</span>
                             </div>
                             <div class="col-6 mt-1 text-end">
+                                <span class="text-muted d-block" style="font-size: 11px;">Total Harga:</span>
+                                <span class="font-monospace fw-bold text-success" style="font-size: 12px;">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + (item.UnitPrice.Value * item.Qty).ToString("N0") : "-")</span>
+                            </div>
+                            <div class="col-12 mt-1">
                                 <span class="text-muted d-block" style="font-size: 11px;">Supplier:</span>
                                 <span class="text-secondary" style="font-size: 12px;">@(item.Supplier ?? "-")</span>
                             </div>
@@ -264,19 +295,19 @@
                 <span class="small text-muted" style="font-size: 11px;">Hal @masukModel.PageNumber dari @masukModel.TotalPages (@masukModel.TotalCount total)</span>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(masukModel.PageNumber <= 1 ? "disabled" : "")">
-                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line"><i class="bi bi-chevron-left"></i></a>
                     </li>
                     @for (int p = 1; p <= masukModel.TotalPages; p++)
                     {
                         if (p == 1 || p == masukModel.TotalPages || Math.Abs(p - masukModel.PageNumber) <= 2)
                         {
                             <li class="page-item @(p == masukModel.PageNumber ? "active" : "")">
-                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line">@p</a>
                             </li>
                         }
                     }
                     <li class="page-item @(masukModel.PageNumber >= masukModel.TotalPages ? "disabled" : "")">
-                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=masuk&page=@(masukModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line"><i class="bi bi-chevron-right"></i></a>
                     </li>
                 </ul>
             </div>
@@ -458,19 +489,19 @@
                 <span class="small text-muted" style="font-size: 11px;">Hal @keluarModel.PageNumber dari @keluarModel.TotalPages (@keluarModel.TotalCount total)</span>
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item @(keluarModel.PageNumber <= 1 ? "disabled" : "")">
-                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-left"></i></a>
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber - 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line"><i class="bi bi-chevron-left"></i></a>
                     </li>
                     @for (int p = 1; p <= keluarModel.TotalPages; p++)
                     {
                         if (p == 1 || p == keluarModel.TotalPages || Math.Abs(p - keluarModel.PageNumber) <= 2)
                         {
                             <li class="page-item @(p == keluarModel.PageNumber ? "active" : "")">
-                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year">@p</a>
+                                <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@p&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line">@p</a>
                             </li>
                         }
                     }
                     <li class="page-item @(keluarModel.PageNumber >= keluarModel.TotalPages ? "disabled" : "")">
-                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year"><i class="bi bi-chevron-right"></i></a>
+                        <a class="page-link" style="border-radius: 0px !important;" href="/History?tab=keluar&page=@(keluarModel.PageNumber + 1)&search=@ViewBag.Search&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&line=@ViewBag.Line"><i class="bi bi-chevron-right"></i></a>
                     </li>
                 </ul>
             </div>

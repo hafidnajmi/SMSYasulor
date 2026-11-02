@@ -178,10 +178,13 @@ namespace UPMS.Web.Services
             worksheet.Cell(1, 4).Value = "BIN";
             worksheet.Cell(1, 5).Value = "Nama Item";
             worksheet.Cell(1, 6).Value = "QTY";
-            worksheet.Cell(1, 7).Value = "PIC";
-            worksheet.Cell(1, 8).Value = "Supplier";
-            worksheet.Cell(1, 9).Value = "Status";
-            worksheet.Cell(1, 10).Value = "Catatan";
+            worksheet.Cell(1, 7).Value = "PU / PO Number";
+            worksheet.Cell(1, 8).Value = "Harga Satuan (IDR)";
+            worksheet.Cell(1, 9).Value = "Total Harga (IDR)";
+            worksheet.Cell(1, 10).Value = "PIC";
+            worksheet.Cell(1, 11).Value = "Supplier";
+            worksheet.Cell(1, 12).Value = "Status";
+            worksheet.Cell(1, 13).Value = "Catatan";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -192,15 +195,22 @@ namespace UPMS.Web.Services
             foreach (var item in data)
             {
                 worksheet.Cell(row, 1).Value = item.Id;
-                worksheet.Cell(row, 2).Value = item.Tanggal.ToString("yyyy-MM-dd");
+                worksheet.Cell(row, 2).Value = item.Tanggal.ToString("yyyy-MM-dd HH:mm");
                 worksheet.Cell(row, 3).Value = item.PartNumber ?? "";
                 worksheet.Cell(row, 4).Value = item.Bin ?? "";
                 worksheet.Cell(row, 5).Value = item.ItemName;
                 worksheet.Cell(row, 6).Value = item.Qty;
-                worksheet.Cell(row, 7).Value = item.Pic ?? "";
-                worksheet.Cell(row, 8).Value = item.Supplier ?? "";
-                worksheet.Cell(row, 9).Value = item.ApprovalStatus ?? "Approved";
-                worksheet.Cell(row, 10).Value = item.ActionNote ?? item.Remarks ?? "";
+                worksheet.Cell(row, 7).Value = !string.IsNullOrEmpty(item.PuNumber) ? item.PuNumber : (item.PoNumber ?? "");
+                worksheet.Cell(row, 8).Value = item.UnitPrice ?? 0m;
+                worksheet.Cell(row, 9).Value = (item.UnitPrice ?? 0m) * item.Qty;
+                worksheet.Cell(row, 10).Value = item.Pic ?? "";
+                worksheet.Cell(row, 11).Value = item.Supplier ?? "";
+                worksheet.Cell(row, 12).Value = item.ApprovalStatus ?? "Approved";
+                worksheet.Cell(row, 13).Value = item.ActionNote ?? item.Remarks ?? "";
+
+                worksheet.Cell(row, 8).Style.NumberFormat.Format = "#,##0";
+                worksheet.Cell(row, 9).Style.NumberFormat.Format = "#,##0";
+
                 row++;
             }
 

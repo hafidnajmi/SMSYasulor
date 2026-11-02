@@ -112,63 +112,159 @@
     }
     
     /* PM Event Status Tags */
+    /* PM Event Status Tags - 50/50 Split with Slanted/Diagonal Divider */
     .pm-tag {
         display: flex;
         align-items: center;
-        gap: 0.4rem;
-        padding: 3px 8px;
+        justify-content: center;
+        position: relative;
+        padding: 0 8px;
         margin-bottom: 4px;
-        font-size: 11px;
-        font-weight: 700;
-        border-radius: 3px !important;
+        border-radius: 0 !important;
         cursor: pointer;
-        color: #000000 !important;
-        border: 1px solid rgba(0, 0, 0, 0.12);
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        height: 25px;
+        min-height: 25px;
+        box-sizing: border-box;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
+        color: #000000 !important;
+        text-shadow: none !important;
     }
     .pm-tag:hover {
         transform: translateY(-1px);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Centered Title with White Card for Calendar Line Cards (70% opacity, radius 0, centered vertically & horizontally) */
+    .pm-tag-center-title {
+        font-size: 11px;
+        font-weight: 600 !important; /* Crisp & readable for calendar line cards */
+        text-align: center;
+        letter-spacing: 0.01em;
+        max-width: calc(100% - 20px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+        z-index: 1;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.7) !important;
+        background-color: rgba(255, 255, 255, 0.7) !important;
         color: #000000 !important;
+        padding: 3px 8px;
+        border-radius: 0 !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        text-shadow: none !important;
+        filter: none !important;
+    }
+
+    /* Legend Status Bar Titles (Clean, 1 Line, NO White Card, NOT Bold as requested) */
+    .pm-legend-title {
+        font-size: 11px;
+        font-weight: 500 !important; /* Regular/Medium - NOT bold */
+        text-align: center;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+        z-index: 1;
+        line-height: 1.2;
+        display: inline-block;
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        color: #000000 !important;
+        text-shadow: none !important;
+        filter: none !important;
+    }
+    .pm-tag-r .pm-legend-title {
+        color: #ffffff !important; /* Clean white text on solid blue Revition card */
     }
     
+    /* Dual-Color Status Themes with User's Exact Palette & Slanted Divider (115deg) */
+    /* Biru = #005497 | Hijau = #00e436 | Merah = #fd4800 | Abu Abu = #e5e2de */
+
+    /* 1. Abu Abu (Planning Awal) */
     .pm-tag-p {
-        background-color: #E2E8F0 !important; /* Soft Slate Grey Card */
-        border-color: #CBD5E1 !important;
+        background-color: #e5e2de !important;
+        border: 1px solid #c8c4be !important;
         color: #000000 !important;
     }
     
-    .pm-tag-e {
-        background-color: #86EFAC !important; /* Soft Green Card */
-        border-color: #4ADE80 !important;
+    /* 2. Abu Abu - Hijau (Planning ter-execute) - 50/50 Split Diagonal */
+    .pm-tag-e-p {
+        background: linear-gradient(115deg, #e5e2de 0%, #e5e2de calc(50% - 1px), rgba(0,0,0,0.25) 50%, #00e436 calc(50% + 1px), #00e436 100%) !important;
+        border: 1px solid #00c72e !important;
         color: #000000 !important;
     }
 
+    /* 3. Biru (Revition) - Solid Biru #005497 */
     .pm-tag-r {
-        background-color: #7DD3FC !important; /* Soft Cyan/Blue Card */
-        border-color: #38BDF8 !important;
+        background: #005497 !important;
+        background-color: #005497 !important;
+        border: 1px solid #003e70 !important;
         color: #000000 !important;
     }
 
+    /* 4. Biru - Hijau (Execute dari Revisi) - 50/50 Split Diagonal */
+    .pm-tag-e-r {
+        background: linear-gradient(115deg, #005497 0%, #005497 calc(50% - 1px), rgba(255,255,255,0.35) 50%, #00e436 calc(50% + 1px), #00e436 100%) !important;
+        border: 1px solid #005497 !important;
+        color: #000000 !important;
+    }
+
+    /* 5. Abu Abu - Merah (Planning Missed) - 50/50 Split Diagonal */
+    .pm-tag-m-p {
+        background: linear-gradient(115deg, #e5e2de 0%, #e5e2de calc(50% - 1px), rgba(0,0,0,0.25) 50%, #fd4800 calc(50% + 1px), #fd4800 100%) !important;
+        border: 1px solid #fd4800 !important;
+        color: #000000 !important;
+    }
+
+    /* 6. Biru - Merah (Revisi Missed) - 50/50 Split Diagonal */
+    .pm-tag-m-r {
+        background: linear-gradient(115deg, #005497 0%, #005497 calc(50% - 1px), rgba(255,255,255,0.35) 50%, #fd4800 calc(50% + 1px), #fd4800 100%) !important;
+        border: 1px solid #fd4800 !important;
+        color: #000000 !important;
+    }
+
+    /* 7. Overhoul - Solid Kuning #FFD300 */
+    .pm-tag-o {
+        background: #FFD300 !important;
+        background-color: #FFD300 !important;
+        border: 1px solid #d4b000 !important;
+        color: #000000 !important;
+    }
+    .pm-tag-o .pm-legend-title {
+        color: #000000 !important;
+    }
+
+    /* Generic Fallbacks */
+    .pm-tag-e {
+        background: linear-gradient(115deg, #e5e2de 0%, #e5e2de calc(50% - 1px), rgba(0,0,0,0.25) 50%, #00e436 calc(50% + 1px), #00e436 100%) !important;
+        border: 1px solid #00c72e !important;
+        color: #000000 !important;
+    }
     .pm-tag-m {
-        background-color: #FF9800 !important; /* Vibrant Orange Card */
-        border-color: #F57C00 !important;
+        background: linear-gradient(115deg, #e5e2de 0%, #e5e2de calc(50% - 1px), rgba(0,0,0,0.25) 50%, #fd4800 calc(50% + 1px), #fd4800 100%) !important;
+        border: 1px solid #fd4800 !important;
         color: #000000 !important;
     }
 
-    /* KPI Cards Styling */
+    /* KPI Cards Styling with User's Exact Palette */
     .pm-kpi-card {
         padding: 0.75rem 1.1rem;
         border-radius: 0px !important;
         border: none !important;
-        border-left: 4px solid transparent !important;
+        border-left: 5px solid transparent !important;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
         cursor: pointer;
         text-decoration: none;
-        color: #ffffff !important;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -176,25 +272,67 @@
     .pm-kpi-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-        color: #ffffff !important;
-        filter: brightness(1.1);
+        filter: brightness(1.05);
     }
 
     .pm-kpi-card-p {
-        background: linear-gradient(135deg, #475569 0%, #64748B 100%) !important;
-        border-left-color: #CBD5E1 !important;
+        background: #e5e2de !important;
+        border-left-color: #99948d !important;
+        color: #1a1a1a !important;
     }
+    .pm-kpi-card-p .pm-kpi-title {
+        color: #595550 !important;
+    }
+    .pm-kpi-card-p .pm-kpi-count {
+        color: #1a1a1a !important;
+    }
+
     .pm-kpi-card-e {
-        background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
-        border-left-color: #A7F3D0 !important;
+        background: linear-gradient(135deg, #00b82b 0%, #00e436 100%) !important;
+        border-left-color: #009122 !important;
+        color: #000000 !important;
     }
+    .pm-kpi-card-e .pm-kpi-title {
+        color: rgba(0, 0, 0, 0.75) !important;
+    }
+    .pm-kpi-card-e .pm-kpi-count {
+        color: #000000 !important;
+    }
+
     .pm-kpi-card-r {
-        background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
-        border-left-color: #BFDBFE !important;
+        background: linear-gradient(135deg, #003e70 0%, #005497 100%) !important;
+        border-left-color: #002747 !important;
+        color: #ffffff !important;
     }
+    .pm-kpi-card-r .pm-kpi-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .pm-kpi-card-r .pm-kpi-count {
+        color: #ffffff !important;
+    }
+
     .pm-kpi-card-m {
-        background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%) !important;
-        border-left-color: #FECACA !important;
+        background: linear-gradient(135deg, #d43b00 0%, #fd4800 100%) !important;
+        border-left-color: #a82e00 !important;
+        color: #ffffff !important;
+    }
+    .pm-kpi-card-m .pm-kpi-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .pm-kpi-card-m .pm-kpi-count {
+        color: #ffffff !important;
+    }
+
+    .pm-kpi-card-o {
+        background: #FFD300 !important;
+        border-left-color: #d4b000 !important;
+        color: #000000 !important;
+    }
+    .pm-kpi-card-o .pm-kpi-title {
+        color: rgba(0, 0, 0, 0.75) !important;
+    }
+    .pm-kpi-card-o .pm-kpi-count {
+        color: #000000 !important;
     }
 
     .pm-kpi-title {
@@ -283,6 +421,18 @@
     .multiselect-option:hover {
         background-color: #f1f5f9;
         color: #0f172a;
+    }
+    .multiselect-option.selected {
+        background-color: #0F4C81 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+    .multiselect-option.line-single-option {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .multiselect-option.d-none-area {
+        display: none !important;
     }
     .multiselect-option .form-check-input {
         width: 15px;
@@ -473,30 +623,28 @@
                         </select>
                     </div>
 
-                    <!-- Line PM Multi-Select -->
+                    <!-- Line PM Single-Select -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Line PM <span class="text-danger">*</span></label>
+                        <input type="hidden" name="selectedLines" id="addSelectedLine" value="" required />
                         <div class="dropdown multiselect-dropdown">
-                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="addLineBtn">
+                            <button class="multiselect-button dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" onclick="toggleMultiselectMenu(this, event)" id="addLineBtn">
                                 <span id="addLineLabel" class="text-truncate">Pilih Line PM</span>
                             </button>
                             <div class="multiselect-menu p-2" style="width:100%;">
-                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
-                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari line..." onkeyup="filterMultiSelectOptions(this)" />
-                                    <div class="btn-group btn-group-sm flex-shrink-0">
-                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
-                                    </div>
+                                <div class="mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search" placeholder="Cari line..." onkeyup="filterLineOptions(this, 'add')" />
                                 </div>
-                                <div class="options-list">
+                                <div class="options-list" style="max-height: 200px; overflow-y: auto;">
                                     @foreach (var l in allLines)
                                     {
                                         var lArea = UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(l);
-                                        <div class="multiselect-option option-item add-line-item" data-up-area="@lArea">
-                                            <input class="form-check-input add-line-check" type="checkbox" name="selectedLines" value="@l" id="add_line_@l" onchange="onAddLineChanged()" />
-                                            <label class="form-check-label" for="add_line_@l">@l</label>
+                                        var isUp1 = lArea.Equals("UP1", StringComparison.OrdinalIgnoreCase);
+                                        <div class="multiselect-option option-item line-single-option add-line-item py-1 px-2 align-items-center @(isUp1 ? "" : "d-none-area")" data-up-area="@lArea" data-line="@l" onclick="selectSingleLine('add', '@l')" style="cursor: pointer; @(isUp1 ? "display: flex !important;" : "display: none !important;")">
+                                            <span class="line-name-text">@l</span>
                                         </div>
                                     }
+                                    <div class="p-2 text-muted text-center small add-line-empty" style="display:none;">Tidak ada line yang sesuai</div>
                                 </div>
                             </div>
                         </div>
@@ -510,10 +658,12 @@
                         <div class="col-6">
                             <label class="form-label small fw-bold">Status PM <span class="text-danger">*</span></label>
                             <select name="Status" class="form-select form-select-sm" required>
-                                <option value="P">P - Planning</option>
-                                <option value="E">E - Execute</option>
-                                <option value="R">R - Revision</option>
-                                <option value="M">M - Missed</option>
+                                <option value="P">Plan</option>
+                                <option value="R">Revision</option>
+                                <option value="E_P">Plan / Execute</option>
+                                <option value="E_R">Revision / Execute</option>
+                                <option value="M">Plan / Missed</option>
+                                <option value="O">Overhoul</option>
                             </select>
                         </div>
                     </div>
@@ -634,6 +784,7 @@
             <form asp-action="Edit" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="editId" name="Id" />
+                <input type="hidden" id="editSourceStatus" name="SourceStatus" value="P" />
                 <input type="hidden" id="editTitleFallback" name="Title" />
                 <input type="hidden" id="editMachineNameFallback" name="MachineName" />
                 <div class="modal-body p-3" style="overflow: visible;">
@@ -647,30 +798,28 @@
                         </select>
                     </div>
 
-                    <!-- Line PM Multi-Select -->
+                    <!-- Line PM Single-Select -->
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Line PM <span class="text-danger">*</span></label>
+                        <input type="hidden" name="selectedLines" id="editSelectedLine" value="" required />
                         <div class="dropdown multiselect-dropdown">
-                            <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="editLineBtn">
+                            <button class="multiselect-button dropdown-toggle w-100 d-flex justify-content-between align-items-center" type="button" onclick="toggleMultiselectMenu(this, event)" id="editLineBtn">
                                 <span id="editLineLabel" class="text-truncate">Pilih Line PM</span>
                             </button>
                             <div class="multiselect-menu p-2" style="width:100%;">
-                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
-                                    <input type="text" class="form-control form-control-sm multiselect-search me-2" placeholder="Cari line..." onkeyup="filterMultiSelectOptions(this)" />
-                                    <div class="btn-group btn-group-sm flex-shrink-0">
-                                        <button type="button" class="btn btn-xs btn-outline-primary py-0 px-1" onclick="selectAllInMenu(this, true)">Semua</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1" onclick="selectAllInMenu(this, false)">Reset</button>
-                                    </div>
+                                <div class="mb-2 pb-1 border-bottom">
+                                    <input type="text" class="form-control form-control-sm multiselect-search" placeholder="Cari line..." onkeyup="filterLineOptions(this, 'edit')" />
                                 </div>
-                                <div class="options-list">
+                                <div class="options-list" style="max-height: 200px; overflow-y: auto;">
                                     @foreach (var l in allLines)
                                     {
                                         var lArea = UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(l);
-                                        <div class="multiselect-option option-item edit-line-item" data-up-area="@lArea">
-                                            <input class="form-check-input edit-line-check" type="checkbox" name="selectedLines" value="@l" id="edit_line_@l" onchange="onEditLineChanged()" />
-                                            <label class="form-check-label" for="edit_line_@l">@l</label>
+                                        var isUp1 = lArea.Equals("UP1", StringComparison.OrdinalIgnoreCase);
+                                        <div class="multiselect-option option-item line-single-option edit-line-item py-1 px-2 align-items-center @(isUp1 ? "" : "d-none-area")" data-up-area="@lArea" data-line="@l" onclick="selectSingleLine('edit', '@l')" style="cursor: pointer; @(isUp1 ? "display: flex !important;" : "display: none !important;")">
+                                            <span class="line-name-text">@l</span>
                                         </div>
                                     }
+                                    <div class="p-2 text-muted text-center small edit-line-empty" style="display:none;">Tidak ada line yang sesuai</div>
                                 </div>
                             </div>
                         </div>
@@ -684,10 +833,12 @@
                         <div class="col-6">
                             <label class="form-label small fw-bold">Status PM <span class="text-danger">*</span></label>
                             <select id="editStatus" name="Status" class="form-select form-select-sm" required>
-                                <option value="P">P - Planning</option>
-                                <option value="E">E - Execute</option>
-                                <option value="R">R - Revision</option>
-                                <option value="M">M - Missed</option>
+                                <option value="P">Plan</option>
+                                <option value="R">Revision</option>
+                                <option value="E_P">Plan / Execute</option>
+                                <option value="E_R">Revision / Execute</option>
+                                <option value="M">Plan / Missed</option>
+                                <option value="O">Overhoul</option>
                             </select>
                         </div>
                     </div>
@@ -814,10 +965,13 @@
                     Seret ke tanggal <strong id="dragDropTargetDate" class="text-primary">2026-09-12</strong>.<br />Pilih aksi yang ingin Anda lakukan:
                 </p>
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary btn-sm py-2" onclick="confirmDragAction('move')">
-                        <i class="bi bi-arrows-move me-1"></i>Pindahkan Tanggal
+                    <button type="button" class="btn btn-info text-dark btn-sm py-2 fw-bold" onclick="confirmDragAction('revise')" title="Jadwalkan ke tanggal baru sebagai Revisi. Jadwal asal Planning tetap ada di database.">
+                        <i class="bi bi-calendar-check me-1"></i>Jadwalkan Revisi (Plan Tetap Ada)
                     </button>
-                    <button type="button" class="btn btn-success btn-sm py-2" onclick="confirmDragAction('duplicate')">
+                    <button type="button" class="btn btn-primary btn-sm py-2" onclick="confirmDragAction('move')" title="Pindahkan tanggal jadwal PM ini">
+                        <i class="bi bi-arrows-move me-1"></i>Pindahkan Tanggal Saja
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm py-2" onclick="confirmDragAction('duplicate')" title="Duplikasi salinan jadwal PM ke tanggal ini">
                         <i class="bi bi-copy me-1"></i>Duplikasi Jadwal (Copy)
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeModal('dragDropChoiceModal')" data-bs-dismiss="modal">
@@ -1121,7 +1275,9 @@
             var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
             var token = tokenInput ? tokenInput.value : '';
 
-            var url = actionType === 'move' ? '/Maintenance/UpdateDate' : '/Maintenance/DuplicateDate';
+            var url = actionType === 'revise' 
+                ? '/Maintenance/ReviseDate' 
+                : (actionType === 'move' ? '/Maintenance/UpdateDate' : '/Maintenance/DuplicateDate');
             var formData = new FormData();
             formData.append('id', activeDragData.id);
             formData.append('newDate', activeDragData.targetDate);
@@ -1256,6 +1412,14 @@
 
         function submitFormViaAjax(form, modalIdToClose, onSuccessCallback) {
             if (!form) return;
+            if (modalIdToClose === 'addPmModal' || modalIdToClose === 'editPmModal') {
+                var prefix = modalIdToClose === 'addPmModal' ? 'add' : 'edit';
+                var lineInput = document.getElementById(prefix + 'SelectedLine');
+                if (!lineInput || !lineInput.value.trim()) {
+                    alert('Line PM wajib dipilih.');
+                    return;
+                }
+            }
             var formData = new FormData(form);
             var actionUrl = form.getAttribute('action') || window.location.pathname;
 
@@ -1333,10 +1497,30 @@
             });
 
             if (!isShown) {
+                // Enforce strict UP Area filtering before showing Line menu
+                if (btnEl.id === 'addLineBtn') {
+                    onAddUpAreaChanged(false);
+                    var searchInput = menu.querySelector('.multiselect-search');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        filterLineOptions(searchInput, 'add');
+                    }
+                } else if (btnEl.id === 'editLineBtn') {
+                    onEditUpAreaChanged(false);
+                    var searchInput = menu.querySelector('.multiselect-search');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        filterLineOptions(searchInput, 'edit');
+                    }
+                }
+
                 menu.classList.add('show');
                 menu.style.display = 'block';
                 menu.style.position = 'absolute';
                 menu.style.zIndex = '99999';
+
+                var searchBox = menu.querySelector('.multiselect-search');
+                if (searchBox) setTimeout(function() { searchBox.focus(); }, 50);
             } else {
                 menu.classList.remove('show');
                 menu.style.display = 'none';
@@ -1451,57 +1635,187 @@
             return "UP2";
         }
 
-        function onAddUpAreaChanged() {
-            var upSelect = document.getElementById('addUpArea');
-            var selArea = upSelect ? upSelect.value : 'UP1';
-            var items = document.querySelectorAll('.add-line-item');
-            items.forEach(function(item) {
-                var area = item.getAttribute('data-up-area') || 'UP1';
-                if (area.toUpperCase() === selArea.toUpperCase()) {
-                    item.style.display = 'flex';
+        function selectSingleLine(prefix, lineVal) {
+            var hiddenInput = document.getElementById(prefix + 'SelectedLine');
+            if (hiddenInput) hiddenInput.value = lineVal;
+
+            var labelSpan = document.getElementById(prefix + 'LineLabel');
+            if (labelSpan) labelSpan.textContent = lineVal ? lineVal : 'Pilih Line PM';
+
+            if (prefix === 'edit') {
+                var fallback = document.getElementById('editTitleFallback');
+                if (fallback) fallback.value = lineVal;
+            }
+
+            // Update selected class
+            document.querySelectorAll('.' + prefix + '-line-item').forEach(function(item) {
+                if (item.getAttribute('data-line') === lineVal) {
+                    item.classList.add('selected');
                 } else {
-                    item.style.display = 'none';
-                    var chk = item.querySelector('input[type="checkbox"]');
-                    if (chk) chk.checked = false;
+                    item.classList.remove('selected');
                 }
             });
+
+            // Close dropdown menu
+            var btn = document.getElementById(prefix + 'LineBtn');
+            if (btn) {
+                var parent = btn.closest('.multiselect-dropdown') || btn.parentElement;
+                var menu = parent ? parent.querySelector('.multiselect-menu') : null;
+                if (menu) {
+                    menu.classList.remove('show');
+                    menu.style.display = 'none';
+                }
+            }
+
+            if (prefix === 'add') {
+                onAddLineChanged();
+            } else {
+                onEditLineChanged();
+            }
+        }
+
+        function filterLineOptions(inputEl, prefix) {
+            var filter = (inputEl.value || '').toLowerCase().trim();
+            var upSelect = document.getElementById(prefix + 'UpArea');
+            var selArea = (upSelect ? upSelect.value : 'UP1').replace(/\s+/g, '').toUpperCase();
+            var items = document.querySelectorAll('.' + prefix + '-line-item');
+            var visibleCount = 0;
+
+            items.forEach(function(item) {
+                var itemArea = (item.getAttribute('data-up-area') || 'UP1').replace(/\s+/g, '').toUpperCase();
+                // STRICT RULE: Never show line from another UP Area!
+                if (itemArea !== selArea) {
+                    item.classList.add('d-none-area');
+                    item.style.setProperty('display', 'none', 'important');
+                    return;
+                }
+
+                // If belonging to selected UP Area, filter by search keyword
+                if (!filter) {
+                    item.classList.remove('d-none-area');
+                    item.style.setProperty('display', 'flex', 'important');
+                    visibleCount++;
+                } else {
+                    var lineName = (item.getAttribute('data-line') || item.querySelector('.line-name-text')?.textContent || item.textContent || '').toLowerCase();
+                    if (lineName.indexOf(filter) > -1) {
+                        item.classList.remove('d-none-area');
+                        item.style.setProperty('display', 'flex', 'important');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('d-none-area');
+                        item.style.setProperty('display', 'none', 'important');
+                    }
+                }
+            });
+
+            var emptyMsg = document.querySelector('.' + prefix + '-line-empty');
+            if (emptyMsg) {
+                emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        }
+
+        function onAddUpAreaChanged(resetLine = true) {
+            var upSelect = document.getElementById('addUpArea');
+            var selArea = (upSelect ? upSelect.value : 'UP1').replace(/\s+/g, '').toUpperCase();
+
+            // Clear search box in add line menu
+            var searchInput = document.querySelector('#addPmModal .multiselect-search');
+            if (searchInput) searchInput.value = '';
+
+            var items = document.querySelectorAll('.add-line-item');
+            var visibleCount = 0;
+            items.forEach(function(item) {
+                var area = (item.getAttribute('data-up-area') || 'UP1').replace(/\s+/g, '').toUpperCase();
+                if (area === selArea) {
+                    item.classList.remove('d-none-area');
+                    item.style.setProperty('display', 'flex', 'important');
+                    visibleCount++;
+                } else {
+                    item.classList.add('d-none-area');
+                    item.style.setProperty('display', 'none', 'important');
+                }
+            });
+
+            var emptyMsg = document.querySelector('.add-line-empty');
+            if (emptyMsg) {
+                emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            if (resetLine) {
+                var hiddenInput = document.getElementById('addSelectedLine');
+                var curLine = hiddenInput ? hiddenInput.value : '';
+                var curItem = curLine ? document.querySelector('.add-line-item[data-line="' + curLine + '"]') : null;
+                var curArea = curItem ? (curItem.getAttribute('data-up-area') || '').replace(/\s+/g, '').toUpperCase() : '';
+                if (curArea !== selArea) {
+                    if (hiddenInput) hiddenInput.value = '';
+                    var label = document.getElementById('addLineLabel');
+                    if (label) label.textContent = 'Pilih Line PM';
+                    document.querySelectorAll('.add-line-item').forEach(it => it.classList.remove('selected'));
+                }
+            }
             onAddLineChanged();
         }
 
-        function onEditUpAreaChanged() {
+        function onEditUpAreaChanged(resetLine = true) {
             var upSelect = document.getElementById('editUpArea');
-            var selArea = upSelect ? upSelect.value : 'UP1';
+            var selArea = (upSelect ? upSelect.value : 'UP1').replace(/\s+/g, '').toUpperCase();
+
+            // Clear search box in edit line menu
+            var searchInput = document.querySelector('#editPmModal .multiselect-search');
+            if (searchInput) searchInput.value = '';
+
             var items = document.querySelectorAll('.edit-line-item');
+            var visibleCount = 0;
             items.forEach(function(item) {
-                var area = item.getAttribute('data-up-area') || 'UP1';
-                if (area.toUpperCase() === selArea.toUpperCase()) {
-                    item.style.display = 'flex';
+                var area = (item.getAttribute('data-up-area') || 'UP1').replace(/\s+/g, '').toUpperCase();
+                if (area === selArea) {
+                    item.classList.remove('d-none-area');
+                    item.style.setProperty('display', 'flex', 'important');
+                    visibleCount++;
                 } else {
-                    item.style.display = 'none';
-                    var chk = item.querySelector('input[type="checkbox"]');
-                    if (chk) chk.checked = false;
+                    item.classList.add('d-none-area');
+                    item.style.setProperty('display', 'none', 'important');
                 }
             });
+
+            var emptyMsg = document.querySelector('.edit-line-empty');
+            if (emptyMsg) {
+                emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            if (resetLine) {
+                var hiddenInput = document.getElementById('editSelectedLine');
+                var curLine = hiddenInput ? hiddenInput.value : '';
+                var curItem = curLine ? document.querySelector('.edit-line-item[data-line="' + curLine + '"]') : null;
+                var curArea = curItem ? (curItem.getAttribute('data-up-area') || '').replace(/\s+/g, '').toUpperCase() : '';
+                if (curArea !== selArea) {
+                    if (hiddenInput) hiddenInput.value = '';
+                    var label = document.getElementById('editLineLabel');
+                    if (label) label.textContent = 'Pilih Line PM';
+                    var fallback = document.getElementById('editTitleFallback');
+                    if (fallback) fallback.value = '';
+                    document.querySelectorAll('.edit-line-item').forEach(it => it.classList.remove('selected'));
+                }
+            }
             onEditLineChanged();
         }
 
         // Add Modal Line -> Machine Dynamic Filtering
         function onAddLineChanged() {
-            var checkedLines = Array.from(document.querySelectorAll('.add-line-check:checked')).map(c => c.value);
+            var hiddenInput = document.getElementById('addSelectedLine');
+            var selectedLine = hiddenInput ? hiddenInput.value.trim() : '';
             var labelSpan = document.getElementById('addLineLabel');
             if (labelSpan) {
-                labelSpan.textContent = checkedLines.length > 0 ? checkedLines.join(', ') : 'Pilih Line PM';
+                labelSpan.textContent = selectedLine ? selectedLine : 'Pilih Line PM';
             }
 
             var machineItems = document.querySelectorAll('.add-machine-item');
             machineItems.forEach(function(item) {
                 var itemLine = item.getAttribute('data-line') || '';
-                if (checkedLines.length === 0) {
+                if (!selectedLine) {
                     item.style.display = 'flex';
                 } else {
-                    var match = checkedLines.some(function(l) {
-                        return itemLine.toLowerCase().indexOf(l.toLowerCase()) > -1;
-                    });
+                    var match = itemLine.toLowerCase().indexOf(selectedLine.toLowerCase()) > -1;
                     if (match) {
                         item.style.display = 'flex';
                     } else {
@@ -1512,7 +1826,7 @@
                 }
             });
             updateAddMachineLabel(false);
-            if (checkedLines.length > 0) {
+            if (selectedLine) {
                 autoSuggestSpareparts('add', false);
             } else {
                 var tbody = document.getElementById('addSparepartTableBody');
@@ -1541,22 +1855,21 @@
 
         // Edit Modal Line -> Machine Dynamic Filtering
         function onEditLineChanged() {
-            var checkedLines = Array.from(document.querySelectorAll('.edit-line-check:checked')).map(c => c.value);
+            var hiddenInput = document.getElementById('editSelectedLine');
+            var selectedLine = hiddenInput ? hiddenInput.value.trim() : '';
             var labelSpan = document.getElementById('editLineLabel');
             var fallback = document.getElementById('editTitleFallback');
-            var lineStr = checkedLines.join(', ');
-            if (labelSpan) labelSpan.textContent = checkedLines.length > 0 ? lineStr : 'Pilih Line PM';
-            if (fallback) fallback.value = lineStr;
+
+            if (labelSpan) labelSpan.textContent = selectedLine ? selectedLine : 'Pilih Line PM';
+            if (fallback) fallback.value = selectedLine;
 
             var machineItems = document.querySelectorAll('.edit-machine-item');
             machineItems.forEach(function(item) {
                 var itemLine = item.getAttribute('data-line') || '';
-                if (checkedLines.length === 0) {
+                if (!selectedLine) {
                     item.style.display = 'flex';
                 } else {
-                    var match = checkedLines.some(function(l) {
-                        return itemLine.toLowerCase().indexOf(l.toLowerCase()) > -1;
-                    });
+                    var match = itemLine.toLowerCase().indexOf(selectedLine.toLowerCase()) > -1;
                     if (match) {
                         item.style.display = 'flex';
                     } else {
@@ -1567,8 +1880,9 @@
                 }
             });
             updateEditMachineLabel(false);
-            if (checkedLines.length > 0) {
+            if (selectedLine) {
                 autoSuggestSpareparts('edit', false);
+                fetchActualPmUsage('edit');
             }
         }
 
@@ -2194,14 +2508,20 @@
             var addUpSelect = document.getElementById('addUpArea');
             if (addUpSelect) addUpSelect.value = 'UP1';
 
+            // Reset add modal single line
+            var hiddenLine = document.getElementById('addSelectedLine');
+            if (hiddenLine) hiddenLine.value = '';
+            var labelSpan = document.getElementById('addLineLabel');
+            if (labelSpan) labelSpan.textContent = 'Pilih Line PM';
+            document.querySelectorAll('.add-line-item').forEach(it => it.classList.remove('selected'));
+
             // Reset add modal checkboxes and spareparts
-            document.querySelectorAll('.add-line-check').forEach(c => c.checked = false);
             document.querySelectorAll('.add-machine-check').forEach(c => c.checked = false);
             document.querySelectorAll('.add-tech-check').forEach(c => c.checked = false);
             var tbody = document.getElementById('addSparepartTableBody');
             if (tbody) tbody.innerHTML = '';
 
-            onAddUpAreaChanged();
+            onAddUpAreaChanged(true);
             updateAddTechLabel();
 
             var el = document.getElementById('addPmModal');
@@ -2222,24 +2542,64 @@
             }
         }
 
-        function openEditModal(id, titleLine, dateStr, status, machineId, machineName, technician, notes, upArea) {
+        function openEditModal(id, titleLine, dateStr, status, machineId, machineName, technician, notes, upArea, sourceStatus) {
             try {
                 document.getElementById('editId').value = id;
                 document.getElementById('editScheduledDate').value = dateStr;
-                document.getElementById('editStatus').value = status;
+                
+                var srcSt = (sourceStatus || 'P').trim().toUpperCase();
+                var editSourceEl = document.getElementById('editSourceStatus');
+                if (editSourceEl) editSourceEl.value = srcSt;
+
+                var stVal = (status || 'P').trim().toUpperCase();
+                var editStatusEl = document.getElementById('editStatus');
+                if (editStatusEl) {
+                    if (stVal === 'E' || stVal === 'E_R' || stVal === 'E_P') {
+                        editStatusEl.value = (stVal === 'E_R' || srcSt === 'R') ? 'E_R' : 'E_P';
+                    } else if (stVal === 'M' || stVal === 'M_R' || stVal === 'M_P') {
+                        editStatusEl.value = 'M';
+                    } else {
+                        editStatusEl.value = stVal;
+                    }
+                }
                 document.getElementById('editNotes').value = notes || '';
 
-                var areaVal = upArea || getAreaFromTitle(titleLine) || 'UP1';
-                var editUpSelect = document.getElementById('editUpArea');
-                if (editUpSelect) editUpSelect.value = areaVal.toUpperCase();
+                var areaFromTitle = getAreaFromTitle(titleLine);
+                var rawArea = (upArea || '').toString().trim().replace(/\s+/g, '').toUpperCase();
+                var cleanArea = (rawArea === 'UP1' || rawArea === 'UP2') ? rawArea : areaFromTitle;
 
-                // Match Line checkboxes
-                var lineList = (titleLine || '').split(',').map(s => s.trim().toLowerCase());
-                document.querySelectorAll('.edit-line-check').forEach(function(c) {
-                    c.checked = lineList.indexOf(c.value.toLowerCase()) > -1;
+                var editUpSelect = document.getElementById('editUpArea');
+                if (editUpSelect) {
+                    editUpSelect.value = cleanArea;
+                    if (!editUpSelect.value) {
+                        for (var i = 0; i < editUpSelect.options.length; i++) {
+                            if (editUpSelect.options[i].value.replace(/\s+/g, '').toUpperCase() === cleanArea) {
+                                editUpSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 1. Filter lines to this area without resetting line
+                onEditUpAreaChanged(false);
+
+                // 2. Set the single selected Line
+                var singleLine = (titleLine || '').trim();
+                var editHidden = document.getElementById('editSelectedLine');
+                if (editHidden) editHidden.value = singleLine;
+                var editLabel = document.getElementById('editLineLabel');
+                if (editLabel) editLabel.textContent = singleLine || 'Pilih Line PM';
+                var fallback = document.getElementById('editTitleFallback');
+                if (fallback) fallback.value = singleLine;
+
+                document.querySelectorAll('.edit-line-item').forEach(function(item) {
+                    if (item.getAttribute('data-line') === singleLine) {
+                        item.classList.add('selected');
+                    } else {
+                        item.classList.remove('selected');
+                    }
                 });
-                
-                onEditUpAreaChanged();
 
                 // Match Machine checkboxes
                 var machineList = (machineName || '').split(',').map(s => s.trim().toLowerCase());

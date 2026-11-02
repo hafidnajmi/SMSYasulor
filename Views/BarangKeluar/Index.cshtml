@@ -4,7 +4,7 @@
     ViewData["Title"] = "Barang Keluar";
     var pics = ViewBag.Pics as List<string> ?? new List<string> { "Raisa", "Priyanto", "Rohmadi", "Yully", "Hussein", "Slamet", "Andra" };
     var lines = ViewBag.Lines as List<string> ?? new List<string> { "B01", "B02", "B03", "B04", "B05", "B06", "B24", "B25", "PACKING", "UTILITY" };
-    var maintTypes = ViewBag.MaintenanceTypes as List<string> ?? new List<string> { "PM", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
+    var maintTypes = ViewBag.MaintenanceTypes as List<string> ?? new List<string> { "PM", "Overhoul", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
     var currentDept = ViewBag.ActiveDept as string ?? Context.Request.Cookies["SMS_ACTIVE_DEPT"] ?? "Filling";
 }
 
@@ -333,7 +333,23 @@
                                 <td class="fw-semibold text-dark">@item.ItemName</td>
                                 <td class="text-end text-danger fw-bold font-monospace">-@item.Qty</td>
                                 <td><span class="badge bg-light text-dark border">@(item.Line ?? "-")</span></td>
-                                <td class="small text-secondary">@(item.MaintenanceType ?? "-")</td>
+                                <td class="small">
+                                    @if (!string.IsNullOrEmpty(item.MaintenanceType))
+                                    {
+                                        if (item.MaintenanceType.Equals("Overhoul", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge border fw-bold text-dark" style="background-color: #FFD300; font-size: 11px;">Overhoul</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary">@item.MaintenanceType</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
                                 <td class="small"><i class="bi bi-person me-1 text-muted"></i>@(item.Pic ?? "-")</td>
                                 <td>
                                     @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
@@ -407,9 +423,18 @@
                         }
                         @if (!string.IsNullOrEmpty(item.MaintenanceType))
                         {
-                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 11px;">
-                                @item.MaintenanceType
-                            </span>
+                            if (item.MaintenanceType.Equals("Overhoul", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="badge border fw-bold text-dark" style="background-color: #FFD300; font-size: 11px;">
+                                    Overhoul
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 11px;">
+                                    @item.MaintenanceType
+                                </span>
+                            }
                         }
                     </div>
 

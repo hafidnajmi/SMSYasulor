@@ -27,6 +27,15 @@ namespace UPMS.Web.Services
                 using var transaction = await _db.Database.BeginTransactionAsync();
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(item.PoNumber) && !string.IsNullOrWhiteSpace(item.PuNumber))
+                    {
+                        item.PoNumber = item.PuNumber;
+                    }
+                    else if (string.IsNullOrWhiteSpace(item.PuNumber) && !string.IsNullOrWhiteSpace(item.PoNumber))
+                    {
+                        item.PuNumber = item.PoNumber;
+                    }
+
                     item.CreatedAt = DateTime.Now;
                     _db.BarangMasuks.Add(item);
                     await _db.SaveChangesAsync();
@@ -69,6 +78,15 @@ namespace UPMS.Web.Services
                     int count = 0;
                     foreach (var item in items)
                     {
+                        if (string.IsNullOrWhiteSpace(item.PoNumber) && !string.IsNullOrWhiteSpace(item.PuNumber))
+                        {
+                            item.PoNumber = item.PuNumber;
+                        }
+                        else if (string.IsNullOrWhiteSpace(item.PuNumber) && !string.IsNullOrWhiteSpace(item.PoNumber))
+                        {
+                            item.PuNumber = item.PoNumber;
+                        }
+
                         item.CreatedAt = DateTime.Now;
                         _db.BarangMasuks.Add(item);
                         await _db.SaveChangesAsync();
@@ -621,7 +639,7 @@ namespace UPMS.Web.Services
                 .ToListAsync();
         }
 
-        public async Task<PagedResult<BarangKeluar>> GetBarangKeluarHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50)
+        public async Task<PagedResult<BarangKeluar>> GetBarangKeluarHistoryAsync(int? year, DateTime? startDate = null, DateTime? endDate = null, string? search = null, int page = 1, int pageSize = 50, string? line = null)
         {
             var query = _db.BarangKeluars
                 .Where(b => b.ApprovalStatus == null || b.ApprovalStatus == "Approved")
@@ -642,6 +660,29 @@ namespace UPMS.Web.Services
             {
                 var end = endDate.Value.Date.AddDays(1).AddTicks(-1);
                 query = query.Where(b => b.Tanggal <= end);
+            }
+
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                string lineTerm = line.Trim().ToLower();
+                query = query.Where(b => b.Line != null && (
+                    b.Line.ToLower() == lineTerm ||
+                    b.Line.ToLower().Trim() == lineTerm ||
+                    b.Line.ToLower().StartsWith(lineTerm + ",") ||
+                    b.Line.ToLower().EndsWith("," + lineTerm) ||
+                    b.Line.ToLower().Contains("," + lineTerm + ",") ||
+                    b.Line.ToLower().Contains("," + lineTerm + " ") ||
+                    b.Line.ToLower().Contains(", " + lineTerm + ",") ||
+                    b.Line.ToLower().Contains(", " + lineTerm) ||
+                    b.Line.ToLower().StartsWith(lineTerm + "/") ||
+                    b.Line.ToLower().EndsWith("/" + lineTerm) ||
+                    b.Line.ToLower().Contains("/" + lineTerm + "/") ||
+                    b.Line.ToLower().StartsWith(lineTerm + ";") ||
+                    b.Line.ToLower().EndsWith(";" + lineTerm) ||
+                    b.Line.ToLower().Contains(";" + lineTerm + ";") ||
+                    b.Line.ToLower().Contains(";" + lineTerm + " ") ||
+                    b.Line.ToLower().Contains("; " + lineTerm)
+                ));
             }
 
             if (!string.IsNullOrWhiteSpace(search))

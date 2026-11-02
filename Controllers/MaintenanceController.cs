@@ -208,10 +208,15 @@ namespace UPMS.Web.Controllers
             {
                 var s = status.Trim().ToUpper();
                 monthFiltered = monthFiltered.Where(p =>
-                    s == "P" ? (p.Status.Equals("P", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("planning", StringComparison.OrdinalIgnoreCase)) :
-                    s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase)) :
-                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase)) :
-                    s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase)) :
+                    s == "O" ? (p.DisplayStatusCategory == "Overhaul") :
+                    s == "P" ? (p.DisplayStatusCategory == "Planning") :
+                    s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Execute")) :
+                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision") :
+                    s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Missed")) :
+                    s == "E_P" ? (p.DisplayStatusCategory == "ExecutePlan") :
+                    s == "E_R" ? (p.DisplayStatusCategory == "ExecuteRevision") :
+                    s == "M_P" ? (p.DisplayStatusCategory == "MissedPlan") :
+                    s == "M_R" ? (p.DisplayStatusCategory == "MissedRevision") :
                     p.Status.Equals(s, StringComparison.OrdinalIgnoreCase));
             }
 
@@ -258,10 +263,11 @@ namespace UPMS.Web.Controllers
 
             // Summary stats for KPI cards
             ViewBag.TotalCount = monthEvents.Count;
-            ViewBag.PlanningCount = monthEvents.Count(e => e.Status.ToUpper() == "P" || e.Status.ToLower() == "planning");
-            ViewBag.ExecuteCount = monthEvents.Count(e => e.Status.ToUpper() == "E" || e.Status.ToLower() == "execute");
-            ViewBag.RevisionCount = monthEvents.Count(e => e.Status.ToUpper() == "R" || e.Status.ToLower() == "revision");
-            ViewBag.MissedCount = monthEvents.Count(e => e.Status.ToUpper() == "M" || e.Status.ToLower() == "missed");
+            ViewBag.PlanningCount = monthEvents.Count(e => e.DisplayStatusCategory == "Planning");
+            ViewBag.ExecuteCount = monthEvents.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_P", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Execute", StringComparison.OrdinalIgnoreCase));
+            ViewBag.RevisionCount = monthEvents.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || (e.SourceStatus != null && e.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || e.ParentId != null || e.DisplayStatusCategory == "Revision" || e.DisplayStatusCategory == "ExecuteRevision" || e.DisplayStatusCategory == "MissedRevision");
+            ViewBag.MissedCount = monthEvents.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_P", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
+            ViewBag.OverhaulCount = monthEvents.Count(e => e.DisplayStatusCategory == "Overhaul");
             ViewBag.CanEditPm = await CanUserEditPmAsync();
 
             if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase) ||
@@ -285,23 +291,30 @@ namespace UPMS.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> GetEvents(int year, int month)
         {
-            var events = await _db.PmSchedules
+            var rawEvents = await _db.PmSchedules
                 .AsNoTracking()
                 .Where(p => p.ScheduledDate.Year == year && p.ScheduledDate.Month == month)
                 .OrderBy(p => p.ScheduledDate)
-                .Select(p => new
-                {
-                    id = p.Id,
-                    title = p.Title,
-                    machineName = p.MachineName ?? "-",
-                    machineCode = p.MachineCode ?? "-",
-                    scheduledDate = p.ScheduledDate.ToString("yyyy-MM-dd"),
-                    day = p.ScheduledDate.Day,
-                    status = p.Status.ToUpper(),
-                    technician = p.Technician ?? "",
-                    notes = p.Notes ?? ""
-                })
                 .ToListAsync();
+
+            var events = rawEvents.Select(p => new
+            {
+                id = p.Id,
+                title = p.Title,
+                machineName = p.MachineName ?? "-",
+                machineCode = p.MachineCode ?? "-",
+                scheduledDate = p.ScheduledDate.ToString("yyyy-MM-dd"),
+                day = p.ScheduledDate.Day,
+                status = p.Status.ToUpper(),
+                sourceStatus = p.SourceStatus ?? "P",
+                parentId = p.ParentId,
+                statusCategory = p.DisplayStatusCategory,
+                badgeClass = p.StatusBadgeCssClass,
+                label = p.StatusDisplayLabel,
+                pillsHtml = p.StatusPillsHtml,
+                technician = p.Technician ?? "",
+                notes = p.Notes ?? ""
+            }).ToList();
 
             return Json(events);
         }
@@ -390,7 +403,7 @@ namespace UPMS.Web.Controllers
 
             var bkList = await _db.BarangKeluars.AsNoTracking()
                 .Where(b => b.MaintenanceType != null &&
-                            b.MaintenanceType.ToUpper().Contains("PM") &&
+                            (b.MaintenanceType.ToUpper().Contains("PM") || b.MaintenanceType.ToUpper().Contains("OVERHOUL") || b.MaintenanceType.ToUpper().Contains("OVERHAUL")) &&
                             b.Tanggal.Year == targetYear &&
                             b.Tanggal.Month == targetMonth)
                 .ToListAsync();
@@ -493,7 +506,7 @@ namespace UPMS.Web.Controllers
             var actualList = await _db.BarangKeluars
                 .AsNoTracking()
                 .Where(b => (b.ApprovalStatus == null || b.ApprovalStatus == "Approved") &&
-                            b.MaintenanceType != null && b.MaintenanceType.ToUpper() == "PM" &&
+                            b.MaintenanceType != null && (b.MaintenanceType.ToUpper() == "PM" || b.MaintenanceType.ToUpper() == "OVERHOUL" || b.MaintenanceType.ToUpper() == "OVERHAUL") &&
                             b.Tanggal.Date == targetDay)
                 .OrderByDescending(b => b.Tanggal)
                 .ToListAsync();
@@ -809,7 +822,7 @@ namespace UPMS.Web.Controllers
                 int targetMonth = pmSchedule.ScheduledDate.Month;
                 bkList = await _db.BarangKeluars.AsNoTracking()
                     .Where(b => b.MaintenanceType != null &&
-                                b.MaintenanceType.ToUpper().Contains("PM") &&
+                                (b.MaintenanceType.ToUpper().Contains("PM") || b.MaintenanceType.ToUpper().Contains("OVERHOUL") || b.MaintenanceType.ToUpper().Contains("OVERHAUL")) &&
                                 b.Tanggal.Year == targetYear &&
                                 b.Tanggal.Month == targetMonth)
                     .ToListAsync();
@@ -950,10 +963,36 @@ namespace UPMS.Web.Controllers
                 }
             }
 
-            model.Status = (model.Status ?? "P").Trim().ToUpper();
-            if (!new[] { "P", "E", "R", "M" }.Contains(model.Status))
+            var incomingStatus = (model.Status ?? "P").Trim().ToUpper();
+            if (incomingStatus == "O" || incomingStatus == "OVERHOUL" || incomingStatus == "OVERHAUL")
+            {
+                model.Status = "O";
+                model.SourceStatus = "O";
+            }
+            else if (incomingStatus == "E_R")
+            {
+                model.Status = "E";
+                model.SourceStatus = "R";
+            }
+            else if (incomingStatus == "E_P" || incomingStatus == "E")
+            {
+                model.Status = "E";
+                model.SourceStatus = "P";
+            }
+            else if (incomingStatus == "M_P" || incomingStatus == "M")
+            {
+                model.Status = "M";
+                model.SourceStatus = "P";
+            }
+            else if (incomingStatus == "R")
+            {
+                model.Status = "R";
+                model.SourceStatus = "R";
+            }
+            else
             {
                 model.Status = "P";
+                model.SourceStatus = "P";
             }
 
             // Real-time current time attachment for scheduled_date
@@ -994,13 +1033,42 @@ namespace UPMS.Web.Controllers
                 return Json(new { success = false, message = "Jadwal PM tidak ditemukan." });
             }
 
-            string newStatus = (status ?? "P").Trim().ToUpper();
-            if (!new[] { "P", "E", "R", "M" }.Contains(newStatus))
+            string incomingStatus = (status ?? "P").Trim().ToUpper();
+            if (incomingStatus == "O" || incomingStatus == "OVERHOUL" || incomingStatus == "OVERHAUL")
             {
-                return Json(new { success = false, message = "Status tidak valid." });
+                item.Status = "O";
+                item.SourceStatus = "O";
             }
-
-            item.Status = newStatus;
+            else if (incomingStatus == "E_R" || (incomingStatus == "E" && (item.Status == "R" || item.SourceStatus == "R" || item.ParentId != null)))
+            {
+                item.Status = "E";
+                item.SourceStatus = "R";
+            }
+            else if (incomingStatus == "E_P" || incomingStatus == "E")
+            {
+                item.Status = "E";
+                item.SourceStatus = "P";
+            }
+            else if (incomingStatus == "M_R" || (incomingStatus == "M" && (item.Status == "R" || item.SourceStatus == "R" || item.ParentId != null)))
+            {
+                item.Status = "M";
+                item.SourceStatus = "R";
+            }
+            else if (incomingStatus == "M_P" || incomingStatus == "M")
+            {
+                item.Status = "M";
+                item.SourceStatus = "P";
+            }
+            else if (incomingStatus == "R")
+            {
+                item.Status = "R";
+                item.SourceStatus = "R";
+            }
+            else
+            {
+                item.Status = "P";
+                item.SourceStatus = "P";
+            }
             if (notes != null)
             {
                 item.Notes = notes;
@@ -1009,7 +1077,7 @@ namespace UPMS.Web.Controllers
             item.UpdatedBy = User.Identity?.Name ?? "System";
 
             await _db.SaveChangesAsync();
-            return Json(new { success = true, message = $"Status PM berhasil diperbarui ke '{newStatus}'." });
+            return Json(new { success = true, message = $"Status PM berhasil diperbarui ke '{item.StatusDisplayLabel}'." });
         }
 
         [HttpPost]
@@ -1050,6 +1118,8 @@ namespace UPMS.Web.Controllers
                 MachineName = item.MachineName,
                 ScheduledDate = newDate.Date.Add(nowTime.TimeOfDay),
                 Status = item.Status,
+                SourceStatus = item.SourceStatus ?? "P",
+                ParentId = item.ParentId,
                 Technician = item.Technician,
                 UpArea = item.UpArea ?? GetAreaFromLine(item.Title),
                 Notes = item.Notes,
@@ -1060,7 +1130,90 @@ namespace UPMS.Web.Controllers
             _db.PmSchedules.Add(duplicate);
             await _db.SaveChangesAsync();
 
+            // Copy sparepart checklist items to duplicated schedule
+            var parentSpareparts = await _db.PmScheduleItems.Where(i => i.PmScheduleId == item.Id).AsNoTracking().ToListAsync();
+            if (parentSpareparts.Any())
+            {
+                foreach (var sp in parentSpareparts)
+                {
+                    _db.PmScheduleItems.Add(new PmScheduleItem
+                    {
+                        PmScheduleId = duplicate.Id,
+                        SparepartId = sp.SparepartId,
+                        SparepartName = sp.SparepartName,
+                        Quantity = sp.Quantity,
+                        Unit = sp.Unit,
+                        Notes = sp.Notes,
+                        CreatedAt = nowTime
+                    });
+                }
+                await _db.SaveChangesAsync();
+            }
+
             return Json(new { success = true, message = $"Jadwal PM '{duplicate.Title}' berhasil diduplikasi ke {newDate:yyyy-MM-dd}." });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviseDate(int id, DateTime newDate)
+        {
+            if (!await CanUserEditPmAsync())
+            {
+                return Json(new { success = false, message = "Anda tidak memiliki izin edit PM (Mode View/Read-Only)." });
+            }
+
+            var item = await _db.PmSchedules.FindAsync(id);
+            if (item == null)
+            {
+                return Json(new { success = false, message = "Jadwal PM asal tidak ditemukan." });
+            }
+
+            var nowTime = DateTime.Now;
+            // Non-destructive: Original schedule remains intact in history (Status = "P")
+            // A new schedule is created for the Revision
+            var revised = new PmSchedule
+            {
+                Title = item.Title,
+                MachineId = item.MachineId,
+                MachineCode = item.MachineCode,
+                MachineName = item.MachineName,
+                ScheduledDate = newDate.Date.Add(nowTime.TimeOfDay),
+                Status = "R",
+                SourceStatus = "R",
+                ParentId = item.Id,
+                Technician = item.Technician,
+                UpArea = item.UpArea ?? GetAreaFromLine(item.Title),
+                Notes = string.IsNullOrWhiteSpace(item.Notes) 
+                    ? $"Revisi dari jadwal {item.ScheduledDate:yyyy-MM-dd}" 
+                    : $"{item.Notes} (Revisi dari {item.ScheduledDate:yyyy-MM-dd})",
+                CreatedAt = nowTime,
+                CreatedBy = User.Identity?.Name ?? "System"
+            };
+
+            _db.PmSchedules.Add(revised);
+            await _db.SaveChangesAsync();
+
+            // Copy sparepart checklist items to the revision schedule
+            var parentSpareparts = await _db.PmScheduleItems.Where(i => i.PmScheduleId == item.Id).AsNoTracking().ToListAsync();
+            if (parentSpareparts.Any())
+            {
+                foreach (var sp in parentSpareparts)
+                {
+                    _db.PmScheduleItems.Add(new PmScheduleItem
+                    {
+                        PmScheduleId = revised.Id,
+                        SparepartId = sp.SparepartId,
+                        SparepartName = sp.SparepartName,
+                        Quantity = sp.Quantity,
+                        Unit = sp.Unit,
+                        Notes = sp.Notes,
+                        CreatedAt = nowTime
+                    });
+                }
+                await _db.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, message = $"Jadwal PM '{revised.Title}' berhasil direvisi ke {newDate:yyyy-MM-dd}. Jadwal awal Planning tetap tersimpan di riwayat." });
         }
 
         [HttpPost]
@@ -1094,64 +1247,107 @@ namespace UPMS.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            string resolvedTitle = item.Title;
             if (selectedLines != null && selectedLines.Any(l => !string.IsNullOrWhiteSpace(l)))
             {
-                item.Title = string.Join(", ", selectedLines.Where(l => !string.IsNullOrWhiteSpace(l)).Distinct());
+                resolvedTitle = string.Join(", ", selectedLines.Where(l => !string.IsNullOrWhiteSpace(l)).Distinct());
             }
             else if (!string.IsNullOrWhiteSpace(model.Title))
             {
-                item.Title = model.Title;
+                resolvedTitle = model.Title;
             }
 
-            if (!string.IsNullOrWhiteSpace(model.UpArea))
-            {
-                item.UpArea = model.UpArea;
-            }
-            else
-            {
-                item.UpArea = GetAreaFromLine(item.Title);
-            }
+            string resolvedUpArea = !string.IsNullOrWhiteSpace(model.UpArea) ? model.UpArea : GetAreaFromLine(resolvedTitle);
 
+            string? resolvedMachineName = item.MachineName;
             if (selectedMachines != null && selectedMachines.Any(m => !string.IsNullOrWhiteSpace(m)))
             {
-                item.MachineName = string.Join(", ", selectedMachines.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct());
+                resolvedMachineName = string.Join(", ", selectedMachines.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct());
             }
             else if (!string.IsNullOrWhiteSpace(model.MachineName))
             {
-                item.MachineName = model.MachineName;
+                resolvedMachineName = model.MachineName;
             }
 
-            if (selectedTechnicians != null && selectedTechnicians.Any(t => !string.IsNullOrWhiteSpace(t)))
+            string? resolvedMachineCode = item.MachineCode;
+            int? resolvedMachineId = item.MachineId;
+            if (!string.IsNullOrEmpty(resolvedMachineName))
             {
-                item.Technician = string.Join(", ", selectedTechnicians.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct());
-            }
-            else if (!string.IsNullOrWhiteSpace(model.Technician))
-            {
-                item.Technician = model.Technician;
-            }
-
-            var nowTime = DateTime.Now;
-            item.ScheduledDate = model.ScheduledDate.Date.Add(nowTime.TimeOfDay);
-            item.Status = (model.Status ?? "P").Trim().ToUpper();
-            if (!new[] { "P", "E", "R", "M" }.Contains(item.Status))
-            {
-                item.Status = "P";
-            }
-
-            if (!string.IsNullOrEmpty(item.MachineName))
-            {
-                var names = item.MachineName.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+                var names = resolvedMachineName.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
                 var allMasterMachines = await _db.MachineMasters.AsNoTracking().ToListAsync();
                 var matched = allMasterMachines
                     .Where(m => names.Any(n => n.Equals(m.MachineName, StringComparison.OrdinalIgnoreCase) || n.Equals(m.MachineCode, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
                 if (matched.Any())
                 {
-                    item.MachineCode = string.Join(", ", matched.Select(m => m.MachineCode).Distinct());
-                    item.MachineId = matched.Count == 1 ? matched.First().Id : (int?)null;
+                    resolvedMachineCode = string.Join(", ", matched.Select(m => m.MachineCode).Distinct());
+                    resolvedMachineId = matched.Count == 1 ? matched.First().Id : (int?)null;
                 }
             }
 
+            string? resolvedTechnician = item.Technician;
+            if (selectedTechnicians != null && selectedTechnicians.Any(t => !string.IsNullOrWhiteSpace(t)))
+            {
+                resolvedTechnician = string.Join(", ", selectedTechnicians.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct());
+            }
+            else if (!string.IsNullOrWhiteSpace(model.Technician))
+            {
+                resolvedTechnician = model.Technician;
+            }
+
+            var nowTime = DateTime.Now;
+            string incomingStatus = (model.Status ?? "P").Trim().ToUpper();
+
+            // Determine target Status and SourceStatus
+            string finalStatus = "P";
+            string finalSourceStatus = item.SourceStatus ?? "P";
+
+            if (incomingStatus == "O" || incomingStatus == "OVERHOUL" || incomingStatus == "OVERHAUL")
+            {
+                finalStatus = "O";
+                finalSourceStatus = "O"; // Overhoul
+            }
+            else if (incomingStatus == "E_R" || (incomingStatus == "E" && (item.Status == "R" || item.SourceStatus == "R" || item.ParentId != null)))
+            {
+                finalStatus = "E";
+                finalSourceStatus = "R"; // Execute dari Revisi (Biru - Hijau)
+            }
+            else if (incomingStatus == "E_P" || incomingStatus == "E")
+            {
+                finalStatus = "E";
+                finalSourceStatus = "P"; // Planning ter-execute (Abu Abu - Hijau)
+            }
+            else if (incomingStatus == "M_R" || (incomingStatus == "M" && (item.Status == "R" || item.SourceStatus == "R" || item.ParentId != null)))
+            {
+                finalStatus = "M";
+                finalSourceStatus = "R"; // Revisi Missed (Biru - Merah)
+            }
+            else if (incomingStatus == "M" || incomingStatus == "M_P")
+            {
+                finalStatus = "M";
+                finalSourceStatus = "P"; // Planning Missed (Abu Abu - Merah)
+            }
+            else if (incomingStatus == "R")
+            {
+                finalStatus = "R";
+                finalSourceStatus = "R"; // Revision (Biru)
+            }
+            else
+            {
+                finalStatus = "P";
+                finalSourceStatus = "P"; // Planning (Abu Abu)
+            }
+
+            // Update current record with new status & source status
+            item.Title = resolvedTitle;
+            item.UpArea = resolvedUpArea;
+            item.MachineName = resolvedMachineName;
+            item.MachineCode = resolvedMachineCode;
+            item.MachineId = resolvedMachineId;
+            item.Technician = resolvedTechnician;
+            item.ScheduledDate = model.ScheduledDate.Date.Add(nowTime.TimeOfDay);
+            item.Status = finalStatus;
+            item.SourceStatus = finalSourceStatus;
             item.Notes = model.Notes;
             item.UpdatedAt = nowTime;
             item.UpdatedBy = User.Identity?.Name ?? "System";
@@ -1368,6 +1564,7 @@ namespace UPMS.Web.Controllers
             {
                 var s = status.Trim().ToUpper();
                 filtered = filtered.Where(p =>
+                    s == "O" ? (p.Status.Equals("O", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("overhoul", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("overhaul", StringComparison.OrdinalIgnoreCase)) :
                     s == "P" ? (p.Status.Equals("P", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("planning", StringComparison.OrdinalIgnoreCase)) :
                     s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase)) :
                     s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase)) :
@@ -1415,26 +1612,18 @@ namespace UPMS.Web.Controllers
                 worksheet.Cell(row, 3).Value = item.Title;
                 worksheet.Cell(row, 4).Value = item.MachineName ?? "-";
                 worksheet.Cell(row, 5).Value = item.Status;
-
-                string statusDesc = item.Status switch
-                {
-                    "P" => "Planning",
-                    "E" => "Execute",
-                    "R" => "Revision",
-                    "M" => "Missed",
-                    _ => item.Status
-                };
-                worksheet.Cell(row, 6).Value = statusDesc;
+                worksheet.Cell(row, 6).Value = item.StatusDisplayLabel;
                 worksheet.Cell(row, 7).Value = item.Technician ?? "-";
                 worksheet.Cell(row, 8).Value = item.Notes ?? "-";
 
-                // Cell status highlight styling
+                // Cell status highlight styling with user's exact palette
                 var statusCell = worksheet.Cell(row, 5);
                 statusCell.Style.Font.Bold = true;
-                if (item.Status == "P") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E5E7EB"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#1F2937"); }
-                else if (item.Status == "E") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E5E7EB"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#10B981"); }
-                else if (item.Status == "R") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E5E7EB"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#06B6D4"); }
-                else if (item.Status == "M") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#FACC15"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#000000"); }
+                if (item.Status == "P") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#e5e2de"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#1a1a1a"); }
+                else if (item.Status == "E") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#00e436"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#000000"); }
+                else if (item.Status == "R") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#005497"); statusCell.Style.Font.FontColor = XLColor.White; }
+                else if (item.Status == "M") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#fd4800"); statusCell.Style.Font.FontColor = XLColor.White; }
+                else if (item.Status == "O") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#FFD300"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#000000"); }
 
                 row++;
             }
@@ -1532,11 +1721,37 @@ namespace UPMS.Web.Controllers
             var result = new List<object>();
             for (int m = 1; m <= 12; m++)
             {
-                var mItems = events.Where(p => p.ScheduledDate.Month == m).ToList();
-                int pCnt = mItems.Count(e => e.Status.Equals("P", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("planning", StringComparison.OrdinalIgnoreCase));
-                int eCnt = mItems.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("execute", StringComparison.OrdinalIgnoreCase));
-                int rCnt = mItems.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("revision", StringComparison.OrdinalIgnoreCase));
-                int mCnt = mItems.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("missed", StringComparison.OrdinalIgnoreCase));
+                // Exclude Overhoul ("O" / "OVERHOUL" / "OVERHAUL") from chart compliance calculation
+                var mItems = events.Where(p => p.ScheduledDate.Month == m &&
+                                               !p.Status.Equals("O", StringComparison.OrdinalIgnoreCase) &&
+                                               !p.Status.Equals("OVERHOUL", StringComparison.OrdinalIgnoreCase) &&
+                                               !p.Status.Equals("OVERHAUL", StringComparison.OrdinalIgnoreCase) &&
+                                               p.DisplayStatusCategory != "Overhaul").ToList();
+
+                int pCnt = mItems.Count(e => e.DisplayStatusCategory == "Planning");
+                
+                // Execute count: includes ExecutePlan, ExecuteRevision ("E_R"), and any executed status
+                int eCnt = mItems.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("E_P", StringComparison.OrdinalIgnoreCase) || 
+                                             e.DisplayStatusCategory.StartsWith("Execute", StringComparison.OrdinalIgnoreCase));
+
+                // Revision count: includes Revision ("R"), ExecuteRevision ("E_R"), MissedRevision ("M_R"), SourceStatus == "R", or ParentId != null
+                // Crucial Rule: When a Revision is executed, it changes to Revision / Execute (E_R / ExecuteRevision).
+                // The data must STILL be counted in Revision (1), AND now also in Execute (1), so both values are 1!
+                int rCnt = mItems.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || 
+                                             (e.SourceStatus != null && e.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || 
+                                             e.ParentId != null ||
+                                             e.DisplayStatusCategory == "Revision" || 
+                                             e.DisplayStatusCategory == "ExecuteRevision" ||
+                                             e.DisplayStatusCategory == "MissedRevision");
+
+                int mCnt = mItems.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("M_P", StringComparison.OrdinalIgnoreCase) || 
+                                             e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || 
+                                             e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
 
                 int totalPlanned = mItems.Count;
                 int realization = eCnt;
@@ -1548,7 +1763,7 @@ namespace UPMS.Web.Controllers
                     Month = m,
                     MonthName = new DateTime(selectedYear, m, 1).ToString("MMMM", new System.Globalization.CultureInfo("en-US")).ToUpper(),
                     ShortMonthName = new DateTime(selectedYear, m, 1).ToString("MMM", new System.Globalization.CultureInfo("en-US")).ToUpper(),
-                    Planning = totalPlanned, // Total planned PMs for this month
+                    Planning = pCnt, // Actual Planning PM count for this month (matches calendar 'Plan')
                     Execute = eCnt,
                     Revision = rCnt,
                     Missed = mCnt,

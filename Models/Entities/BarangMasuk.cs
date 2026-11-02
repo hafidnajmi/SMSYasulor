@@ -43,6 +43,10 @@ namespace UPMS.Web.Models.Entities
         [Column("po_number")]
         public string? PoNumber { get; set; }
 
+        [StringLength(100)]
+        [Column("pu_number")]
+        public string? PuNumber { get; set; }
+
         [Column("unit_price")]
         public decimal? UnitPrice { get; set; }
 

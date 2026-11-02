@@ -223,31 +223,36 @@
                         </div>
                     </div>
 
-                    <!-- QTY & PO Number -->
+                    <!-- QTY & PU / PO Number -->
                     <div class="row g-2 mb-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-bold text-secondary mb-1">Jumlah Masuk (QTY) <span class="text-danger">*</span></label>
                             <div class="input-group input-group-sm bm-input-group">
                                 <span class="input-group-text"><i class="bi bi-hash text-success"></i></span>
-                                <input type="number" name="Qty" class="form-control form-control-sm fw-bold text-success" placeholder="QTY..." required min="1" value="1" />
+                                <input type="number" name="Qty" id="qtyInput" class="form-control form-control-sm fw-bold text-success" placeholder="QTY..." required min="1" value="1" oninput="calcTotalMasukPrice()" />
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary mb-1">PO Number (Optional)</label>
+                            <label class="form-label small fw-bold text-secondary mb-1">PU / PO Number <span class="text-muted fw-normal">(Optional)</span></label>
                             <div class="input-group input-group-sm bm-input-group">
                                 <span class="input-group-text"><i class="bi bi-file-earmark-text text-secondary"></i></span>
-                                <input type="text" name="PoNumber" class="form-control form-control-sm" placeholder="Nomor PO..." />
+                                <input type="text" name="PuNumber" id="puNumberInput" class="form-control form-control-sm font-monospace text-uppercase" placeholder="Nomor PU / PO..." oninput="syncPuAndPo(this.value)" />
+                                <input type="hidden" name="PoNumber" id="poNumberInput" />
                             </div>
                         </div>
                     </div>
 
                     <!-- Harga Beli / Purchase Price -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary mb-1">Harga Beli Satuan (Opsional)</label>
+                        <label class="form-label small fw-bold text-secondary mb-1 d-flex justify-content-between align-items-center">
+                            <span>Harga Beli Satuan (Unit Price) <span class="text-muted fw-normal">(Opsional)</span></span>
+                            <span class="small fw-semibold text-primary" id="totalPricePreview">Total: Rp 0</span>
+                        </label>
                         <div class="input-group input-group-sm bm-input-group">
                             <span class="input-group-text fw-bold text-primary">Rp</span>
-                            <input type="number" name="UnitPrice" class="form-control form-control-sm" placeholder="Harga beli per unit (update Master Data otomatis)..." step="0.01" />
+                            <input type="number" name="UnitPrice" id="unitPriceInput" class="form-control form-control-sm" placeholder="Harga beli per unit (update Master Data otomatis)..." step="0.01" oninput="calcTotalMasukPrice()" />
                         </div>
+                        <div class="form-text text-muted" style="font-size: 11px;">Tersimpan permanen di database dan otomatis memperbarui harga Master Data sparepart.</div>
                     </div>
 
                     <!-- Remarks -->
@@ -293,9 +298,11 @@
                         <th style="font-weight: 600;">PART NUMBER</th>
                         <th style="font-weight: 600;">ITEM NAME</th>
                         <th class="text-end" style="font-weight: 600;">QTY</th>
+                        <th class="text-end" style="font-weight: 600;">HARGA SATUAN</th>
+                        <th class="text-end" style="font-weight: 600;">TOTAL HARGA</th>
                         <th style="font-weight: 600;">PIC</th>
                         <th style="font-weight: 600;">SUPPLIER</th>
-                        <th style="font-weight: 600;">PO NUMBER</th>
+                        <th style="font-weight: 600;">PU / PO NUMBER</th>
                         <th style="font-weight: 600;">STATUS</th>
                         <th class="text-center" style="font-weight: 600;">AKSI</th>
                     </tr>
@@ -313,9 +320,11 @@
                                 <td><span class="small font-monospace text-secondary">@(item.PartNumber ?? "-")</span></td>
                                 <td class="fw-semibold text-dark">@item.ItemName</td>
                                 <td class="text-end text-success fw-bold font-monospace">+@item.Qty</td>
+                                <td class="text-end font-monospace">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + item.UnitPrice.Value.ToString("N0") : "-")</td>
+                                <td class="text-end font-monospace fw-bold text-success">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + (item.UnitPrice.Value * item.Qty).ToString("N0") : "-")</td>
                                 <td class="small"><i class="bi bi-person me-1 text-muted"></i>@(item.Pic ?? "-")</td>
                                 <td class="small text-secondary"><i class="bi bi-building me-1 text-muted"></i>@(item.Supplier ?? "-")</td>
-                                <td class="small text-muted">@(item.PoNumber ?? "-")</td>
+                                <td class="small font-monospace"><span class="badge bg-light text-dark border font-monospace">@(!string.IsNullOrEmpty(item.PuNumber) ? item.PuNumber : (!string.IsNullOrEmpty(item.PoNumber) ? item.PoNumber : "-"))</span></td>
                                 <td>
                                     @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
                                     {
@@ -354,7 +363,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="11" class="text-center text-muted py-4">
+                            <td colspan="13" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox fs-3 d-block text-secondary opacity-50 mb-1"></i>
                                 Belum ada riwayat transaksi barang masuk.
                             </td>
@@ -396,12 +405,23 @@
                         }
                     </div>
 
+                    <div class="row g-1 small mb-2">
+                        <div class="col-6">
+                            <span class="text-muted d-block" style="font-size: 11px;">Harga Satuan:</span>
+                            <span class="font-monospace text-dark" style="font-size: 12px;">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + item.UnitPrice.Value.ToString("N0") : "-")</span>
+                        </div>
+                        <div class="col-6 text-end">
+                            <span class="text-muted d-block" style="font-size: 11px;">Total Harga:</span>
+                            <span class="font-monospace fw-bold text-success" style="font-size: 12px;">@(item.UnitPrice.HasValue && item.UnitPrice.Value > 0 ? "Rp " + (item.UnitPrice.Value * item.Qty).ToString("N0") : "-")</span>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center pt-2 border-top text-muted" style="font-size: 11px;">
                         <div><i class="bi bi-person me-1 text-primary"></i>@(item.Pic ?? "-")</div>
                         <div><i class="bi bi-building me-1 text-secondary"></i>@(item.Supplier ?? "-")</div>
-                        @if (!string.IsNullOrEmpty(item.PoNumber))
+                        @if (!string.IsNullOrEmpty(item.PuNumber) || !string.IsNullOrEmpty(item.PoNumber))
                         {
-                            <div><i class="bi bi-file-earmark-text me-1"></i>PO: @item.PoNumber</div>
+                            <div><i class="bi bi-file-earmark-text me-1"></i>PU/PO: @(!string.IsNullOrEmpty(item.PuNumber) ? item.PuNumber : item.PoNumber)</div>
                         }
                         <div>
                             @if (item.ApprovalStatus == "Approved" || string.IsNullOrEmpty(item.ApprovalStatus))
@@ -469,11 +489,32 @@
             }, 250);
         }
 
+        function syncPuAndPo(val) {
+            var poEl = document.getElementById("poNumberInput");
+            if (poEl) poEl.value = val ? val.trim() : "";
+        }
+
+        function calcTotalMasukPrice() {
+            var qty = parseFloat(document.getElementById("qtyInput")?.value) || 0;
+            var price = parseFloat(document.getElementById("unitPriceInput")?.value) || 0;
+            var total = qty * price;
+            var totalPreview = document.getElementById("totalPricePreview");
+            if (totalPreview) {
+                totalPreview.innerText = "Total: Rp " + Math.round(total).toLocaleString('id-ID');
+            }
+        }
+
         function selectMasterItem(item) {
             document.getElementById("binLocation").value = item.bin !== '-' ? item.bin : '';
             document.getElementById("partNumber").value = item.id || '';
             document.getElementById("itemName").value = item.item || '';
             document.getElementById("itemName").readOnly = true;
+
+            var priceEl = document.getElementById("unitPriceInput");
+            if (priceEl && item.unitPrice && (!priceEl.value || parseFloat(priceEl.value) === 0)) {
+                priceEl.value = item.unitPrice;
+                calcTotalMasukPrice();
+            }
 
             var statusEl = document.getElementById("binStatus");
             statusEl.innerText = "Ditemukan di Master Data";
@@ -498,6 +539,11 @@
                     if (data) {
                         itemEl.value = data.itemName || '';
                         partEl.value = data.partNumber || '';
+                        var priceEl = document.getElementById("unitPriceInput");
+                        if (priceEl && data.currentUnitPrice && (!priceEl.value || parseFloat(priceEl.value) === 0)) {
+                            priceEl.value = data.currentUnitPrice;
+                            calcTotalMasukPrice();
+                        }
                         itemEl.readOnly = true;
                         statusEl.innerText = "Ditemukan di Master Data";
                         statusEl.className = "small fw-semibold text-success";
@@ -517,6 +563,7 @@
             document.getElementById("partNumber").value = "";
             document.getElementById("itemName").readOnly = false;
             document.getElementById("binStatus").innerText = "";
+            calcTotalMasukPrice();
         }
 
         document.addEventListener("click", function(e) {
