@@ -233,7 +233,7 @@
 </head>
 <body>
     <!-- Dual Background Layer System for Smooth Crossfade (Cropped to Right Half 50vw) -->
-    <div id="bgLayerA" class="bg-layer active" style="background-image: url('/filling.webp');"></div>
+    <div id="bgLayerA" class="bg-layer active" style="background-image: url('https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/filling.webp'), url('/filling.webp');"></div>
     <div id="bgLayerB" class="bg-layer"></div>
 
     <!-- Left Side Dynamic Department Title (Pure Solid White Area) -->
@@ -323,7 +323,7 @@
                     }
                 }
 
-                // High-Performance Smooth Background Crossfade System (No Hard Refresh)
+                // High-Performance Smooth Background Crossfade System (Dual CDN & Local fallback)
                 (function() {
                     var activeLayerIndex = 0;
                     var layerA = document.getElementById('bgLayerA');
@@ -331,15 +331,29 @@
                     var deptSelect = document.getElementById('department');
                     var leftDeptName = document.getElementById('leftDeptName');
 
+                    var cdnBase = 'https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot';
+                    var isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+                    // If on local dev, use local path; on Dewacloud online, use CDN with automatic fallback
                     var deptImages = {
-                        'Filling': '/filling.webp',
-                        'Process': '/process.webp',
-                        'Utility': '/utility1.webp'
+                        'Filling': isLocal ? '/filling.webp' : (cdnBase + '/filling.webp'),
+                        'Process': isLocal ? '/process.webp' : (cdnBase + '/process.webp'),
+                        'Utility': isLocal ? '/utility1.webp' : (cdnBase + '/utility1.webp')
                     };
 
-                    // Preload all local images
+                    // Preload and verify image accessibility with auto-failover
                     Object.keys(deptImages).forEach(function(key) {
                         var img = new Image();
+                        img.onerror = function() {
+                            if (deptImages[key].indexOf('github') !== -1) {
+                                deptImages[key] = '/' + key.toLowerCase() + (key === 'Utility' ? '1' : '') + '.webp';
+                            } else {
+                                deptImages[key] = cdnBase + '/' + key.toLowerCase() + (key === 'Utility' ? '1' : '') + '.webp';
+                            }
+                            if ((deptSelect.value || 'Filling') === key) {
+                                switchBackgroundSmoothly(key);
+                            }
+                        };
                         img.src = deptImages[key];
                     });
 
@@ -350,8 +364,11 @@
 
                         if (!nextActive || !currentActive) return;
 
-                        // Set target background image
-                        nextActive.style.backgroundImage = "url('" + targetUrl + "')";
+                        // Set target background image with fallback
+                        var localFallback = '/' + deptName.toLowerCase() + (deptName === 'Utility' ? '1' : '') + '.webp';
+                        var cdnFallback = cdnBase + '/' + deptName.toLowerCase() + (deptName === 'Utility' ? '1' : '') + '.webp';
+                        
+                        nextActive.style.backgroundImage = "url('" + targetUrl + "'), url('" + (isLocal ? cdnFallback : localFallback) + "')";
 
                         // Crossfade opacity
                         nextActive.classList.add('active');

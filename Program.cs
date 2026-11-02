@@ -2,6 +2,7 @@ using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using UPMS.Web.Data;
 using UPMS.Web.Services;
@@ -189,7 +190,13 @@ app.UseForwardedHeaders(forwardedOptions);
 // Configure the HTTP request pipeline.
 app.UseDeveloperExceptionPage();
 
-app.UseStaticFiles();
+var staticFileProvider = new FileExtensionContentTypeProvider();
+staticFileProvider.Mappings[".webp"] = "image/webp";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = staticFileProvider
+});
 
 app.UseRouting();
 
