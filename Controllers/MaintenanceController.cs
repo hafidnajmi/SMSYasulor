@@ -209,9 +209,9 @@ namespace UPMS.Web.Controllers
                 var s = status.Trim().ToUpper();
                 monthFiltered = monthFiltered.Where(p =>
                     s == "O" ? (p.DisplayStatusCategory == "Overhaul") :
-                    s == "P" ? (p.DisplayStatusCategory == "Planning") :
+                    s == "P" ? (p.DisplayStatusCategory == "Planning" || p.DisplayStatusCategory == "ExecutePlan" || p.DisplayStatusCategory == "MissedPlan") :
                     s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Execute")) :
-                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision") :
+                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision" || p.DisplayStatusCategory == "MissedRevision") :
                     s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Missed")) :
                     s == "E_P" ? (p.DisplayStatusCategory == "ExecutePlan") :
                     s == "E_R" ? (p.DisplayStatusCategory == "ExecuteRevision") :
@@ -263,7 +263,7 @@ namespace UPMS.Web.Controllers
 
             // Summary stats for KPI cards
             ViewBag.TotalCount = monthEvents.Count;
-            ViewBag.PlanningCount = monthEvents.Count(e => e.DisplayStatusCategory == "Planning");
+            ViewBag.PlanningCount = monthEvents.Count(e => e.DisplayStatusCategory == "Planning" || e.DisplayStatusCategory == "ExecutePlan" || e.DisplayStatusCategory == "MissedPlan");
             ViewBag.ExecuteCount = monthEvents.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_P", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Execute", StringComparison.OrdinalIgnoreCase));
             ViewBag.RevisionCount = monthEvents.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || (e.SourceStatus != null && e.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || e.ParentId != null || e.DisplayStatusCategory == "Revision" || e.DisplayStatusCategory == "ExecuteRevision" || e.DisplayStatusCategory == "MissedRevision");
             ViewBag.MissedCount = monthEvents.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_P", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
@@ -1564,11 +1564,15 @@ namespace UPMS.Web.Controllers
             {
                 var s = status.Trim().ToUpper();
                 filtered = filtered.Where(p =>
-                    s == "O" ? (p.Status.Equals("O", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("overhoul", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("overhaul", StringComparison.OrdinalIgnoreCase)) :
-                    s == "P" ? (p.Status.Equals("P", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("planning", StringComparison.OrdinalIgnoreCase)) :
-                    s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase)) :
-                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase)) :
-                    s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase)) :
+                    s == "O" ? (p.DisplayStatusCategory == "Overhaul") :
+                    s == "P" ? (p.DisplayStatusCategory == "Planning" || p.DisplayStatusCategory == "ExecutePlan" || p.DisplayStatusCategory == "MissedPlan") :
+                    s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Execute")) :
+                    s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision" || p.DisplayStatusCategory == "MissedRevision") :
+                    s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Missed")) :
+                    s == "E_P" ? (p.DisplayStatusCategory == "ExecutePlan") :
+                    s == "E_R" ? (p.DisplayStatusCategory == "ExecuteRevision") :
+                    s == "M_P" ? (p.DisplayStatusCategory == "MissedPlan") :
+                    s == "M_R" ? (p.DisplayStatusCategory == "MissedRevision") :
                     p.Status.Equals(s, StringComparison.OrdinalIgnoreCase));
             }
 
@@ -1728,7 +1732,12 @@ namespace UPMS.Web.Controllers
                                                !p.Status.Equals("OVERHAUL", StringComparison.OrdinalIgnoreCase) &&
                                                p.DisplayStatusCategory != "Overhaul").ToList();
 
-                int pCnt = mItems.Count(e => e.DisplayStatusCategory == "Planning");
+                // Planning count: includes pure Planning, ExecutePlan (Plan ter-execute), and MissedPlan
+                // Crucial Rule: When a Plan is executed, it changes to Plan / Execute (ExecutePlan).
+                // The data must STILL be counted in Planning (1), AND now also in Execute (1), so both values are 1!
+                int pCnt = mItems.Count(e => e.DisplayStatusCategory == "Planning" || 
+                                             e.DisplayStatusCategory == "ExecutePlan" || 
+                                             e.DisplayStatusCategory == "MissedPlan");
                 
                 // Execute count: includes ExecutePlan, ExecuteRevision ("E_R"), and any executed status
                 int eCnt = mItems.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || 
