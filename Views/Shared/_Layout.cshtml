@@ -676,16 +676,16 @@ body:not(.modal-open) {
                     <div class="ems-nav-header">Transactions</div>
                     @if (rbacBarangMasuk)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")" asp-controller="BarangMasuk" asp-action="Index" title="Barang Masuk">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")" asp-controller="BarangMasuk" asp-action="Index" title="Stock In">
                             <span class="nav-icon-box"><i class="bi bi-box-arrow-in-down" style="color:#059669;"></i></span>
-                            <span>Barang Masuk</span>
+                            <span>Stock In</span>
                         </a>
                     }
                     @if (rbacBarangKeluar)
                     {
-                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")" asp-controller="BarangKeluar" asp-action="Index" title="Barang Keluar">
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")" asp-controller="BarangKeluar" asp-action="Index" title="Stock Out">
                             <span class="nav-icon-box"><i class="bi bi-box-arrow-up-right" style="color:#DC2626;"></i></span>
-                            <span>Barang Keluar</span>
+                            <span>Stock Out</span>
                         </a>
                     }
                     @if (rbacRiwayat)

@@ -1,7 +1,7 @@
 @model UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangMasuk>
 
 @{
-    ViewData["Title"] = "Barang Masuk";
+    ViewData["Title"] = "Stock In";
     var pics = ViewBag.Pics as List<string> ?? new List<string> { "Raisa", "Priyanto", "Rohmadi", "Yully", "Hussein", "Slamet", "Andra" };
     var suppliers = ViewBag.Suppliers as List<string> ?? new List<string>();
 }
@@ -102,7 +102,7 @@
             <i class="bi bi-box-arrow-in-down fs-5"></i>
         </div>
         <div>
-            <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Barang Masuk</h4>
+            <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Stock In</h4>
             <p class="text-muted small mb-0" style="font-size: 12px;">Input &amp; Riwayat Penerimaan Sparepart</p>
         </div>
     </div>
@@ -191,7 +191,7 @@
                             <div class="bm-icon-badge bg-success-subtle text-success">
                                 <i class="bi bi-box-seam-fill"></i>
                             </div>
-                            <h6 class="bm-section-title mb-0">Detail Barang Masuk</h6>
+                            <h6 class="bm-section-title mb-0">Detail Stock In</h6>
                         </div>
                         <span id="binStatus" class="small fw-semibold"></span>
                     </div>
@@ -281,7 +281,7 @@
     <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-clock-history text-primary fw-bold"></i>
-            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Riwayat Transaksi Barang Masuk</span>
+            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Riwayat Transaksi Stock In</span>
         </div>
         <span class="text-muted small fw-medium">@Model?.TotalCount.ToString("N0") Record(s)</span>
     </div>

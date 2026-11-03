@@ -1,7 +1,7 @@
 @model UPMS.Web.Services.PagedResult<UPMS.Web.Models.Entities.BarangKeluar>
 
 @{
-    ViewData["Title"] = "Barang Keluar";
+    ViewData["Title"] = "Stock Out";
     var pics = ViewBag.Pics as List<string> ?? new List<string> { "Raisa", "Priyanto", "Rohmadi", "Yully", "Hussein", "Slamet", "Andra" };
     var lines = ViewBag.Lines as List<string> ?? new List<string> { "B01", "B02", "B03", "B04", "B05", "B06", "B24", "B25", "PACKING", "UTILITY" };
     var maintTypes = ViewBag.MaintenanceTypes as List<string> ?? new List<string> { "PM", "Overhoul", "Breakdown", "Improvement", "Trial", "Stock Correction", "Others" };
@@ -89,7 +89,7 @@
         </div>
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
-                <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Barang Keluar</h4>
+                <h4 class="fw-bold mb-0" style="color: #0F4C81; letter-spacing: -0.02em;">Stock Out</h4>
             </div>
             <p class="text-muted small mb-0" style="font-size: 12px;">Record &amp; Riwayat Pengeluaran Sparepart</p>
         </div>
@@ -296,7 +296,7 @@
     <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-clock-history text-danger fw-bold"></i>
-            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Riwayat Transaksi Barang Keluar</span>
+            <span class="fw-bold text-dark" style="font-size: 0.9rem;">Riwayat Transaksi Stock Out</span>
         </div>
         <span class="text-muted small fw-medium">@Model?.TotalCount.ToString("N0") Record(s)</span>
     </div>

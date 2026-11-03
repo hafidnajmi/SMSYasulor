@@ -57,12 +57,12 @@
 <ul class="nav nav-tabs mb-3" style="border-bottom: 2px solid #E2E8F0;">
     <li class="nav-item">
         <a class="nav-link @(tab == "masuk" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=masuk&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search&line=@ViewBag.Line">
-            <i class="bi bi-box-arrow-in-down text-success me-1"></i> Barang Masuk History
+            <i class="bi bi-box-arrow-in-down text-success me-1"></i> Stock In History
         </a>
     </li>
     <li class="nav-item">
         <a class="nav-link @(tab == "keluar" ? "active fw-bold text-primary" : "text-secondary")" style="border-radius: 0px !important;" href="/History?tab=keluar&startDate=@ViewBag.StartDate&endDate=@ViewBag.EndDate&year=@ViewBag.Year&search=@ViewBag.Search&line=@ViewBag.Line">
-            <i class="bi bi-box-arrow-up-right text-danger me-1"></i> Barang Keluar History
+            <i class="bi bi-box-arrow-up-right text-danger me-1"></i> Stock Out History
         </a>
     </li>
 </ul>
@@ -122,7 +122,7 @@
     {
         <div class="bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
             <div class="fw-bold text-dark small">
-                <i class="bi bi-box-arrow-in-down me-1 text-success"></i> Log Transaksi Barang Masuk
+                <i class="bi bi-box-arrow-in-down me-1 text-success"></i> Log Transaksi Stock In
             </div>
             <span class="text-muted small">@masukModel.TotalCount.ToString("N0") Record(s)</span>
         </div>
@@ -317,7 +317,7 @@
     {
         <div class="bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
             <div class="fw-bold text-dark small">
-                <i class="bi bi-box-arrow-up-right me-1 text-danger"></i> Log Transaksi Barang Keluar
+                <i class="bi bi-box-arrow-up-right me-1 text-danger"></i> Log Transaksi Stock Out
             </div>
             <span class="text-muted small">@keluarModel.TotalCount.ToString("N0") Record(s)</span>
         </div>
