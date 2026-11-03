@@ -32,15 +32,27 @@ namespace UPMS.Web.Services
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                string term = search.Trim().ToLower();
-                query = query.Where(m =>
-                    m.Id.ToLower().Contains(term) ||
-                    m.Item.ToLower().Contains(term) ||
-                    (m.Bin != null && m.Bin.ToLower().Contains(term)) ||
-                    (m.Machine != null && m.Machine.ToLower().Contains(term)) ||
-                    (m.Brand != null && m.Brand.ToLower().Contains(term)) ||
-                    (m.Detail != null && m.Detail.ToLower().Contains(term))
-                );
+                // Multi-term tokenized search: Splits keywords so users can search across Item, Detail & Brand effortlessly
+                // e.g. "sensor festo" or "bearing 6205 skf" matches across Item, Detail, Brand, etc.
+                var terms = search.Trim()
+                    .Split(new[] { ' ', ',', '+', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(t => t.ToLower())
+                    .Distinct()
+                    .ToList();
+
+                foreach (var term in terms)
+                {
+                    var t = term;
+                    query = query.Where(m =>
+                        (m.Item != null && m.Item.ToLower().Contains(t)) ||
+                        (m.Detail != null && m.Detail.ToLower().Contains(t)) ||
+                        (m.Brand != null && m.Brand.ToLower().Contains(t)) ||
+                        (m.Id != null && m.Id.ToLower().Contains(t)) ||
+                        (m.Bin != null && m.Bin.ToLower().Contains(t)) ||
+                        (m.Machine != null && m.Machine.ToLower().Contains(t)) ||
+                        (m.Line != null && m.Line.ToLower().Contains(t))
+                    );
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(upArea))
@@ -91,8 +103,11 @@ namespace UPMS.Web.Services
             }
 
             int totalCount = await query.CountAsync();
-            var items = await query
-                .OrderBy(m => m.Id)
+            var orderedQuery = !string.IsNullOrWhiteSpace(search)
+                ? query.OrderBy(m => m.Item).ThenBy(m => m.Brand).ThenBy(m => m.Id)
+                : query.OrderBy(m => m.Id);
+
+            var items = await orderedQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
