@@ -38,7 +38,7 @@ namespace UPMS.Web.Controllers
         }
 
         // GET: /DeveloperUpdates
-        public async Task<IActionResult> Index(string? type, string? search)
+        public async Task<IActionResult> Index(string? type, string? status, string? search)
         {
             if (!await IsAdminOrDeveloperAsync())
             {
@@ -51,6 +51,11 @@ namespace UPMS.Web.Controllers
             if (!string.IsNullOrWhiteSpace(type) && !string.Equals(type, "all", StringComparison.OrdinalIgnoreCase))
             {
                 query = query.Where(u => u.UpdateType.ToLower() == type.Trim().ToLower());
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(u => u.ReleaseStatus.ToLower() == status.Trim().ToLower());
             }
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -66,17 +71,20 @@ namespace UPMS.Web.Controllers
             var allList = await _db.SystemUpdates.AsNoTracking().ToListAsync();
 
             ViewBag.TotalCount = allList.Count;
+            ViewBag.PublishedCount = allList.Count(u => u.ReleaseStatus.Equals("Published", StringComparison.OrdinalIgnoreCase));
+            ViewBag.DraftCount = allList.Count(u => u.ReleaseStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase));
             ViewBag.BugFixCount = allList.Count(u => u.UpdateType.Equals("Bug Fix", StringComparison.OrdinalIgnoreCase));
             ViewBag.ImprovementCount = allList.Count(u => u.UpdateType.Equals("Improvement", StringComparison.OrdinalIgnoreCase));
             ViewBag.NewFeatureCount = allList.Count(u => u.UpdateType.Equals("New Feature", StringComparison.OrdinalIgnoreCase));
             ViewBag.ActiveAlertCount = allList.Count(u => u.IsActive && u.ShowPopupAlert);
 
             ViewBag.SelectedType = type ?? "all";
+            ViewBag.SelectedStatus = status ?? "all";
             ViewBag.SearchQuery = search ?? "";
             ViewBag.DefaultReceiverEmail = await GetSettingAsync("receiver_email", "");
             ViewBag.EmailEnabled = (await GetSettingAsync("email_enabled", "0")) == "1";
 
-            var updates = await query.OrderByDescending(u => u.CreatedAt).ToListAsync();
+            var updates = await query.OrderByDescending(u => u.ReleaseDate ?? u.CreatedAt).ToListAsync();
             return View(updates);
         }
 
@@ -103,8 +111,21 @@ namespace UPMS.Web.Controllers
             model.Description = model.Description.Trim();
             model.ActionRequired = string.IsNullOrWhiteSpace(model.ActionRequired) ? null : model.ActionRequired.Trim();
             model.TargetAudience = string.IsNullOrWhiteSpace(model.TargetAudience) ? "All Users" : model.TargetAudience.Trim();
+            model.ReleaseStatus = string.IsNullOrWhiteSpace(model.ReleaseStatus) ? "Published" : model.ReleaseStatus.Trim();
+            
+            if (model.ReleaseStatus.Equals("Published", StringComparison.OrdinalIgnoreCase))
+            {
+                model.ReleaseDate = model.ReleaseDate ?? now;
+            }
+            else
+            {
+                model.ReleaseDate = null;
+                model.SendEmail = false; // Do not send email for drafts
+            }
+
             model.CreatedBy = User.Identity?.Name ?? "Developer";
             model.CreatedAt = now;
+            model.UpdatedAt = now;
             model.IsActive = true;
 
             // Resolve email recipients
@@ -117,7 +138,7 @@ namespace UPMS.Web.Controllers
             await _db.SaveChangesAsync();
 
             // Handle Email Broadcast if enabled
-            if (model.SendEmail && !string.IsNullOrWhiteSpace(recipients))
+            if (model.SendEmail && !string.IsNullOrWhiteSpace(recipients) && model.ReleaseStatus.Equals("Published", StringComparison.OrdinalIgnoreCase))
             {
                 var (success, count, error) = await SendBroadcastEmailAsync(model, recipients);
                 if (success)
@@ -134,7 +155,9 @@ namespace UPMS.Web.Controllers
             }
             else
             {
-                TempData["Success"] = $"Update '{model.Title}' ({model.Version}) berhasil dipublish ke sistem.";
+                TempData["Success"] = model.ReleaseStatus == "Draft" 
+                    ? $"Draft pembaruan '{model.Title}' ({model.Version}) berhasil disimpan."
+                    : $"Update '{model.Title}' ({model.Version}) berhasil dipublikasikan ke sistem.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -143,7 +166,7 @@ namespace UPMS.Web.Controllers
         // POST: /DeveloperUpdates/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string title, string version, string updateType, string description, string? actionRequired, string targetAudience, bool showPopupAlert, bool isActive)
+        public async Task<IActionResult> Edit(int id, string title, string version, string updateType, string description, string? actionRequired, string targetAudience, string? releaseStatus, DateTime? releaseDate, bool showPopupAlert, bool isActive)
         {
             if (!await IsAdminOrDeveloperAsync()) return Forbid();
 
@@ -160,12 +183,51 @@ namespace UPMS.Web.Controllers
             item.Description = description?.Trim() ?? item.Description;
             item.ActionRequired = string.IsNullOrWhiteSpace(actionRequired) ? null : actionRequired.Trim();
             item.TargetAudience = string.IsNullOrWhiteSpace(targetAudience) ? "All Users" : targetAudience.Trim();
+
+            var newStatus = string.IsNullOrWhiteSpace(releaseStatus) ? item.ReleaseStatus : releaseStatus.Trim();
+            if (newStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) && item.ReleaseStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                item.ReleaseDate = releaseDate ?? DateTime.Now;
+            }
+            else if (newStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                item.ReleaseDate = null;
+            }
+            else
+            {
+                item.ReleaseDate = releaseDate ?? item.ReleaseDate ?? DateTime.Now;
+            }
+            item.ReleaseStatus = newStatus;
+
             item.ShowPopupAlert = showPopupAlert;
             item.IsActive = isActive;
             item.UpdatedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
             TempData["Success"] = $"Update '{item.Title}' berhasil diperbarui.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /DeveloperUpdates/PublishDraft
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PublishDraft(int id)
+        {
+            if (!await IsAdminOrDeveloperAsync()) return Forbid();
+
+            var item = await _db.SystemUpdates.FindAsync(id);
+            if (item == null)
+            {
+                TempData["Error"] = "Catatan update tidak ditemukan.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            item.ReleaseStatus = "Published";
+            item.ReleaseDate = DateTime.Now;
+            item.UpdatedAt = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = $"Draft '{item.Title}' ({item.Version}) resmi dipublikasikan ke sistem & aktif di ikon lonceng.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -287,9 +349,9 @@ namespace UPMS.Web.Controllers
             {
                 var updates = await _db.SystemUpdates
                     .AsNoTracking()
-                    .Where(u => u.IsActive)
-                    .OrderByDescending(u => u.CreatedAt)
-                    .Take(10)
+                    .Where(u => u.IsActive && u.ReleaseStatus == "Published")
+                    .OrderByDescending(u => u.ReleaseDate ?? u.CreatedAt)
+                    .Take(15)
                     .ToListAsync();
 
                 var list = updates.Select(u => new
@@ -298,13 +360,15 @@ namespace UPMS.Web.Controllers
                     title = u.Title,
                     version = u.Version,
                     type = u.UpdateType,
+                    status = u.ReleaseStatus,
                     description = u.Description,
                     actionRequired = u.ActionRequired ?? "",
                     createdBy = u.CreatedBy,
-                    createdAt = u.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                    timeAgo = GetRelativeTime(u.CreatedAt),
+                    releaseDate = (u.ReleaseDate ?? u.CreatedAt).ToString("dd MMM yyyy HH:mm"),
+                    createdAt = (u.ReleaseDate ?? u.CreatedAt).ToString("dd MMM yyyy HH:mm"),
+                    timeAgo = GetRelativeTime(u.ReleaseDate ?? u.CreatedAt),
                     showAlert = u.ShowPopupAlert,
-                    isRecent = (DateTime.Now - u.CreatedAt).TotalHours < 72
+                    isRecent = (DateTime.Now - (u.ReleaseDate ?? u.CreatedAt)).TotalHours < 72
                 });
 
                 return Json(new { success = true, data = list });

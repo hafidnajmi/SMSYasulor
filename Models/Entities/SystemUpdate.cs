@@ -37,6 +37,13 @@ namespace UPMS.Web.Models.Entities
         [Column("target_audience")]
         public string TargetAudience { get; set; } = "All Users"; // "All Users", "Admin Only", "Technician Only"
 
+        [StringLength(50)]
+        [Column("release_status")]
+        public string ReleaseStatus { get; set; } = "Published"; // "Draft", "Published"
+
+        [Column("release_date")]
+        public DateTime? ReleaseDate { get; set; }
+
         [Column("send_email")]
         public bool SendEmail { get; set; } = false;
 
