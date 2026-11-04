@@ -41,29 +41,34 @@
         margin-bottom: 0;
     }
 
-    /* Minimalist Cardless Stats Bar */
+    /* Clean Bordered Stats Bar */
     .dev-summary-bar {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 18px;
-        padding: 8px 0;
+        gap: 8px;
         margin-bottom: 16px;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 13px;
     }
 
-    .dev-stat-item {
+    .dev-stat-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 12.5px;
         color: #64748b;
+        line-height: 1.3;
     }
 
-    .dev-stat-item strong {
+    .dev-stat-box strong {
         color: #0f172a;
         font-weight: 600;
-        margin-left: 4px;
     }
 
-    /* Minimalist Cardless Filter Links */
+    /* Clean Bordered Filter Navigation */
     .dev-filter-nav {
         display: flex;
         align-items: center;
@@ -71,7 +76,7 @@
         flex-wrap: wrap;
         gap: 12px;
         margin-bottom: 14px;
-        padding-bottom: 10px;
+        padding-bottom: 12px;
         border-bottom: 1px solid #e2e8f0;
     }
 
@@ -79,71 +84,126 @@
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 18px;
+        gap: 8px;
     }
 
-    .dev-filter-link {
-        color: #64748b;
+    .dev-filter-btn {
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        background: #ffffff;
+        color: #0f172a;
+        font-size: 12.5px;
+        padding: 5px 12px;
         text-decoration: none;
-        font-size: 13px;
-        padding: 4px 0;
-        position: relative;
-        transition: color 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+        line-height: 1.3;
     }
 
-    .dev-filter-link:hover {
+    .dev-filter-btn:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
         color: #0f172a;
     }
 
-    .dev-filter-link.active {
-        color: #0f172a;
-        font-weight: 600;
-        border-bottom: 2px solid #0f172a;
+    .dev-filter-btn.active {
+        border: 1px solid #0f172a;
+        background: #0f172a;
+        color: #ffffff;
+        font-weight: 500;
     }
 
-    /* Cardless Clean Table */
+    .dev-filter-btn.active:hover {
+        background: #1e293b;
+        border-color: #1e293b;
+        color: #ffffff;
+    }
+
+    /* Clean Bordered Table */
+    .dev-table-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        background: #ffffff;
+        overflow: hidden;
+    }
+
     .dev-table {
         width: 100%;
         border-collapse: collapse;
+        margin-bottom: 0;
     }
 
     .dev-table th {
-        font-size: 11px;
+        font-size: 11.5px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         color: #64748b;
-        padding: 10px 12px;
+        padding: 10px 14px;
         border-bottom: 1px solid #e2e8f0;
-        background: transparent;
+        background: #f8fafc;
         text-align: left;
     }
 
     .dev-table td {
-        padding: 14px 12px;
+        padding: 12px 14px;
         vertical-align: top;
         border-bottom: 1px solid #f1f5f9;
         font-size: 13px;
         color: #0f172a;
     }
 
+    .dev-table tr:last-child td {
+        border-bottom: none;
+    }
+
     .dev-table tr:hover td {
-        background-color: #fafafa;
+        background-color: #fafbfc;
     }
 
     .dev-action-btn {
-        background: none;
-        border: none;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
         color: #64748b;
-        padding: 4px 6px;
+        padding: 4px 7px;
         cursor: pointer;
-        font-size: 14px;
-        transition: color 0.15s ease;
+        font-size: 13px;
+        transition: all 0.15s ease;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
     }
 
     .dev-action-btn:hover {
+        border-color: #0f172a;
         color: #0f172a;
+        background: #f8fafc;
+    }
+
+    .dev-publish-btn {
+        background: #0f172a;
+        border: 1px solid #0f172a;
+        border-radius: 4px;
+        color: #ffffff;
+        padding: 4px 7px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .dev-publish-btn:hover {
+        background: #1e293b;
+        border-color: #1e293b;
+        color: #ffffff;
     }
 </style>
 
@@ -186,46 +246,41 @@
         </div>
     }
 
-    <!-- Minimalist Summary Bar (No Cards, Pure Text & Numbers) -->
+    <!-- Summary Stats Bar with Clean 1px Borders -->
     <div class="dev-summary-bar">
-        <div class="dev-stat-item">Total Catatan: <strong>@ViewBag.TotalCount</strong></div>
-        <div class="text-muted opacity-50">&bull;</div>
-        <div class="dev-stat-item">Rilis Aktif: <strong>@ViewBag.PublishedCount</strong></div>
-        <div class="text-muted opacity-50">&bull;</div>
-        <div class="dev-stat-item">Draf: <strong>@ViewBag.DraftCount</strong></div>
-        <div class="text-muted opacity-50">&bull;</div>
-        <div class="dev-stat-item">Perbaikan Bug: <strong>@ViewBag.BugFixCount</strong></div>
-        <div class="text-muted opacity-50">&bull;</div>
-        <div class="dev-stat-item">Peningkatan: <strong>@ViewBag.ImprovementCount</strong></div>
-        <div class="text-muted opacity-50">&bull;</div>
-        <div class="dev-stat-item">Fitur Baru: <strong>@ViewBag.NewFeatureCount</strong></div>
+        <div class="dev-stat-box">Total Catatan: <strong>@ViewBag.TotalCount</strong></div>
+        <div class="dev-stat-box">Rilis Aktif: <strong>@ViewBag.PublishedCount</strong></div>
+        <div class="dev-stat-box">Draf: <strong>@ViewBag.DraftCount</strong></div>
+        <div class="dev-stat-box">Perbaikan Bug: <strong>@ViewBag.BugFixCount</strong></div>
+        <div class="dev-stat-box">Peningkatan: <strong>@ViewBag.ImprovementCount</strong></div>
+        <div class="dev-stat-box">Fitur Baru: <strong>@ViewBag.NewFeatureCount</strong></div>
     </div>
 
-    <!-- Filter Nav (Pure Text Links, No Boxy Cards) -->
+    <!-- Filter Nav with Clean 1px Border Buttons -->
     <div class="dev-filter-nav">
         <div class="dev-filter-links">
             <a asp-action="Index" asp-route-type="all" asp-route-status="all" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentType == "all" && currentStatus == "all" ? "active" : "")">
+               class="dev-filter-btn @(currentType == "all" && currentStatus == "all" ? "active" : "")">
                 Semua (@ViewBag.TotalCount)
             </a>
             <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Published" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+               class="dev-filter-btn @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
                 Rilis (@ViewBag.PublishedCount)
             </a>
             <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Draft" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+               class="dev-filter-btn @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
                 Draf (@ViewBag.DraftCount)
             </a>
             <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentType == "Bug Fix" ? "active" : "")">
+               class="dev-filter-btn @(currentType == "Bug Fix" ? "active" : "")">
                 Bug Fix (@ViewBag.BugFixCount)
             </a>
             <a asp-action="Index" asp-route-type="Improvement" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentType == "Improvement" ? "active" : "")">
+               class="dev-filter-btn @(currentType == "Improvement" ? "active" : "")">
                 Improvement (@ViewBag.ImprovementCount)
             </a>
             <a asp-action="Index" asp-route-type="New Feature" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-link @(currentType == "New Feature" ? "active" : "")">
+               class="dev-filter-btn @(currentType == "New Feature" ? "active" : "")">
                 Fitur Baru (@ViewBag.NewFeatureCount)
             </a>
         </div>
@@ -233,21 +288,21 @@
         <form method="get" asp-action="Index" class="d-flex align-items-center">
             <input type="hidden" name="type" value="@currentType" />
             <input type="hidden" name="status" value="@currentStatus" />
-            <div class="input-group input-group-sm" style="width: 240px;">
-                <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari catatan..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border-color: #e2e8f0;" />
-                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            <div class="input-group input-group-sm" style="width: 260px;">
+                <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari catatan..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border: 1px solid #e2e8f0; border-right: none;" />
+                <button class="btn btn-dark" type="submit" style="border-radius: 0 4px 4px 0; font-size: 12.5px; padding: 5px 14px; border: 1px solid #0f172a;"><i class="bi bi-search me-1"></i> Cari</button>
                 @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all" || currentStatus != "all")
                 {
-                    <a asp-action="Index" class="btn btn-outline-secondary" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-1" style="border-radius: 4px; font-size: 12.5px; border: 1px solid #e2e8f0; padding: 5px 10px;" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
                 }
             </div>
         </form>
     </div>
 
-    <!-- Table of Release Records (No Text Cards / No Badge Boxes) -->
+    <!-- Table of Release Records in Clean Bordered Container -->
     @if (!Model.Any())
     {
-        <div class="p-5 text-center text-muted">
+        <div class="p-5 text-center text-muted border" style="border-radius: 4px; background: #ffffff;">
             <i class="bi bi-inbox fs-3 text-secondary opacity-50 d-block mb-2"></i>
             <div class="fw-medium text-dark mb-1">Belum ada catatan pembaruan</div>
             <div class="small text-muted mb-3">Klik tombol "Buat Pembaruan" untuk menambahkan perbaikan atau draf rilis baru.</div>
@@ -258,7 +313,7 @@
     }
     else
     {
-        <div class="table-responsive">
+        <div class="dev-table-container table-responsive">
             <table class="dev-table">
                 <thead>
                     <tr>
@@ -324,7 +379,7 @@
                                     {
                                         <form asp-action="PublishDraft" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Publikasikan draf ini ke sistem dan ikon lonceng sekarang?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="dev-action-btn" title="Publikasikan Draf Ini Sekarang">
+                                            <button type="submit" class="dev-publish-btn" title="Publikasikan Draf Ini Sekarang">
                                                 <i class="bi bi-send-check"></i>
                                             </button>
                                         </form>
@@ -340,7 +395,7 @@
                                     </button>
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan rilis ini?');">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="dev-action-btn text-muted" title="Hapus Update">
+                                        <button type="submit" class="dev-action-btn" title="Hapus Update">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
