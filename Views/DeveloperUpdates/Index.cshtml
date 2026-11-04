@@ -10,194 +10,246 @@
 }
 
 <style>
-    /* Microsoft 365 / Azure Style - Simple, Clean & Lightweight */
-    .ms-page-header {
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 1rem;
-        margin-bottom: 1.25rem;
+    /* Uniform Font: Segoe UI / Inter / Helvetica Neue (Matching the SAS reference image) */
+    *, *::before, *::after,
+    .dev-portal, .dev-portal * {
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        letter-spacing: -0.01em;
     }
-    .ms-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .ms-stat-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.85rem 1.15rem;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .ms-stat-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-    .ms-stat-label {
-        font-size: 11.5px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        margin-bottom: 0.25rem;
-    }
-    .ms-stat-val {
-        font-size: 22px;
-        font-weight: 700;
+
+    .dev-portal {
         color: #0f172a;
-        line-height: 1.2;
     }
-    .ms-table thead th {
-        background-color: #f8fafc !important;
-        color: #475569 !important;
-        font-size: 11.5px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+
+    .dev-header {
         border-bottom: 1px solid #e2e8f0;
-        border-top: none;
-        padding: 10px 14px;
+        padding-bottom: 14px;
+        margin-bottom: 16px;
     }
-    .ms-table tbody td {
-        padding: 12px 14px;
-        vertical-align: middle;
+
+    .dev-title {
+        font-size: 19px;
+        font-weight: 600;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .dev-subtitle {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 2px;
+        margin-bottom: 0;
+    }
+
+    /* Minimalist Cardless Stats Bar */
+    .dev-summary-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 18px;
+        padding: 8px 0;
+        margin-bottom: 16px;
         border-bottom: 1px solid #f1f5f9;
         font-size: 13px;
-        color: #1e293b;
     }
-    .ms-table tbody tr:hover {
-        background-color: #f8fafc;
+
+    .dev-stat-item {
+        color: #64748b;
     }
-    .ms-pill-tag {
+
+    .dev-stat-item strong {
+        color: #0f172a;
+        font-weight: 600;
+        margin-left: 4px;
+    }
+
+    /* Minimalist Cardless Filter Links */
+    .dev-filter-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .dev-filter-links {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+
+    .dev-filter-link {
+        color: #64748b;
+        text-decoration: none;
+        font-size: 13px;
+        padding: 4px 0;
+        position: relative;
+        transition: color 0.15s ease;
+    }
+
+    .dev-filter-link:hover {
+        color: #0f172a;
+    }
+
+    .dev-filter-link.active {
+        color: #0f172a;
+        font-weight: 600;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    /* Cardless Clean Table */
+    .dev-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .dev-table th {
         font-size: 11px;
         font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 4px;
-        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        background: transparent;
+        text-align: left;
+    }
+
+    .dev-table td {
+        padding: 14px 12px;
+        vertical-align: top;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+        color: #0f172a;
+    }
+
+    .dev-table tr:hover td {
+        background-color: #fafafa;
+    }
+
+    .dev-action-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        padding: 4px 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: color 0.15s ease;
+        text-decoration: none;
+    }
+
+    .dev-action-btn:hover {
+        color: #0f172a;
     }
 </style>
 
-<!-- Clean Microsoft-Style Header -->
-<div class="ms-page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
-    <div>
-        <h4 class="fw-semibold text-dark mb-1" style="font-size: 19px; letter-spacing: -0.01em;">Pembaruan Sistem &amp; Catatan Rilis</h4>
-        <p class="text-muted small mb-0" style="font-size: 12.5px;">Dokumentasi profesional riwayat rilis, draf pembaruan, perbaikan bug, dan notifikasi ke pengguna.</p>
-    </div>
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-        <a asp-controller="EmailSettings" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px; font-size: 12.5px;" title="Konfigurasi Pengiriman Email SMTP">
-            <i class="bi bi-gear me-1"></i> Pengaturan SMTP
-        </a>
-        <button type="button" class="btn btn-dark btn-sm px-3 d-flex align-items-center gap-1" style="border-radius: 4px; font-size: 12.5px;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
-            <i class="bi bi-plus-lg"></i>
-            <span>Buat Pembaruan</span>
-        </button>
-    </div>
-</div>
-
-<!-- Alerts -->
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show py-2 px-3 d-flex align-items-center mb-3" role="alert" style="border-radius: 4px; font-size: 13px;">
-        <i class="bi bi-check-circle-fill me-2 fs-6"></i>
-        <div>@TempData["Success"]</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show py-2 px-3 d-flex align-items-center mb-3" role="alert" style="border-radius: 4px; font-size: 13px;">
-        <i class="bi bi-exclamation-circle-fill me-2 fs-6"></i>
-        <div>@TempData["Error"]</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<!-- Lightweight KPI Stats (Microsoft 365 Style) -->
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="ms-stat-card">
-            <div class="ms-stat-label"><i class="bi bi-journal-text me-1"></i> Total Catatan</div>
-            <div class="ms-stat-val">@ViewBag.TotalCount</div>
+<div class="dev-portal">
+    <!-- Header -->
+    <div class="dev-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h4 class="dev-title">Pembaruan Sistem &amp; Catatan Rilis</h4>
+            <p class="dev-subtitle">Dokumentasi riwayat rilis, draf pembaruan, perbaikan bug, dan notifikasi sistem.</p>
+        </div>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <a asp-controller="EmailSettings" asp-action="Index" class="dev-action-btn" style="font-size: 13px;" title="Konfigurasi Pengiriman Email SMTP">
+                <i class="bi bi-gear me-1"></i> Pengaturan SMTP
+            </a>
+            <button type="button" class="btn btn-dark btn-sm px-3 py-1 fw-medium" style="border-radius: 4px; font-size: 13px;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
+                <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan
+            </button>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="ms-stat-card">
-            <div class="ms-stat-label"><i class="bi bi-check2-circle me-1"></i> Rilis Publik (Aktif)</div>
-            <div class="ms-stat-val">@ViewBag.PublishedCount</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="ms-stat-card">
-            <div class="ms-stat-label"><i class="bi bi-file-earmark-text me-1"></i> Draf Pembaruan</div>
-            <div class="ms-stat-val">@ViewBag.DraftCount</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="ms-stat-card">
-            <div class="ms-stat-label"><i class="bi bi-tools me-1"></i> Perbaikan &amp; Fitur</div>
-            <div class="ms-stat-val">@(ViewBag.BugFixCount + ViewBag.NewFeatureCount)</div>
-        </div>
-    </div>
-</div>
 
-<!-- Filter Tabs & Search Bar -->
-<div class="ms-card p-2 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-    <div class="d-flex flex-wrap gap-1">
-        <a asp-action="Index" asp-route-type="all" asp-route-status="all" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentType == "all" && currentStatus == "all" ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            Semua (@ViewBag.TotalCount)
-        </a>
-        <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Published" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            <i class="bi bi-check-circle me-1"></i> Rilis (@ViewBag.PublishedCount)
-        </a>
-        <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Draft" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            <i class="bi bi-file-earmark me-1"></i> Draf (@ViewBag.DraftCount)
-        </a>
-        <span class="border-end mx-1" style="height: 20px;"></span>
-        <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentType == "Bug Fix" ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            Bug Fix (@ViewBag.BugFixCount)
-        </a>
-        <a asp-action="Index" asp-route-type="Improvement" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentType == "Improvement" ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            Improvement (@ViewBag.ImprovementCount)
-        </a>
-        <a asp-action="Index" asp-route-type="New Feature" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-           class="btn btn-sm @(currentType == "New Feature" ? "btn-dark" : "btn-light border")" style="border-radius: 4px; font-size: 12px; padding: 4px 10px;">
-            Fitur Baru (@ViewBag.NewFeatureCount)
-        </a>
+    <!-- Alerts -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #0f172a; background: #fafafa;">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check2-circle me-2 text-dark fs-6"></i>
+                <div>@TempData["Success"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #0f172a; background: #fafafa;">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-circle me-2 text-dark fs-6"></i>
+                <div>@TempData["Error"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Minimalist Summary Bar (No Cards, Pure Text & Numbers) -->
+    <div class="dev-summary-bar">
+        <div class="dev-stat-item">Total Catatan: <strong>@ViewBag.TotalCount</strong></div>
+        <div class="text-muted opacity-50">&bull;</div>
+        <div class="dev-stat-item">Rilis Aktif: <strong>@ViewBag.PublishedCount</strong></div>
+        <div class="text-muted opacity-50">&bull;</div>
+        <div class="dev-stat-item">Draf: <strong>@ViewBag.DraftCount</strong></div>
+        <div class="text-muted opacity-50">&bull;</div>
+        <div class="dev-stat-item">Perbaikan Bug: <strong>@ViewBag.BugFixCount</strong></div>
+        <div class="text-muted opacity-50">&bull;</div>
+        <div class="dev-stat-item">Peningkatan: <strong>@ViewBag.ImprovementCount</strong></div>
+        <div class="text-muted opacity-50">&bull;</div>
+        <div class="dev-stat-item">Fitur Baru: <strong>@ViewBag.NewFeatureCount</strong></div>
     </div>
 
-    <form method="get" asp-action="Index" class="d-flex align-items-center gap-1">
-        <input type="hidden" name="type" value="@currentType" />
-        <input type="hidden" name="status" value="@currentStatus" />
-        <div class="input-group input-group-sm" style="width: 250px;">
-            <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari judul atau rincian..." style="border-radius: 4px 0 0 4px; font-size: 12px;" />
-            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-            @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all" || currentStatus != "all")
-            {
-                <a asp-action="Index" class="btn btn-outline-secondary" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
-            }
+    <!-- Filter Nav (Pure Text Links, No Boxy Cards) -->
+    <div class="dev-filter-nav">
+        <div class="dev-filter-links">
+            <a asp-action="Index" asp-route-type="all" asp-route-status="all" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentType == "all" && currentStatus == "all" ? "active" : "")">
+                Semua (@ViewBag.TotalCount)
+            </a>
+            <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Published" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                Rilis (@ViewBag.PublishedCount)
+            </a>
+            <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Draft" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+                Draf (@ViewBag.DraftCount)
+            </a>
+            <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentType == "Bug Fix" ? "active" : "")">
+                Bug Fix (@ViewBag.BugFixCount)
+            </a>
+            <a asp-action="Index" asp-route-type="Improvement" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentType == "Improvement" ? "active" : "")">
+                Improvement (@ViewBag.ImprovementCount)
+            </a>
+            <a asp-action="Index" asp-route-type="New Feature" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
+               class="dev-filter-link @(currentType == "New Feature" ? "active" : "")">
+                Fitur Baru (@ViewBag.NewFeatureCount)
+            </a>
         </div>
-    </form>
-</div>
 
-<!-- Clean Table of Release Records -->
-<div class="ms-card overflow-hidden mb-4">
-    <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white">
-        <div class="fw-semibold text-dark" style="font-size: 13.5px;">
-            <i class="bi bi-list-check me-1"></i> Riwayat &amp; Draf Rilis Sistem
-        </div>
-        <span class="text-muted small" style="font-size: 12px;">@Model.Count() catatan ditemukan</span>
+        <form method="get" asp-action="Index" class="d-flex align-items-center">
+            <input type="hidden" name="type" value="@currentType" />
+            <input type="hidden" name="status" value="@currentStatus" />
+            <div class="input-group input-group-sm" style="width: 240px;">
+                <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari catatan..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border-color: #e2e8f0;" />
+                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all" || currentStatus != "all")
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
+                }
+            </div>
+        </form>
     </div>
 
+    <!-- Table of Release Records (No Text Cards / No Badge Boxes) -->
     @if (!Model.Any())
     {
         <div class="p-5 text-center text-muted">
-            <i class="bi bi-inbox fs-2 text-secondary opacity-50 d-block mb-2"></i>
-            <div class="fw-semibold text-dark mb-1">Belum ada catatan rilis</div>
+            <i class="bi bi-inbox fs-3 text-secondary opacity-50 d-block mb-2"></i>
+            <div class="fw-medium text-dark mb-1">Belum ada catatan pembaruan</div>
             <div class="small text-muted mb-3">Klik tombol "Buat Pembaruan" untuk menambahkan perbaikan atau draf rilis baru.</div>
             <button type="button" class="btn btn-dark btn-sm px-3" style="border-radius: 4px;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
                 <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan Pertama
@@ -207,7 +259,7 @@
     else
     {
         <div class="table-responsive">
-            <table class="table ms-table mb-0">
+            <table class="dev-table">
                 <thead>
                     <tr>
                         <th style="width: 140px;">Versi &amp; Status</th>
@@ -222,115 +274,73 @@
                     @foreach (var item in Model)
                     {
                         var isDraft = item.ReleaseStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase);
-                        var badgeStyle = "background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;";
-                        if (item.UpdateType.Equals("Bug Fix", StringComparison.OrdinalIgnoreCase))
-                        {
-                            badgeStyle = "background:#f8fafc; color:#0f172a; border:1px solid #0f172a;";
-                        }
-                        else if (item.UpdateType.Equals("New Feature", StringComparison.OrdinalIgnoreCase))
-                        {
-                            badgeStyle = "background:#0f172a; color:#ffffff;";
-                        }
-                        else if (item.UpdateType.Equals("System Alert", StringComparison.OrdinalIgnoreCase))
-                        {
-                            badgeStyle = "background:#ffffff; color:#000000; border:2px solid #000000; font-weight:700;";
-                        }
 
-                        <tr style="@(isDraft ? "background:#fafafa;" : "")">
+                        <tr>
                             <td>
-                                <div class="d-flex align-items-center gap-1 mb-1">
-                                    <span class="badge bg-light text-dark border font-monospace px-2 py-1" style="font-size: 11px; border-radius: 4px;">
-                                        @item.Version
-                                    </span>
-                                    @if (isDraft)
-                                    {
-                                        <span class="badge bg-warning-subtle text-dark border border-warning" style="font-size: 9.5px; border-radius: 3px;">
-                                            DRAFT
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-success border border-success-subtle" style="font-size: 9.5px; border-radius: 3px;">
-                                            RILIS
-                                        </span>
-                                    }
+                                <div class="fw-semibold text-dark">
+                                    @item.Version &bull; @(isDraft ? "Draft" : "Rilis")
                                 </div>
-                                <div class="text-muted small" style="font-size: 10.5px;">
+                                <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
                                     Target: @item.TargetAudience
                                 </div>
                             </td>
                             <td>
-                                <span class="ms-pill-tag" style="@badgeStyle">
+                                <div class="text-dark fw-medium">
                                     @item.UpdateType
-                                </span>
+                                </div>
                             </td>
                             <td>
                                 <div class="fw-semibold text-dark" style="font-size: 13.5px;">@item.Title</div>
-                                <div class="text-muted small text-truncate mt-1" style="max-width: 520px; font-size: 12px;">
+                                <div class="text-muted text-truncate mt-1" style="max-width: 520px; font-size: 12.5px; line-height: 1.4;">
                                     @item.Description
                                 </div>
                                 @if (!string.IsNullOrWhiteSpace(item.ActionRequired))
                                 {
-                                    <div class="mt-1 small" style="font-size: 11.5px; color:#475569;">
+                                    <div class="mt-1" style="font-size: 11.5px; color: #64748b;">
                                         <i class="bi bi-info-circle me-1"></i><span class="text-dark fw-medium">Action:</span> @item.ActionRequired
                                     </div>
                                 }
                             </td>
                             <td>
-                                <div style="font-size: 11.5px;">
+                                <div style="font-size: 12px; color: #0f172a;">
                                     <span class="text-muted">Rilis:</span> 
-                                    <strong>@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMM yyyy HH:mm") : "- (Belum Rilis)")</strong>
+                                    @(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMM yyyy HH:mm") : "- (Belum Rilis)")
                                 </div>
-                                <div class="text-muted small mt-1" style="font-size: 11px;">
+                                <div class="text-muted" style="font-size: 11px; margin-top: 2px;">
                                     Update: @((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMM yyyy HH:mm"))
                                 </div>
                             </td>
                             <td>
-                                @if (item.SendEmail && item.EmailSentCount > 0)
-                                {
-                                    <span class="badge bg-light text-dark border" style="font-size: 10.5px; border-radius: 4px;">
-                                        <i class="bi bi-envelope-check me-1"></i> Terkirim (@item.EmailSentCount)
-                                    </span>
-                                }
-                                else if (item.SendEmail)
-                                {
-                                    <span class="badge bg-light text-muted border" style="font-size: 10.5px; border-radius: 4px;">
-                                        <i class="bi bi-clock me-1"></i> Menunggu
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-light text-secondary border" style="font-size: 10.5px; border-radius: 4px;">
-                                        In-App Lonceng
-                                    </span>
-                                }
-                                <div class="text-muted small mt-1" style="font-size: 10.5px;">
+                                <div style="font-size: 12px; color: #0f172a;">
+                                    @(item.SendEmail && item.EmailSentCount > 0 ? $"Email Terkirim ({item.EmailSentCount})" : "In-App Lonceng")
+                                </div>
+                                <div class="text-muted" style="font-size: 11px; margin-top: 2px;">
                                     By: @item.CreatedBy
                                 </div>
                             </td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm">
+                                <div class="d-inline-flex align-items-center gap-1">
                                     @if (isDraft)
                                     {
                                         <form asp-action="PublishDraft" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Publikasikan draf ini ke sistem dan ikon lonceng sekarang?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-dark btn-sm py-1 px-2" title="Publikasikan Draf Ini Sekarang">
+                                            <button type="submit" class="dev-action-btn" title="Publikasikan Draf Ini Sekarang">
                                                 <i class="bi bi-send-check"></i>
                                             </button>
                                         </form>
                                     }
-                                    <button type="button" class="btn btn-light border btn-sm py-1 px-2" title="Lihat Rincian Rilis" onclick="openViewModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMMM yyyy HH:mm") : "-")', '@((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMMM yyyy HH:mm"))', '@item.CreatedBy')">
-                                        <i class="bi bi-eye text-dark"></i>
+                                    <button type="button" class="dev-action-btn" title="Lihat Rincian Rilis" onclick="openViewModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMMM yyyy HH:mm") : "-")', '@((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMMM yyyy HH:mm"))', '@item.CreatedBy')">
+                                        <i class="bi bi-eye"></i>
                                     </button>
-                                    <button type="button" class="btn btn-light border btn-sm py-1 px-2" title="Kirim Ulang Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
-                                        <i class="bi bi-envelope-arrow-up text-dark"></i>
+                                    <button type="button" class="dev-action-btn" title="Kirim Ulang Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
+                                        <i class="bi bi-envelope-arrow-up"></i>
                                     </button>
-                                    <button type="button" class="btn btn-light border btn-sm py-1 px-2" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.IsActive.ToString().ToLower()))">
-                                        <i class="bi bi-pencil text-dark"></i>
+                                    <button type="button" class="dev-action-btn" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.IsActive.ToString().ToLower()))">
+                                        <i class="bi bi-pencil"></i>
                                     </button>
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan rilis ini?');">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-light border btn-sm py-1 px-2 text-danger" title="Hapus Update">
+                                        <button type="submit" class="dev-action-btn text-muted" title="Hapus Update">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -344,18 +354,18 @@
     }
 </div>
 
-<!-- MODAL 1: Create New Update (Microsoft Fluent Style) -->
+<!-- MODAL 1: Create New Update -->
 <div class="modal fade" id="createUpdateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 8px;">
+        <div class="modal-content border-0 shadow" style="border-radius: 6px;">
             <form asp-action="Create" method="post" id="createUpdateForm">
                 @Html.AntiForgeryToken()
-                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 8px 8px 0 0;">
+                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <div>
                         <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                            <i class="bi bi-megaphone me-1 text-secondary"></i> Buat Catatan Rilis &amp; Draf Pembaruan
+                            Buat Catatan Rilis &amp; Draf Pembaruan
                         </h5>
-                        <p class="text-muted small mb-0 mt-1" style="font-size: 12px;">Catat dokumentasi perubahan sistem secara profesional.</p>
+                        <p class="text-muted small mb-0 mt-1" style="font-size: 12px;">Dokumentasikan perubahan sistem secara terstruktur.</p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -398,7 +408,7 @@
 
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Rincian Perubahan / Changelog <span class="text-danger">*</span></label>
-                        <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Gunakan tanda strip (-) untuk membuat poin changelog yang profesional:&#10;- Pembaruan komponen A untuk performa lebih cepat&#10;- Perbaikan bug validasi form pada menu B&#10;- Penambahan indikator status rilis dan tanggal update" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
+                        <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Gunakan tanda strip (-) untuk membuat poin changelog:&#10;- Pembaruan komponen A untuk performa lebih cepat&#10;- Perbaikan bug validasi form pada menu B&#10;- Penambahan indikator status rilis dan tanggal update" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
                     </div>
 
                     <div class="mb-3">
@@ -432,10 +442,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 8px 8px;">
+                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">
-                        <i class="bi bi-check2 me-1"></i> Simpan Catatan Rilis
+                        Simpan Catatan Rilis
                     </button>
                 </div>
             </form>
@@ -446,12 +456,13 @@
 <!-- MODAL 2: View Update Details -->
 <div class="modal fade" id="viewDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 8px;">
-            <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 8px 8px 0 0;">
+        <div class="modal-content border-0 shadow" style="border-radius: 6px;">
+            <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                 <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span id="viewStatusBadge" class="badge bg-light text-dark border font-monospace" style="font-size: 10px;">PUBLISHED</span>
-                        <span id="viewTypeBadge" class="ms-pill-tag" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1;">IMPROVEMENT</span>
+                    <div class="d-flex align-items-center gap-2 mb-1" style="font-size: 12px; color: #64748b;">
+                        <span id="viewStatusBadge" class="fw-semibold text-dark">PUBLISHED</span>
+                        <span>&bull;</span>
+                        <span id="viewTypeBadge" class="text-dark">IMPROVEMENT</span>
                     </div>
                     <h5 class="modal-title fw-semibold text-dark mb-0" id="viewModalTitle">Judul Update</h5>
                 </div>
@@ -461,7 +472,7 @@
                 <div class="row g-2 border-bottom pb-2 mb-3 small">
                     <div class="col-md-3 col-6">
                         <span class="text-muted">Versi:</span>
-                        <strong class="font-monospace text-dark d-block" id="viewVersionTag">v1.0.0</strong>
+                        <strong class="text-dark d-block" id="viewVersionTag">v1.0.0</strong>
                     </div>
                     <div class="col-md-4 col-6">
                         <span class="text-muted">Tanggal Rilis:</span>
@@ -479,7 +490,7 @@
                 </div>
 
                 <div id="viewActionContainer" style="display: none;" class="p-3 bg-light border rounded-1 mb-3">
-                    <div class="fw-semibold text-dark small text-uppercase mb-1" style="font-size: 11.5px;"><i class="bi bi-info-circle me-1"></i> Tindakan yang Diperlukan:</div>
+                    <div class="fw-semibold text-dark small text-uppercase mb-1" style="font-size: 11.5px;">Tindakan yang Diperlukan:</div>
                     <div id="viewActionText" class="text-dark small"></div>
                 </div>
 
@@ -487,7 +498,7 @@
                     Dipublikasikan oleh: <strong id="viewAuthor" class="text-dark">Developer</strong>
                 </div>
             </div>
-            <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 8px 8px;">
+            <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-4" style="border-radius: 4px;" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -497,13 +508,13 @@
 <!-- MODAL 3: Edit Update Modal -->
 <div class="modal fade" id="editUpdateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 8px;">
+        <div class="modal-content border-0 shadow" style="border-radius: 6px;">
             <form asp-action="Edit" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="editId" />
-                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 8px 8px 0 0;">
+                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                        <i class="bi bi-pencil-square me-1 text-secondary"></i> Edit Catatan Rilis
+                        Edit Catatan Rilis
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -571,7 +582,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 8px 8px;">
+                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">Simpan Perubahan</button>
                 </div>
@@ -583,20 +594,20 @@
 <!-- MODAL 4: Resend Email Broadcast Modal -->
 <div class="modal fade" id="resendEmailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 8px;">
+        <div class="modal-content border-0 shadow" style="border-radius: 6px;">
             <form asp-action="ResendEmail" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="resendId" />
-                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 8px 8px 0 0;">
+                <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                        <i class="bi bi-envelope-arrow-up me-1 text-secondary"></i> Kirim Ulang Email Broadcast
+                        Kirim Ulang Email Broadcast
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-white">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Rilis yang Dikirimkan:</label>
-                        <div class="p-2 bg-light border rounded-1 font-monospace small" id="resendReleaseInfo"></div>
+                        <div class="p-2 bg-light border rounded-1 small" id="resendReleaseInfo"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Daftar Email Penerima <span class="text-danger">*</span></label>
@@ -604,9 +615,9 @@
                         <small class="text-muted" style="font-size: 11px;">Pisahkan antar email dengan koma atau baris baru.</small>
                     </div>
                 </div>
-                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 8px 8px;">
+                <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;"><i class="bi bi-send me-1"></i> Kirim Sekarang</button>
+                    <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">Kirim Sekarang</button>
                 </div>
             </form>
         </div>
@@ -629,14 +640,9 @@
         
         const statusBadge = document.getElementById('viewStatusBadge');
         statusBadge.textContent = (status || 'PUBLISHED').toUpperCase();
-        statusBadge.className = 'badge ' + (status && status.toLowerCase() === 'draft' ? 'bg-warning-subtle text-dark border border-warning' : 'bg-success-subtle text-success border border-success');
 
         const badge = document.getElementById('viewTypeBadge');
-        badge.textContent = type.toUpperCase();
-        badge.style = (type.toLowerCase() === 'bug fix' ? 'background:#f8fafc; color:#0f172a; border:1px solid #0f172a;' : 
-                      (type.toLowerCase() === 'new feature' ? 'background:#0f172a; color:#ffffff;' : 
-                      (type.toLowerCase() === 'system alert' ? 'background:#ffffff; color:#000000; border:2px solid #000000; font-weight:700;' : 
-                      'background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;')));
+        badge.textContent = type;
 
         // Format description with bullets
         const lines = description.split('\n');
@@ -644,7 +650,7 @@
         lines.forEach(line => {
             const trimmed = line.trim();
             if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
-                html += '<div class="d-flex align-items-start mb-1"><i class="bi bi-dash me-2"></i><span>' + escapeHtml(trimmed.replace(/^[-*•]\s*/, '')) + '</span></div>';
+                html += '<div class="d-flex align-items-start mb-1"><span class="me-2 text-muted">&bull;</span><span>' + escapeHtml(trimmed.replace(/^[-*•]\s*/, '')) + '</span></div>';
             } else if (trimmed) {
                 html += '<p class="mb-2">' + escapeHtml(trimmed) + '</p>';
             }

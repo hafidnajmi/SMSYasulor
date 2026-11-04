@@ -1192,17 +1192,18 @@ body:not(.modal-open) {
                 if (u.type === 'New Feature') badgeClass = 'badge bg-dark text-white';
 
                 html += '<div class="p-3 border-bottom notif-item" style="cursor:pointer; ' + bgStyle + '" onclick="toggleNotifDetail(' + u.id + ')">';
-                html += '  <div class="d-flex align-items-center justify-content-between mb-1">';
-                html += '    <div class="d-flex align-items-center gap-1 flex-wrap">';
-                html += '      <span class="' + badgeClass + '" style="font-size:10px; border-radius:4px; padding:2px 6px;">' + escapeHtmlNotif(u.type) + '</span>';
-                html += '      <span class="badge bg-white text-secondary border font-monospace" style="font-size:10px; border-radius:4px; padding:2px 5px;">' + escapeHtmlNotif(u.version) + '</span>';
+                html += '  <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:12px;">';
+                html += '    <div class="d-flex align-items-center gap-2">';
+                html += '      <strong class="text-dark">' + escapeHtmlNotif(u.version) + '</strong>';
+                html += '      <span class="text-muted">&bull;</span>';
+                html += '      <span class="text-secondary">' + escapeHtmlNotif(u.type) + '</span>';
                 if (!isRead) {
-                    html += '  <span class="badge rounded-pill bg-danger text-white" style="font-size:8px; padding:2px 5px;">BARU</span>';
+                    html += '  <span class="text-dark fw-bold" style="font-size:10.5px;">(Baru)</span>';
                 }
                 html += '    </div>';
                 html += '    <span class="text-muted" style="font-size:11px;">' + escapeHtmlNotif(u.timeAgo) + '</span>';
                 html += '  </div>';
-                html += '  <div class="fw-semibold text-dark" style="font-size:13px; line-height:1.35;">' + escapeHtmlNotif(u.title) + '</div>';
+                html += '  <div class="fw-semibold text-dark" style="font-size:13.5px; line-height:1.35;">' + escapeHtmlNotif(u.title) + '</div>';
                 if (!isExpanded) {
                     html += '  <div class="text-muted text-truncate mt-1" style="font-size:12px;">' + escapeHtmlNotif(u.description) + '</div>';
                 }
