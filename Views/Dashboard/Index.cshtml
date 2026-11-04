@@ -423,27 +423,27 @@
                 <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">HIGHEST COST LINE</div>
-                        <div class="fw-bold text-primary">@(costInsights?.HighestCostLine ?? "-")</div>
+                        <div class="text-dark" style="color: #000000 !important; font-weight: normal !important;">@(costInsights?.HighestCostLine ?? "-")</div>
                     </div>
-                    <div class="col-mono text-primary font-monospace fw-bold">Rp @((costInsights?.HighestCostLineAmount ?? 0m).ToString("N0"))</div>
+                    <div class="col-mono font-monospace" style="color: #000000 !important; font-weight: normal !important;">Rp @((costInsights?.HighestCostLineAmount ?? 0m).ToString("N0"))</div>
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">HIGHEST COST ASSET</div>
-                        <div class="fw-bold text-success">@(costInsights?.HighestCostMachine ?? "-")</div>
+                        <div class="text-dark" style="color: #000000 !important; font-weight: normal !important;">@(costInsights?.HighestCostMachine ?? "-")</div>
                     </div>
-                    <div class="col-mono text-success font-monospace fw-bold">Rp @((costInsights?.HighestCostMachineAmount ?? 0m).ToString("N0"))</div>
+                    <div class="col-mono font-monospace" style="color: #000000 !important; font-weight: normal !important;">Rp @((costInsights?.HighestCostMachineAmount ?? 0m).ToString("N0"))</div>
                 </div>
             </div>
             <div class="col-12 col-md-4">
                 <div class="p-2 border bg-light d-flex align-items-center justify-content-between mini-kpi-box">
                     <div>
                         <div class="small text-muted text-uppercase font-monospace" style="font-size: 10px;">TOP COST SPAREPART</div>
-                        <div class="fw-bold text-warning text-truncate" style="max-width: 160px;" title="@(costInsights?.TopCostSparepart ?? "-")">@(costInsights?.TopCostSparepart ?? "-")</div>
+                        <div class="text-dark text-truncate" style="max-width: 160px; color: #000000 !important; font-weight: normal !important;" title="@(costInsights?.TopCostSparepart ?? "-")">@(costInsights?.TopCostSparepart ?? "-")</div>
                     </div>
-                    <div class="col-mono text-warning font-monospace fw-bold">Rp @((costInsights?.TopCostSparepartAmount ?? 0m).ToString("N0"))</div>
+                    <div class="col-mono font-monospace" style="color: #000000 !important; font-weight: normal !important;">Rp @((costInsights?.TopCostSparepartAmount ?? 0m).ToString("N0"))</div>
                 </div>
             </div>
         </div>
