@@ -1,0 +1,754 @@
+@model IEnumerable<UPMS.Web.Models.Entities.SystemUpdate>
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Developer Updates & System Broadcast";
+    string currentType = ViewBag.SelectedType as string ?? "all";
+    string searchQuery = ViewBag.SearchQuery as string ?? "";
+    string defaultReceiver = ViewBag.DefaultReceiverEmail as string ?? "";
+    bool emailEnabled = ViewBag.EmailEnabled != null && (bool)ViewBag.EmailEnabled;
+}
+
+<style>
+    /* Strictly Monochrome Professional Theme (Black & White) */
+    .dev-page-header {
+        border-bottom: 2px solid #000000;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .dev-mono-card {
+        background: #ffffff;
+        border: 1px solid #000000;
+        border-radius: 0px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .dev-kpi-box {
+        background: #ffffff;
+        border: 1px solid #000000;
+        padding: 1rem;
+        border-radius: 0px !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .dev-kpi-box:hover {
+        box-shadow: 3px 3px 0px #000000;
+    }
+    .dev-kpi-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 0.25rem;
+    }
+    .dev-kpi-num {
+        font-size: 26px;
+        font-weight: 800;
+        color: #000000;
+        line-height: 1.1;
+        font-family: monospace;
+    }
+    .btn-mono-dark {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 1px solid #000000 !important;
+        border-radius: 0px !important;
+        font-weight: 600;
+    }
+    .btn-mono-dark:hover {
+        background-color: #262626 !important;
+        color: #ffffff !important;
+    }
+    .btn-mono-outline {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+        border-radius: 0px !important;
+        font-weight: 600;
+    }
+    .btn-mono-outline:hover {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+    }
+    .dev-tag {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-radius: 0px !important;
+        display: inline-block;
+    }
+    .dev-tag-bugfix {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid #000000;
+    }
+    .dev-tag-improvement {
+        background: #ffffff;
+        color: #000000;
+        border: 1px solid #000000;
+    }
+    .dev-tag-feature {
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid #000000;
+    }
+    .dev-tag-alert {
+        background: #ffffff;
+        color: #000000;
+        border: 2px solid #000000;
+        font-weight: 800;
+    }
+    .dev-table thead th {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: none;
+        padding: 10px 12px;
+    }
+    .dev-table tbody td {
+        padding: 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 13px;
+    }
+    .dev-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+</style>
+
+<!-- Main Header -->
+<div class="dev-page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-black text-white px-2 py-1 font-monospace" style="font-size: 10px; border-radius: 0;">DEV &bull; ADMIN PORTAL</span>
+            <span class="text-muted small font-monospace">SYSTEM RELEASE &amp; BROADCAST MANAGER</span>
+        </div>
+        <h3 class="fw-bold text-black mb-0" style="letter-spacing: -0.02em;">Developer Updates &amp; System Broadcast</h3>
+        <p class="text-muted small mb-0 mt-1">Publikasikan rincian perbaikan bug, peningkatan performa, dan fitur baru secara otomatis via email &amp; notifikasi sistem.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a asp-controller="EmailSettings" asp-action="Index" class="btn btn-mono-outline btn-sm px-3" title="Buka Konfigurasi SMTP Email">
+            <i class="bi bi-envelope-gear me-1"></i> Pengaturan SMTP Email
+        </a>
+        <button type="button" class="btn btn-mono-dark btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
+            <i class="bi bi-plus-lg me-1"></i> Buat Update Baru &amp; Broadcast
+        </button>
+    </div>
+</div>
+
+<!-- Alerts Container -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-dark alert-dismissible fade show dev-mono-card mb-3 py-2 px-3 d-flex align-items-center" role="alert" style="background:#f8fafc; border-left: 4px solid #000000;">
+        <i class="bi bi-check-circle-fill me-2 fs-5 text-dark"></i>
+        <div class="text-dark small">@TempData["Success"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-dark alert-dismissible fade show dev-mono-card mb-3 py-2 px-3 d-flex align-items-center" role="alert" style="background:#f8fafc; border-left: 4px solid #000000;">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5 text-dark"></i>
+        <div class="text-dark small">@TempData["Warning"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-dark alert-dismissible fade show dev-mono-card mb-3 py-2 px-3 d-flex align-items-center" role="alert" style="background:#ffffff; border: 2px solid #000000;">
+        <i class="bi bi-x-circle-fill me-2 fs-5 text-dark"></i>
+        <div class="text-dark small">@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- 4 Monochrome KPI Cards -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="dev-kpi-box">
+            <div class="dev-kpi-title"><i class="bi bi-journal-text me-1"></i> Total Releases</div>
+            <div class="dev-kpi-num">@ViewBag.TotalCount</div>
+            <div class="text-muted small mt-1" style="font-size: 11px;">Semua catatan rilis</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dev-kpi-box">
+            <div class="dev-kpi-title"><i class="bi bi-tools me-1"></i> Bug Fixes</div>
+            <div class="dev-kpi-num">@ViewBag.BugFixCount</div>
+            <div class="text-muted small mt-1" style="font-size: 11px;">Perbaikan bug / patch</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dev-kpi-box">
+            <div class="dev-kpi-title"><i class="bi bi-arrow-up-right-circle me-1"></i> Improvements</div>
+            <div class="dev-kpi-num">@ViewBag.ImprovementCount</div>
+            <div class="text-muted small mt-1" style="font-size: 11px;">Peningkatan performa</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="dev-kpi-box">
+            <div class="dev-kpi-title"><i class="bi bi-stars me-1"></i> New Features</div>
+            <div class="dev-kpi-num">@ViewBag.NewFeatureCount</div>
+            <div class="text-muted small mt-1" style="font-size: 11px;">Fitur &amp; modul baru</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="dev-mono-card p-3 mb-3">
+    <form method="get" asp-action="Index" class="row g-2 align-items-center">
+        <div class="col-md-7 col-12 d-flex gap-1 flex-wrap">
+            <a asp-action="Index" asp-route-type="all" asp-route-search="@searchQuery"
+               class="btn btn-sm @(currentType == "all" ? "btn-mono-dark" : "btn-mono-outline")">
+                Semua (@ViewBag.TotalCount)
+            </a>
+            <a asp-action="Index" asp-route-type="Bug Fix" asp-route-search="@searchQuery"
+               class="btn btn-sm @(currentType == "Bug Fix" ? "btn-mono-dark" : "btn-mono-outline")">
+                <i class="bi bi-tools me-1"></i> Bug Fix (@ViewBag.BugFixCount)
+            </a>
+            <a asp-action="Index" asp-route-type="Improvement" asp-route-search="@searchQuery"
+               class="btn btn-sm @(currentType == "Improvement" ? "btn-mono-dark" : "btn-mono-outline")">
+                <i class="bi bi-arrow-up-right me-1"></i> Improvement (@ViewBag.ImprovementCount)
+            </a>
+            <a asp-action="Index" asp-route-type="New Feature" asp-route-search="@searchQuery"
+               class="btn btn-sm @(currentType == "New Feature" ? "btn-mono-dark" : "btn-mono-outline")">
+                <i class="bi bi-stars me-1"></i> New Feature (@ViewBag.NewFeatureCount)
+            </a>
+            <a asp-action="Index" asp-route-type="System Alert" asp-route-search="@searchQuery"
+               class="btn btn-sm @(currentType == "System Alert" ? "btn-mono-dark" : "btn-mono-outline")">
+                <i class="bi bi-exclamation-circle me-1"></i> Alert
+            </a>
+        </div>
+        <div class="col-md-5 col-12">
+            <div class="input-group input-group-sm">
+                <input type="hidden" name="type" value="@currentType" />
+                <input type="text" name="search" value="@searchQuery" class="form-control form-control-sm" placeholder="Cari judul update, versi, atau changelog..." style="border-radius: 0; border: 1px solid #000000;" />
+                <button type="submit" class="btn btn-mono-dark"><i class="bi bi-search me-1"></i> Cari</button>
+                @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all")
+                {
+                    <a asp-action="Index" class="btn btn-mono-outline" title="Reset Filter"><i class="bi bi-x-lg"></i></a>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Main Table of Updates -->
+<div class="dev-mono-card overflow-hidden mb-4">
+    <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-terminal-fill fs-5 text-black"></i>
+            <span class="fw-bold text-black" style="font-size: 14px;">Daftar Riwayat Rilis &amp; Notifikasi Sistem</span>
+        </div>
+        <span class="badge bg-light text-black border border-dark font-monospace" style="border-radius:0;">@Model.Count() Record(s)</span>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="p-5 text-center text-muted">
+            <i class="bi bi-inbox fs-1 text-black opacity-25 d-block mb-2"></i>
+            <h6 class="fw-bold text-dark mb-1">Belum ada catatan pembaruan</h6>
+            <p class="small text-muted mb-3">Klik tombol "Buat Update Baru &amp; Broadcast" untuk mempublikasikan perbaikan sistem atau fitur baru.</p>
+            <button type="button" class="btn btn-mono-dark btn-sm" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
+                <i class="bi bi-plus-lg me-1"></i> Buat Update Sekarang
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table dev-table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;" class="text-center">NO</th>
+                        <th style="width: 100px;">VERSI</th>
+                        <th style="width: 130px;">TIPE</th>
+                        <th>JUDUL PEMBARUAN &amp; RINGKASAN</th>
+                        <th style="width: 130px;">TARGET</th>
+                        <th style="width: 140px;">STATUS EMAIL</th>
+                        <th style="width: 120px;" class="text-center">IN-APP ALERT</th>
+                        <th style="width: 140px;" class="text-center">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int rowNo = 1; }
+                    @foreach (var item in Model)
+                    {
+                        string badgeClass = item.UpdateType.ToLower() switch
+                        {
+                            "bug fix" => "dev-tag-bugfix",
+                            "new feature" => "dev-tag-feature",
+                            "system alert" => "dev-tag-alert",
+                            _ => "dev-tag-improvement"
+                        };
+
+                        <tr>
+                            <td class="text-center text-muted font-monospace small">@rowNo</td>
+                            <td>
+                                <span class="badge bg-white text-black border border-dark font-monospace py-1 px-2" style="font-size: 11px; border-radius: 0;">
+                                    @item.Version
+                                </span>
+                                <div class="text-muted small mt-1" style="font-size: 10px;">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                            </td>
+                            <td>
+                                <span class="dev-tag @badgeClass">@item.UpdateType</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-black" style="font-size: 13.5px;">@item.Title</div>
+                                <div class="text-muted small text-truncate mt-1" style="max-width: 450px;">
+                                    @(item.Description.Replace("\n", " &bull; "))
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.ActionRequired))
+                                {
+                                    <div class="mt-1" style="font-size: 11px;">
+                                        <span class="text-black fw-bold">Action:</span> <span class="text-muted">@item.ActionRequired</span>
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-black border font-monospace" style="font-size: 10px; border-radius:0;">
+                                    @item.TargetAudience
+                                </span>
+                                <div class="text-muted small mt-1" style="font-size: 10px;">By: @item.CreatedBy</div>
+                            </td>
+                            <td>
+                                @if (item.SendEmail && item.EmailSentCount > 0)
+                                {
+                                    <span class="badge bg-black text-white px-2 py-1" style="font-size: 10px; border-radius:0;">
+                                        <i class="bi bi-check2-all me-1"></i> Terkirim (@item.EmailSentCount)
+                                    </span>
+                                    <div class="text-muted small mt-1" style="font-size: 10px;">@item.EmailSentAt?.ToString("dd/MM HH:mm")</div>
+                                }
+                                else if (item.SendEmail)
+                                {
+                                    <span class="badge bg-white text-black border border-dark" style="font-size: 10px; border-radius:0;">
+                                        <i class="bi bi-clock me-1"></i> Pending
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small" style="font-size: 11px;">In-App Only</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm p-0 border-0 bg-transparent" onclick="toggleUpdateActive(@item.Id, this)" title="Klik untuk toggle status aktif notifikasi">
+                                    @if (item.IsActive && item.ShowPopupAlert)
+                                    {
+                                        <span class="badge bg-black text-white px-2 py-1" style="font-size: 10px; border-radius:0;">
+                                            <i class="bi bi-bell-fill me-1"></i> Aktif
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 10px; border-radius:0;">
+                                            <i class="bi bi-bell-slash me-1"></i> Nonaktif
+                                        </span>
+                                    }
+                                </button>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-mono-outline btn-sm py-1 px-2" title="Lihat Rincian Rilis" onclick="openViewModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.CreatedAt.ToString("dd MMMM yyyy HH:mm")', '@item.CreatedBy')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-mono-outline btn-sm py-1 px-2" title="Kirim Ulang Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
+                                        <i class="bi bi-envelope-arrow-up"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-mono-outline btn-sm py-1 px-2" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.IsActive.ToString().ToLower()))">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan rilis ini?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-mono-outline btn-sm py-1 px-2 text-danger" title="Hapus Update">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        rowNo++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- MODAL 1: Create New Update & Broadcast -->
+<div class="modal fade" id="createUpdateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content dev-mono-card" style="border: 2px solid #000000;">
+            <form asp-action="Create" method="post" id="createUpdateForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-black text-white py-3 px-4" style="border-radius: 0;">
+                    <div>
+                        <div class="text-white-50 font-monospace small" style="font-size: 10px;">DEVELOPER SYSTEM BROADCAST</div>
+                        <h5 class="modal-title fw-bold text-white mb-0"><i class="bi bi-megaphone me-2"></i>Buat Update Baru &amp; Notifikasi</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4 col-12">
+                            <label class="form-label small fw-bold text-black mb-1">Tipe Pembaruan <span class="text-danger">*</span></label>
+                            <select name="UpdateType" id="createUpdateType" class="form-select form-select-sm" style="border-radius: 0; border: 1px solid #000000;" required>
+                                <option value="Improvement">Improvement (Peningkatan)</option>
+                                <option value="Bug Fix">Bug Fix (Perbaikan Bug / Patch)</option>
+                                <option value="New Feature">New Feature (Fitur Baru)</option>
+                                <option value="System Alert">System Alert (Pemberitahuan Sistem)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-bold text-black mb-1">Versi / Tag <span class="text-danger">*</span></label>
+                            <input type="text" name="Version" id="createVersion" class="form-control form-control-sm font-monospace" placeholder="e.g. v2.5.1" value="v2.5.1" style="border-radius: 0; border: 1px solid #000000;" required />
+                        </div>
+                        <div class="col-md-5 col-6">
+                            <label class="form-label small fw-bold text-black mb-1">Target Pengguna</label>
+                            <select name="TargetAudience" class="form-select form-select-sm" style="border-radius: 0; border: 1px solid #000000;">
+                                <option value="All Users">Semua Pengguna (All Users)</option>
+                                <option value="Admin Only">Khusus Administrator</option>
+                                <option value="Technician Only">Khusus Teknisi / Operator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Judul Ringkas Pembaruan <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" id="createTitle" class="form-control form-control-sm" placeholder="Contoh: Perbaikan Search Engine Sparepart Catalog & Logika PM Compliance" style="border-radius: 0; border: 1px solid #000000;" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Rincian Perubahan / Changelog <span class="text-danger">*</span></label>
+                        <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Gunakan tanda strip (-) untuk membuat poin changelog:&#10;- Perbaikan logika compliance chart pada kalender PM&#10;- Fitur pencarian multi-kata berbasis Item, Detail, dan Brand&#10;- Sinkronisasi penamaan menu Stock In dan Stock Out" style="border-radius: 0; border: 1px solid #000000; font-family: monospace; font-size: 12.5px;" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Petunjuk / Tindakan Pengguna (Action Required) <span class="text-muted fw-normal">(Opsional)</span></label>
+                        <input type="text" name="ActionRequired" id="createActionRequired" class="form-control form-control-sm" placeholder="Contoh: Tekan Ctrl+F5 pada browser untuk memuat tampilan terbaru." style="border-radius: 0; border: 1px solid #000000;" />
+                    </div>
+
+                    <!-- Email & In-App Broadcast Options Card -->
+                    <div class="p-3 border bg-light mb-3" style="border: 1px solid #000000 !important;">
+                        <div class="fw-bold text-black small mb-2"><i class="bi bi-broadcast me-1"></i> Saluran Notifikasi (Broadcast Channels):</div>
+                        
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="ShowPopupAlert" value="true" id="checkPopupAlert" checked>
+                            <label class="form-check-label small fw-semibold text-black" for="checkPopupAlert">
+                                Tampilkan Notifikasi &amp; Alert Pop-up di Sistem (In-App Topbar Bell &amp; Banner)
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="SendEmail" value="true" id="checkSendEmail" onchange="toggleEmailRecipientSection(this.checked)">
+                            <label class="form-check-label small fw-semibold text-black" for="checkSendEmail">
+                                Kirim Email Broadcast Otomatis ke Penerima (Auto Email via SMTP)
+                            </label>
+                        </div>
+
+                        <div id="emailRecipientSection" style="display: none;" class="mt-2 pt-2 border-top">
+                            <label class="form-label small fw-bold text-black mb-1">
+                                Daftar Email Penerima (Pisahkan dengan tanda koma atau titik koma):
+                            </label>
+                            <input type="text" name="customRecipients" id="customRecipients" class="form-control form-control-sm" value="@defaultReceiver" placeholder="e.g. user1@yasulor.com, user2@yasulor.com" style="border-radius: 0; border: 1px solid #000000;" />
+                            <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
+                                <span class="text-muted small" style="font-size: 11px;">
+                                    Status SMTP: <strong>@(emailEnabled ? "Aktif & Siap Kirim" : "Belum Diaktifkan di Email Settings")</strong>
+                                </span>
+                                <button type="button" class="btn btn-mono-outline btn-xs py-1 px-2" style="font-size: 11px;" onclick="sendPreviewTestEmail()">
+                                    <i class="bi bi-send-check me-1"></i> Kirim Test Email Preview ke Saya
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4" style="border-top: 1px solid #000000;">
+                    <button type="button" class="btn btn-mono-outline btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-mono-dark btn-sm px-4">
+                        <i class="bi bi-send-fill me-1"></i> Publish &amp; Broadcast Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: View Update Details (Release Notes Preview) -->
+<div class="modal fade" id="viewDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content dev-mono-card" style="border: 2px solid #000000;">
+            <div class="modal-header bg-black text-white py-3 px-4">
+                <div>
+                    <span id="viewTypeBadge" class="dev-tag dev-tag-improvement mb-1">IMPROVEMENT</span>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="viewModalTitle">Judul Update</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-white">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <div>
+                        <span class="text-muted small">Versi:</span>
+                        <strong class="font-monospace text-black" id="viewVersionTag">v1.0.0</strong>
+                    </div>
+                    <div class="text-muted small" id="viewTimestamp">Waktu Rilis</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="fw-bold text-black small text-uppercase mb-2 font-monospace">Rincian Perubahan &amp; Peningkatan:</div>
+                    <div class="p-3 border bg-light" id="viewChangelogBody" style="border: 1px solid #e2e8f0; font-size: 13.5px; line-height: 1.6;"></div>
+                </div>
+
+                <div id="viewActionContainer" style="display: none;" class="p-3 border mb-3" style="border-left: 4px solid #000000 !important;">
+                    <div class="fw-bold text-black small text-uppercase mb-1"><i class="bi bi-info-circle-fill me-1"></i> Tindakan yang Diperlukan:</div>
+                    <div id="viewActionText" class="text-dark small"></div>
+                </div>
+
+                <div class="text-muted small mt-3" style="font-size: 11px;">
+                    Dipublikasikan oleh: <strong id="viewAuthor" class="text-black">Developer</strong>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4" style="border-top: 1px solid #000000;">
+                <button type="button" class="btn btn-mono-dark btn-sm px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 3: Edit Update Modal -->
+<div class="modal fade" id="editUpdateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content dev-mono-card" style="border: 2px solid #000000;">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editId" />
+                <div class="modal-header bg-black text-white py-3 px-4">
+                    <h5 class="modal-title fw-bold text-white mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Catatan Rilis</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4 col-12">
+                            <label class="form-label small fw-bold text-black mb-1">Tipe Pembaruan</label>
+                            <select name="updateType" id="editUpdateType" class="form-select form-select-sm" style="border-radius: 0; border: 1px solid #000000;" required>
+                                <option value="Improvement">Improvement</option>
+                                <option value="Bug Fix">Bug Fix</option>
+                                <option value="New Feature">New Feature</option>
+                                <option value="System Alert">System Alert</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="form-label small fw-bold text-black mb-1">Versi</label>
+                            <input type="text" name="version" id="editVersion" class="form-control form-control-sm font-monospace" style="border-radius: 0; border: 1px solid #000000;" required />
+                        </div>
+                        <div class="col-md-5 col-6">
+                            <label class="form-label small fw-bold text-black mb-1">Target</label>
+                            <select name="targetAudience" id="editTargetAudience" class="form-select form-select-sm" style="border-radius: 0; border: 1px solid #000000;">
+                                <option value="All Users">Semua Pengguna</option>
+                                <option value="Admin Only">Khusus Administrator</option>
+                                <option value="Technician Only">Khusus Teknisi / Operator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Judul Pembaruan</label>
+                        <input type="text" name="title" id="editTitle" class="form-control form-control-sm" style="border-radius: 0; border: 1px solid #000000;" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Rincian Perubahan / Changelog</label>
+                        <textarea name="description" id="editDescription" rows="5" class="form-control form-control-sm" style="border-radius: 0; border: 1px solid #000000; font-family: monospace; font-size: 12.5px;" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Petunjuk Pengguna (Action Required)</label>
+                        <input type="text" name="actionRequired" id="editActionRequired" class="form-control form-control-sm" style="border-radius: 0; border: 1px solid #000000;" />
+                    </div>
+
+                    <div class="d-flex gap-3 pt-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="showPopupAlert" value="true" id="editShowPopupAlert">
+                            <label class="form-check-label small fw-semibold text-black" for="editShowPopupAlert">Tampilkan In-App Alert</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="isActive" value="true" id="editIsActive">
+                            <label class="form-check-label small fw-semibold text-black" for="editIsActive">Status Rilis Aktif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4" style="border-top: 1px solid #000000;">
+                    <button type="button" class="btn btn-mono-outline btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-mono-dark btn-sm px-4">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 4: Resend Email Broadcast Modal -->
+<div class="modal fade" id="resendEmailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dev-mono-card" style="border: 2px solid #000000;">
+            <form asp-action="ResendEmail" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="resendId" />
+                <div class="modal-header bg-black text-white py-3 px-4">
+                    <h5 class="modal-title fw-bold text-white mb-0"><i class="bi bi-envelope-arrow-up me-2"></i>Kirim Ulang Email Broadcast</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Rilis yang Dikirimkan:</label>
+                        <div class="p-2 border bg-light font-monospace small" id="resendReleaseInfo"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-black mb-1">Daftar Email Penerima <span class="text-danger">*</span></label>
+                        <textarea name="customRecipients" id="resendRecipients" rows="3" class="form-control form-control-sm" placeholder="user1@domain.com, user2@domain.com" style="border-radius: 0; border: 1px solid #000000;" required></textarea>
+                        <small class="text-muted" style="font-size: 11px;">Pisahkan antar email dengan koma atau baris baru.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4" style="border-top: 1px solid #000000;">
+                    <button type="button" class="btn btn-mono-outline btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-mono-dark btn-sm px-4"><i class="bi bi-send me-1"></i> Kirim Broadcast Sekarang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleEmailRecipientSection(isChecked) {
+        const el = document.getElementById('emailRecipientSection');
+        if (el) el.style.display = isChecked ? 'block' : 'none';
+    }
+
+    function openViewModal(id, title, version, type, description, actionRequired, timestamp, author) {
+        document.getElementById('viewModalTitle').textContent = title;
+        document.getElementById('viewVersionTag').textContent = version;
+        document.getElementById('viewTimestamp').textContent = timestamp;
+        document.getElementById('viewAuthor').textContent = author;
+        
+        const badge = document.getElementById('viewTypeBadge');
+        badge.textContent = type.toUpperCase();
+        badge.className = 'dev-tag ' + (type.toLowerCase() === 'bug fix' ? 'dev-tag-bugfix' : (type.toLowerCase() === 'new feature' ? 'dev-tag-feature' : (type.toLowerCase() === 'system alert' ? 'dev-tag-alert' : 'dev-tag-improvement')));
+
+        // Format description with bullets
+        const lines = description.split('\n');
+        let html = '';
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+                html += '<div class="d-flex align-items-start mb-1"><i class="bi bi-dash me-2"></i><span>' + escapeHtml(trimmed.replace(/^[-*•]\s*/, '')) + '</span></div>';
+            } else if (trimmed) {
+                html += '<p class="mb-2">' + escapeHtml(trimmed) + '</p>';
+            }
+        });
+        document.getElementById('viewChangelogBody').innerHTML = html || '<span class="text-muted">Tidak ada rincian tambahan.</span>';
+
+        const actionContainer = document.getElementById('viewActionContainer');
+        const actionText = document.getElementById('viewActionText');
+        if (actionRequired && actionRequired.trim()) {
+            actionText.textContent = actionRequired;
+            actionContainer.style.display = 'block';
+        } else {
+            actionContainer.style.display = 'none';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('viewDetailModal'));
+        modal.show();
+    }
+
+    function openEditModal(id, title, version, type, description, actionRequired, audience, showPopup, isActive) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editVersion').value = version;
+        document.getElementById('editUpdateType').value = type;
+        document.getElementById('editDescription').value = description;
+        document.getElementById('editActionRequired').value = actionRequired || '';
+        document.getElementById('editTargetAudience').value = audience || 'All Users';
+        document.getElementById('editShowPopupAlert').checked = showPopup;
+        document.getElementById('editIsActive').checked = isActive;
+
+        const modal = new bootstrap.Modal(document.getElementById('editUpdateModal'));
+        modal.show();
+    }
+
+    function openResendModal(id, title, version, recipients) {
+        document.getElementById('resendId').value = id;
+        document.getElementById('resendReleaseInfo').textContent = `${title} (${version})`;
+        document.getElementById('resendRecipients').value = recipients;
+
+        const modal = new bootstrap.Modal(document.getElementById('resendEmailModal'));
+        modal.show();
+    }
+
+    function toggleUpdateActive(id, btn) {
+        fetch('/DeveloperUpdates/ToggleActive', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: `id=${id}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Gagal mengubah status update.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan.');
+        });
+    }
+
+    function sendPreviewTestEmail() {
+        const title = document.getElementById('createTitle').value;
+        const version = document.getElementById('createVersion').value;
+        const type = document.getElementById('createUpdateType').value;
+        const desc = document.getElementById('createDescription').value;
+        const action = document.getElementById('createActionRequired').value;
+
+        const testEmail = prompt('Masukkan email tujuan untuk menerima TEST PREVIEW:', '@defaultReceiver');
+        if (!testEmail || !testEmail.trim()) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const params = new URLSearchParams();
+        params.append('title', title);
+        params.append('version', version);
+        params.append('updateType', type);
+        params.append('description', desc);
+        params.append('actionRequired', action);
+        params.append('testEmail', testEmail.trim());
+
+        fetch('/DeveloperUpdates/SendTestEmail', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: params.toString()
+        })
+        .then(r => r.json())
+        .then(res => {
+            alert(res.message);
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Gagal mengirim test email.');
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+}
+

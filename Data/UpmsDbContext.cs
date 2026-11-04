@@ -28,6 +28,7 @@ namespace UPMS.Web.Data
         public DbSet<PmSchedule> PmSchedules => Set<PmSchedule>();
         public DbSet<PmScheduleItem> PmScheduleItems => Set<PmScheduleItem>();
         public DbSet<PmStandardPart> PmStandardParts => Set<PmStandardPart>();
+        public DbSet<SystemUpdate> SystemUpdates => Set<SystemUpdate>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,3 +1,26 @@
+@using Microsoft.EntityFrameworkCore
+@inject UPMS.Web.Data.UpmsDbContext DbContext
+@{
+    var curUser = User.Identity?.Name;
+    var userEntity = !string.IsNullOrEmpty(curUser) 
+        ? DbContext.Users.AsNoTracking().FirstOrDefault(u => u.Username.ToLower() == curUser.ToLower()) 
+        : null;
+
+    bool isUserAdmin = (userEntity?.Role?.ToLower() == "admin") || string.Equals(curUser, "admin", StringComparison.OrdinalIgnoreCase);
+
+    bool rbacMasterData = isUserAdmin || (userEntity?.CanMasterData == 1);
+    bool rbacBarangMasuk = isUserAdmin || (userEntity?.CanBarangMasuk == 1);
+    bool rbacBarangKeluar = isUserAdmin || (userEntity?.CanBarangKeluar == 1);
+    bool rbacRiwayat = isUserAdmin || (userEntity?.CanRiwayat == 1);
+    bool rbacManagePm = isUserAdmin || (userEntity?.CanManagePm == 1);
+    bool rbacCostIntel = isUserAdmin || (userEntity?.CanCostIntelligence == 1);
+    bool rbacLineMapping = isUserAdmin || (userEntity?.CanLineMapping == 1);
+    bool rbacSupplierData = isUserAdmin || (userEntity?.CanSupplierData == 1);
+    bool rbacAdminMgmt = isUserAdmin || (userEntity?.CanAdminMgmt == 1) || (userEntity?.CanBidding == 1);
+    bool rbacSettings = isUserAdmin || (userEntity?.CanSettings == 1);
+    bool rbacEmailSettings = isUserAdmin || (userEntity?.CanEmailSettings == 1);
+    bool rbacDeveloperUpdates = isUserAdmin;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -595,6 +618,35 @@ body:not(.modal-open) {
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold" style="font-size:11px; border-radius:0; font-family: Arial, sans-serif !important;">
                     @activeDept.ToUpper()
                 </span>
+
+                <!-- Notification Bell for Developer Updates & In-App Alerts -->
+                <div class="dropdown me-1">
+                    <button class="btn btn-sm btn-link text-dark position-relative p-1 text-decoration-none" type="button" id="topNotifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Pemberitahuan & Update Sistem">
+                        <i class="bi bi-bell fs-5 text-dark"></i>
+                        <span id="topNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white border border-white" style="display:none; font-size:9px; padding:2px 5px;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow border border-dark p-0" style="width: 340px; max-width: 92vw; border-radius: 0; font-size: 12.5px;" aria-labelledby="topNotifBellBtn">
+                        <div class="p-2 border-bottom bg-black text-white d-flex align-items-center justify-content-between">
+                            <span class="fw-bold small font-monospace"><i class="bi bi-bell-fill me-1"></i> UPDATE &amp; NOTIFIKASI</span>
+                            <span id="topNotifCountText" class="badge bg-white text-black font-monospace" style="font-size:9px; border-radius:0;">0 Baru</span>
+                        </div>
+                        <div id="topNotifList" class="overflow-auto" style="max-height: 320px;">
+                            <div class="p-3 text-center text-muted small">Memuat notifikasi...</div>
+                        </div>
+                        <div class="p-2 border-top bg-light text-center d-flex justify-content-between align-items-center px-3">
+                            <button type="button" class="btn btn-link btn-xs text-secondary p-0 text-decoration-none" style="font-size: 11px;" onclick="markAllNotificationsAsRead()">
+                                Tandai Semua Dibaca
+                            </button>
+                            @if (isUserAdmin)
+                            {
+                                <a asp-controller="DeveloperUpdates" asp-action="Index" class="btn btn-link btn-xs text-dark p-0 text-decoration-none fw-semibold" style="font-size: 11px;">
+                                    Developer Portal &rarr;
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dropdown">
                     <button class="btn btn-sm btn-link text-decoration-none p-0 d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                         <div class="ems-user-avatar">@(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "A")</div>
@@ -617,29 +669,6 @@ body:not(.modal-open) {
 
     <!-- Global Toast Container -->
     <div id="ems-toast-container" style="position:fixed; top:70px; right:20px; z-index:10000; pointer-events:none;"></div>
-
-@using Microsoft.EntityFrameworkCore
-@inject UPMS.Web.Data.UpmsDbContext DbContext
-@{
-    var curUser = User.Identity?.Name;
-    var userEntity = !string.IsNullOrEmpty(curUser) 
-        ? DbContext.Users.AsNoTracking().FirstOrDefault(u => u.Username.ToLower() == curUser.ToLower()) 
-        : null;
-
-    bool isUserAdmin = (userEntity?.Role?.ToLower() == "admin") || string.Equals(curUser, "admin", StringComparison.OrdinalIgnoreCase);
-
-    bool rbacMasterData = isUserAdmin || (userEntity?.CanMasterData == 1);
-    bool rbacBarangMasuk = isUserAdmin || (userEntity?.CanBarangMasuk == 1);
-    bool rbacBarangKeluar = isUserAdmin || (userEntity?.CanBarangKeluar == 1);
-    bool rbacRiwayat = isUserAdmin || (userEntity?.CanRiwayat == 1);
-    bool rbacManagePm = isUserAdmin || (userEntity?.CanManagePm == 1);
-    bool rbacCostIntel = isUserAdmin || (userEntity?.CanCostIntelligence == 1);
-    bool rbacLineMapping = isUserAdmin || (userEntity?.CanLineMapping == 1);
-    bool rbacSupplierData = isUserAdmin || (userEntity?.CanSupplierData == 1);
-    bool rbacAdminMgmt = isUserAdmin || (userEntity?.CanAdminMgmt == 1) || (userEntity?.CanBidding == 1);
-    bool rbacSettings = isUserAdmin || (userEntity?.CanSettings == 1);
-    bool rbacEmailSettings = isUserAdmin || (userEntity?.CanEmailSettings == 1);
-}
 
     <div class="ems-sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     <div class="app-wrapper">
@@ -737,7 +766,7 @@ body:not(.modal-open) {
                     }
                 }
 
-                @if (rbacAdminMgmt || rbacSettings || rbacEmailSettings)
+                @if (rbacAdminMgmt || rbacSettings || rbacEmailSettings || rbacDeveloperUpdates)
                 {
                     <div class="ems-nav-header">Administration</div>
                     @if (rbacAdminMgmt)
@@ -759,6 +788,13 @@ body:not(.modal-open) {
                         <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "EmailSettings" ? "active" : "")" asp-controller="EmailSettings" asp-action="Index" title="Email Settings">
                             <span class="nav-icon-box"><i class="bi bi-envelope-at" style="color:#0EA5E9;"></i></span>
                             <span>Email Settings</span>
+                        </a>
+                    }
+                    @if (rbacDeveloperUpdates)
+                    {
+                        <a class="ems-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeveloperUpdates" ? "active" : "")" asp-controller="DeveloperUpdates" asp-action="Index" title="Developer Updates & Broadcast">
+                            <span class="nav-icon-box"><i class="bi bi-megaphone" style="color:#000000;"></i></span>
+                            <span>Developer Updates</span>
                         </a>
                     }
                 }
@@ -1063,6 +1099,228 @@ body:not(.modal-open) {
             if (sidebar) sidebar.classList.toggle('show-mobile');
             if (overlay) overlay.classList.toggle('show');
         }
+
+        // ==========================================
+        // Developer Updates & In-App Notification Engine
+        // ==========================================
+        var _globalCachedUpdates = [];
+
+        function getReadUpdateIds() {
+            try {
+                return JSON.parse(localStorage.getItem('sms_read_updates') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function markUpdateAsRead(id) {
+            var readIds = getReadUpdateIds();
+            if (!readIds.includes(id)) {
+                readIds.push(id);
+                localStorage.setItem('sms_read_updates', JSON.stringify(readIds));
+            }
+            updateNotifBadge();
+        }
+
+        function markAllNotificationsAsRead() {
+            var readIds = getReadUpdateIds();
+            _globalCachedUpdates.forEach(function(u) {
+                if (!readIds.includes(u.id)) {
+                    readIds.push(u.id);
+                }
+            });
+            localStorage.setItem('sms_read_updates', JSON.stringify(readIds));
+            updateNotifBadge();
+            renderNotifList();
+            showEmsToast('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
+        }
+
+        function updateNotifBadge() {
+            var readIds = getReadUpdateIds();
+            var unreadCount = 0;
+            _globalCachedUpdates.forEach(function(u) {
+                if (!readIds.includes(u.id)) {
+                    unreadCount++;
+                }
+            });
+
+            var badge = document.getElementById('topNotifBadge');
+            var countText = document.getElementById('topNotifCountText');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            if (countText) {
+                countText.textContent = unreadCount + ' Baru';
+            }
+        }
+
+        function escapeHtmlNotif(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+        }
+
+        function renderNotifList() {
+            var listEl = document.getElementById('topNotifList');
+            if (!listEl) return;
+
+            if (!_globalCachedUpdates || _globalCachedUpdates.length === 0) {
+                listEl.innerHTML = '<div class="p-3 text-center text-muted small font-monospace">Belum ada pembaruan atau notifikasi sistem.</div>';
+                return;
+            }
+
+            var readIds = getReadUpdateIds();
+            var html = '';
+
+            _globalCachedUpdates.forEach(function(u, idx) {
+                var isRead = readIds.includes(u.id);
+                var bgStyle = isRead ? 'background:#ffffff;' : 'background:#f8fafc; border-left:3px solid #000000;';
+
+                html += '<div class="p-2 border-bottom notif-item" style="cursor:pointer; ' + bgStyle + '" onclick="viewUpdateDetailById(' + u.id + ')">';
+                html += '  <div class="d-flex align-items-center justify-content-between mb-1">';
+                html += '    <div class="d-flex align-items-center gap-1">';
+                html += '      <span class="badge bg-black text-white font-monospace" style="font-size:8.5px; border-radius:0; padding:2px 4px;">' + escapeHtmlNotif(u.type.toUpperCase()) + '</span>';
+                html += '      <span class="badge bg-white text-black border border-dark font-monospace" style="font-size:8.5px; border-radius:0; padding:1px 4px;">' + escapeHtmlNotif(u.version) + '</span>';
+                if (!isRead) {
+                    html += '  <span class="badge bg-dark text-white font-monospace" style="font-size:8px; border-radius:0; padding:1px 3px;">BARU</span>';
+                }
+                html += '    </div>';
+                html += '    <span class="text-muted font-monospace" style="font-size:9.5px;">' + escapeHtmlNotif(u.timeAgo) + '</span>';
+                html += '  </div>';
+                html += '  <div class="fw-semibold text-dark text-truncate" style="font-size:12px;">' + escapeHtmlNotif(u.title) + '</div>';
+                html += '  <div class="text-muted text-truncate" style="font-size:11px;">' + escapeHtmlNotif(u.description) + '</div>';
+                html += '</div>';
+            });
+
+            listEl.innerHTML = html;
+        }
+
+        function viewUpdateDetailById(id) {
+            var item = _globalCachedUpdates.find(function(x) { return x.id === id; });
+            if (!item) return;
+
+            markUpdateAsRead(id);
+            renderNotifList();
+
+            var modalEl = document.getElementById('layoutWhatsNewModal');
+            if (!modalEl) return;
+
+            document.getElementById('layoutModalTypeBadge').textContent = (item.type || 'UPDATE').toUpperCase();
+            document.getElementById('layoutModalVersion').textContent = item.version || 'v1.0.0';
+            document.getElementById('layoutModalDate').textContent = item.createdAt || '';
+            document.getElementById('layoutModalTitle').textContent = item.title || '';
+            document.getElementById('layoutModalDescription').textContent = item.description || '';
+            document.getElementById('layoutModalAuthor').textContent = item.createdBy || 'Developer';
+
+            var actionSec = document.getElementById('layoutModalActionSection');
+            var actionReq = document.getElementById('layoutModalActionRequired');
+            if (item.actionRequired && item.actionRequired.trim().length > 0) {
+                actionReq.textContent = item.actionRequired;
+                actionSec.classList.remove('d-none');
+            } else {
+                actionSec.classList.add('d-none');
+            }
+
+            var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        function loadDeveloperNotifications() {
+            fetch('/DeveloperUpdates/GetLatestNotifications')
+                .then(function(res) { return res.json(); })
+                .then(function(res) {
+                    if (res && res.success && Array.isArray(res.data)) {
+                        _globalCachedUpdates = res.data;
+                        updateNotifBadge();
+                        renderNotifList();
+
+                        // Check if there is an active alert popup that has not been shown to this user/browser yet
+                        var activeAlert = _globalCachedUpdates.find(function(u) {
+                            return u.showAlert && (localStorage.getItem('sms_alert_shown_' + u.id) !== 'true');
+                        });
+
+                        if (activeAlert) {
+                            localStorage.setItem('sms_alert_shown_' + activeAlert.id, 'true');
+                            setTimeout(function() {
+                                viewUpdateDetailById(activeAlert.id);
+                            }, 800);
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    console.warn('Developer updates fetch error:', err);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <text>loadDeveloperNotifications();</text>
+            }
+        });
+    </script>
+
+    <!-- Global Modal: What's New & System Update Notification (Strict Monochrome Theme) -->
+    <div class="modal fade" id="layoutWhatsNewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius:0; border:2px solid #000000; box-shadow:0 12px 30px rgba(0,0,0,0.3);">
+                <div class="modal-header bg-black text-white py-2 px-3 d-flex align-items-center justify-content-between" style="border-radius:0;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-broadcast fs-6 text-white"></i>
+                        <span class="fw-bold font-monospace text-uppercase" style="font-size:13px; letter-spacing:0.04em;">PEMBERITAHUAN &amp; CATATAN RILIS SISTEM</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4" style="background:#ffffff; color:#000000;">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="layoutModalTypeBadge" class="badge bg-black text-white font-monospace px-2 py-1" style="border-radius:0; font-size:11px;">UPDATE</span>
+                            <span id="layoutModalVersion" class="badge bg-white text-black border border-dark font-monospace px-2 py-1" style="border-radius:0; font-size:11px;">v1.0.0</span>
+                        </div>
+                        <span id="layoutModalDate" class="text-muted small font-monospace"></span>
+                    </div>
+
+                    <h5 id="layoutModalTitle" class="fw-bold text-black mb-3" style="font-size:17px; line-height:1.35;"></h5>
+
+                    <div class="mb-3">
+                        <div class="fw-bold small text-uppercase font-monospace text-secondary mb-1" style="font-size:10.5px; letter-spacing:0.05em;">RINCIAN PERUBAHAN &amp; FITUR:</div>
+                        <div id="layoutModalDescription" class="p-3 border border-dark bg-light font-monospace small" style="white-space:pre-wrap; line-height:1.6; max-height:260px; overflow-y:auto; font-size:12px;"></div>
+                    </div>
+
+                    <div id="layoutModalActionSection" class="mb-3 d-none">
+                        <div class="p-2 border border-dark bg-white font-monospace small" style="font-size:12px;">
+                            <strong class="text-black"><i class="bi bi-exclamation-diamond-fill me-1"></i> INSTRUKSI / ACTION REQUIRED:</strong>
+                            <div id="layoutModalActionRequired" class="mt-1 text-dark"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-muted small border-top pt-2 d-flex justify-content-between" style="font-size:11px;">
+                        <span>Dipublikasikan oleh: <strong id="layoutModalAuthor" class="text-dark">Developer</strong></span>
+                        <span class="font-monospace text-dark">SMS Automation Enterprise</span>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-3 border-top d-flex justify-content-between" style="border-radius:0;">
+                    <button type="button" class="btn btn-outline-dark btn-sm px-3 font-monospace" style="border-radius:0; font-size:12px;" data-bs-dismiss="modal">
+                        <i class="bi bi-check2 me-1"></i> Mengerti &amp; Tutup
+                    </button>
+                    @if (isUserAdmin)
+                    {
+                        <a asp-controller="DeveloperUpdates" asp-action="Index" class="btn btn-black btn-sm text-white px-3 font-monospace" style="background:#000000; border-radius:0; font-size:12px;">
+                            Buka Developer Portal &rarr;
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

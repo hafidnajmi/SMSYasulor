@@ -147,6 +147,25 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ""System_Updates"" (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    version VARCHAR(50) DEFAULT 'v1.0.0',
+    update_type VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    action_required TEXT,
+    target_audience VARCHAR(50) DEFAULT 'All Users',
+    send_email BOOLEAN DEFAULT FALSE,
+    recipient_emails TEXT,
+    email_sent_count INT DEFAULT 0,
+    email_sent_at TIMESTAMP,
+    show_popup_alert BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by VARCHAR(100) DEFAULT 'Developer',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
 ";
                 await db.Database.ExecuteSqlRawAsync(sql);
 
@@ -362,6 +381,7 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
                 await SeedSuppliersAsync(db);
                 await SyncElectricalPartsToMasterDataAsync(db);
                 await SeedPmSchedulesAsync(db);
+                await SeedSystemUpdatesAsync(db);
                 await UPMS.Web.Helpers.PriceHelper.SyncAllCheapestSupplierOffersAsync(db);
             }
             catch (Exception ex)
@@ -590,6 +610,68 @@ CREATE TABLE IF NOT EXISTS ""pm_standard_part"" (
             catch (Exception ex)
             {
                 Console.WriteLine($"[DbSeeder] SeedPmSchedules warning: {ex.Message}");
+            }
+        }
+
+        public static async Task SeedSystemUpdatesAsync(UpmsDbContext db)
+        {
+            try
+            {
+                if (await db.SystemUpdates.AnyAsync()) return;
+
+                var initialUpdates = new List<SystemUpdate>
+                {
+                    new SystemUpdate
+                    {
+                        Title = "Peningkatan Multi-Keyword Search Engine pada Sparepart Catalog",
+                        Version = "v2.5.0",
+                        UpdateType = "Improvement",
+                        Description = "- Mesin pencari sekarang mendukung pencarian multi-kata berbasis token lintas kolom Item, Detail, Brand, dan Part #.\n- Kata kunci sederhana seperti 'sensor festo' atau 'bearing 6205 skf' langsung menemukan hasil akurat tanpa perlu spesifikasi yang terlalu rinci.\n- Hasil pencarian diurutkan rapi berdasarkan Item dan Brand.",
+                        ActionRequired = "Pengguna dapat langsung menggunakan kolom pencarian dengan mengetik kata kunci kombinasi.",
+                        TargetAudience = "All Users",
+                        SendEmail = false,
+                        ShowPopupAlert = true,
+                        IsActive = true,
+                        CreatedBy = "Developer",
+                        CreatedAt = DateTime.Now.AddDays(-1)
+                    },
+                    new SystemUpdate
+                    {
+                        Title = "Perbaikan Retensi Data Planning pada Compliance Chart & KPI Card PM",
+                        Version = "v2.4.2",
+                        UpdateType = "Bug Fix",
+                        Description = "- Memperbaiki flow kalkulasi di mana jadwal PM yang dieksekusi (Plan / Execute) tidak lagi menghapus nilai Planning dari grafik Compliance dan kartu KPI.\n- Sinkronisasi filter status Planning (P) agar konsisten menampilkan riwayat seluruh jadwal asal Plan.\n- Filter Export Excel disinkronkan dengan visualisasi kalender.",
+                        ActionRequired = "Tidak ada tindakan khusus yang diperlukan dari pengguna.",
+                        TargetAudience = "All Users",
+                        SendEmail = false,
+                        ShowPopupAlert = true,
+                        IsActive = true,
+                        CreatedBy = "Developer",
+                        CreatedAt = DateTime.Now.AddDays(-2)
+                    },
+                    new SystemUpdate
+                    {
+                        Title = "Standarisasi Penamaan Menu Transaksi: Stock In & Stock Out",
+                        Version = "v2.4.1",
+                        UpdateType = "Improvement",
+                        Description = "- Pembaruan label navigasi menu dan header dari 'Barang Masuk' menjadi 'Stock In', serta 'Barang Keluar' menjadi 'Stock Out'.\n- Tab pada menu Transaction Logs disesuaikan menjadi Stock In History dan Stock Out History.",
+                        ActionRequired = "Refresh halaman browser jika label belum ter-update.",
+                        TargetAudience = "All Users",
+                        SendEmail = false,
+                        ShowPopupAlert = false,
+                        IsActive = true,
+                        CreatedBy = "Developer",
+                        CreatedAt = DateTime.Now.AddDays(-3)
+                    }
+                };
+
+                db.SystemUpdates.AddRange(initialUpdates);
+                await db.SaveChangesAsync();
+                Console.WriteLine("[DbSeeder] Successfully seeded initial System Updates release history.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DbSeeder] SeedSystemUpdates warning: {ex.Message}");
             }
         }
 
