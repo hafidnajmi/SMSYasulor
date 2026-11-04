@@ -619,29 +619,37 @@ body:not(.modal-open) {
                     @activeDept.ToUpper()
                 </span>
 
-                <!-- Notification Bell for Developer Updates & In-App Alerts -->
+                <!-- Notification Bell (Microsoft 365 Style, Simple & Lightweight) -->
                 <div class="dropdown me-1">
-                    <button class="btn btn-sm btn-link text-dark position-relative p-1 text-decoration-none" type="button" id="topNotifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Pemberitahuan & Update Sistem">
+                    <button class="btn btn-sm btn-link text-dark position-relative p-1 text-decoration-none d-flex align-items-center justify-content-center" type="button" id="topNotifBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Pemberitahuan & Update Sistem" style="width: 34px; height: 34px; border-radius: 4px;">
                         <i class="bi bi-bell fs-5 text-dark"></i>
-                        <span id="topNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black text-white border border-white" style="display:none; font-size:9px; padding:2px 5px;">0</span>
+                        <span id="topNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark text-white border border-white" style="display:none; font-size:9px; padding:2px 5px;">0</span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end shadow border border-dark p-0" style="width: 340px; max-width: 92vw; border-radius: 0; font-size: 12.5px;" aria-labelledby="topNotifBellBtn">
-                        <div class="p-2 border-bottom bg-black text-white d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small font-monospace"><i class="bi bi-bell-fill me-1"></i> UPDATE &amp; NOTIFIKASI</span>
-                            <span id="topNotifCountText" class="badge bg-white text-black font-monospace" style="font-size:9px; border-radius:0;">0 Baru</span>
+                    <div class="dropdown-menu dropdown-menu-end shadow-sm border p-0" style="width: 400px; max-width: 92vw; border-radius: 6px; font-size: 13px; border-color: #e2e8f0 !important;" aria-labelledby="topNotifBellBtn">
+                        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white" style="border-radius: 6px 6px 0 0;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-bell text-dark fs-6"></i>
+                                <span class="fw-semibold text-dark" style="font-size: 13.5px;">Pemberitahuan Sistem</span>
+                                <span id="topNotifCountText" class="badge bg-light text-dark border fw-normal" style="font-size: 10px; border-radius: 10px; padding: 2px 7px;">0 Baru</span>
+                            </div>
+                            <button type="button" class="btn btn-link btn-xs text-secondary p-0 text-decoration-none" style="font-size: 11.5px;" onclick="markAllNotificationsAsRead()" title="Tandai semua telah dibaca">
+                                Tandai Dibaca
+                            </button>
                         </div>
-                        <div id="topNotifList" class="overflow-auto" style="max-height: 320px;">
+                        <div id="topNotifList" class="overflow-auto" style="max-height: 400px;">
                             <div class="p-3 text-center text-muted small">Memuat notifikasi...</div>
                         </div>
-                        <div class="p-2 border-top bg-light text-center d-flex justify-content-between align-items-center px-3">
-                            <button type="button" class="btn btn-link btn-xs text-secondary p-0 text-decoration-none" style="font-size: 11px;" onclick="markAllNotificationsAsRead()">
-                                Tandai Semua Dibaca
-                            </button>
+                        <div class="p-2 border-top bg-light text-center" style="border-radius: 0 0 6px 6px;">
                             @if (isUserAdmin)
                             {
-                                <a asp-controller="DeveloperUpdates" asp-action="Index" class="btn btn-link btn-xs text-dark p-0 text-decoration-none fw-semibold" style="font-size: 11px;">
-                                    Developer Portal &rarr;
+                                <a asp-controller="DeveloperUpdates" asp-action="Index" class="text-dark small text-decoration-none fw-medium d-inline-flex align-items-center gap-1" style="font-size: 12px;">
+                                    <span>Kelola Catatan Rilis (Developer Portal)</span>
+                                    <i class="bi bi-arrow-right"></i>
                                 </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted" style="font-size: 11px;">Sparepart Management System &bull; Versi Terbaru</span>
                             }
                         </div>
                     </div>
@@ -1173,64 +1181,70 @@ body:not(.modal-open) {
             if (!listEl) return;
 
             if (!_globalCachedUpdates || _globalCachedUpdates.length === 0) {
-                listEl.innerHTML = '<div class="p-3 text-center text-muted small font-monospace">Belum ada pembaruan atau notifikasi sistem.</div>';
+                listEl.innerHTML = '<div class="p-4 text-center text-muted small"><i class="bi bi-bell-slash fs-4 d-block mb-1 text-secondary opacity-50"></i>Belum ada pemberitahuan atau rilis terbaru.</div>';
                 return;
             }
 
             var readIds = getReadUpdateIds();
             var html = '';
 
-            _globalCachedUpdates.forEach(function(u, idx) {
+            _globalCachedUpdates.forEach(function(u) {
                 var isRead = readIds.includes(u.id);
-                var bgStyle = isRead ? 'background:#ffffff;' : 'background:#f8fafc; border-left:3px solid #000000;';
+                var bgStyle = isRead ? 'background:#ffffff;' : 'background:#f8fafc; border-left:3px solid #0f172a;';
+                var badgeClass = 'badge bg-light text-dark border';
+                if (u.type === 'New Feature') badgeClass = 'badge bg-dark text-white';
 
-                html += '<div class="p-2 border-bottom notif-item" style="cursor:pointer; ' + bgStyle + '" onclick="viewUpdateDetailById(' + u.id + ')">';
+                html += '<div class="p-3 border-bottom notif-item" style="cursor:pointer; ' + bgStyle + '" onclick="toggleNotifDetail(' + u.id + ')">';
                 html += '  <div class="d-flex align-items-center justify-content-between mb-1">';
-                html += '    <div class="d-flex align-items-center gap-1">';
-                html += '      <span class="badge bg-black text-white font-monospace" style="font-size:8.5px; border-radius:0; padding:2px 4px;">' + escapeHtmlNotif(u.type.toUpperCase()) + '</span>';
-                html += '      <span class="badge bg-white text-black border border-dark font-monospace" style="font-size:8.5px; border-radius:0; padding:1px 4px;">' + escapeHtmlNotif(u.version) + '</span>';
+                html += '    <div class="d-flex align-items-center gap-1 flex-wrap">';
+                html += '      <span class="' + badgeClass + '" style="font-size:10px; border-radius:4px; padding:2px 6px;">' + escapeHtmlNotif(u.type) + '</span>';
+                html += '      <span class="badge bg-white text-secondary border font-monospace" style="font-size:10px; border-radius:4px; padding:2px 5px;">' + escapeHtmlNotif(u.version) + '</span>';
                 if (!isRead) {
-                    html += '  <span class="badge bg-dark text-white font-monospace" style="font-size:8px; border-radius:0; padding:1px 3px;">BARU</span>';
+                    html += '  <span class="badge rounded-pill bg-dark text-white" style="font-size:8px; padding:2px 5px;">BARU</span>';
                 }
                 html += '    </div>';
-                html += '    <span class="text-muted font-monospace" style="font-size:9.5px;">' + escapeHtmlNotif(u.timeAgo) + '</span>';
+                html += '    <span class="text-muted" style="font-size:11px;">' + escapeHtmlNotif(u.timeAgo) + '</span>';
                 html += '  </div>';
-                html += '  <div class="fw-semibold text-dark text-truncate" style="font-size:12px;">' + escapeHtmlNotif(u.title) + '</div>';
-                html += '  <div class="text-muted text-truncate" style="font-size:11px;">' + escapeHtmlNotif(u.description) + '</div>';
+                html += '  <div class="fw-semibold text-dark" style="font-size:13px; line-height:1.35;">' + escapeHtmlNotif(u.title) + '</div>';
+                html += '  <div class="text-muted text-truncate mt-1" style="font-size:12px;" id="notifSummary_' + u.id + '">' + escapeHtmlNotif(u.description) + '</div>';
+                
+                // Expanded inline detail
+                html += '  <div class="mt-2 pt-2 border-top d-none" id="notifDetail_' + u.id + '">';
+                html += '    <div class="small text-secondary" style="font-size:12px; white-space:pre-wrap; line-height:1.5;">' + escapeHtmlNotif(u.description) + '</div>';
+                if (u.actionRequired && u.actionRequired.trim().length > 0) {
+                    html += '    <div class="mt-2 p-2 bg-light border rounded-1 small" style="font-size:11.5px;">';
+                    html += '      <strong class="text-dark"><i class="bi bi-info-circle me-1"></i> Instruksi:</strong> ' + escapeHtmlNotif(u.actionRequired);
+                    html += '    </div>';
+                }
+                html += '    <div class="mt-2 d-flex justify-content-between align-items-center text-muted" style="font-size:10.5px;">';
+                html += '      <span>Rilis: ' + escapeHtmlNotif(u.createdAt) + ' &bull; ' + escapeHtmlNotif(u.createdBy) + '</span>';
+                html += '      <span class="text-secondary fw-semibold" style="cursor:pointer;" onclick="event.stopPropagation(); toggleNotifDetail(' + u.id + ');">Tutup &uarr;</span>';
+                html += '    </div>';
+                html += '  </div>';
                 html += '</div>';
             });
 
             listEl.innerHTML = html;
         }
 
-        function viewUpdateDetailById(id) {
-            var item = _globalCachedUpdates.find(function(x) { return x.id === id; });
-            if (!item) return;
-
+        function toggleNotifDetail(id) {
             markUpdateAsRead(id);
-            renderNotifList();
+            var detailEl = document.getElementById('notifDetail_' + id);
+            var summaryEl = document.getElementById('notifSummary_' + id);
+            if (!detailEl) return;
 
-            var modalEl = document.getElementById('layoutWhatsNewModal');
-            if (!modalEl) return;
+            if (detailEl.classList.contains('d-none')) {
+                // Collapse all other details
+                document.querySelectorAll('[id^="notifDetail_"]').forEach(function(el) { el.classList.add('d-none'); });
+                document.querySelectorAll('[id^="notifSummary_"]').forEach(function(el) { el.classList.remove('d-none'); });
 
-            document.getElementById('layoutModalTypeBadge').textContent = (item.type || 'UPDATE').toUpperCase();
-            document.getElementById('layoutModalVersion').textContent = item.version || 'v1.0.0';
-            document.getElementById('layoutModalDate').textContent = item.createdAt || '';
-            document.getElementById('layoutModalTitle').textContent = item.title || '';
-            document.getElementById('layoutModalDescription').textContent = item.description || '';
-            document.getElementById('layoutModalAuthor').textContent = item.createdBy || 'Developer';
-
-            var actionSec = document.getElementById('layoutModalActionSection');
-            var actionReq = document.getElementById('layoutModalActionRequired');
-            if (item.actionRequired && item.actionRequired.trim().length > 0) {
-                actionReq.textContent = item.actionRequired;
-                actionSec.classList.remove('d-none');
+                detailEl.classList.remove('d-none');
+                if (summaryEl) summaryEl.classList.add('d-none');
             } else {
-                actionSec.classList.add('d-none');
+                detailEl.classList.add('d-none');
+                if (summaryEl) summaryEl.classList.remove('d-none');
             }
-
-            var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-            modal.show();
+            renderNotifList();
         }
 
         function loadDeveloperNotifications() {
@@ -1241,18 +1255,7 @@ body:not(.modal-open) {
                         _globalCachedUpdates = res.data;
                         updateNotifBadge();
                         renderNotifList();
-
-                        // Check if there is an active alert popup that has not been shown to this user/browser yet
-                        var activeAlert = _globalCachedUpdates.find(function(u) {
-                            return u.showAlert && (localStorage.getItem('sms_alert_shown_' + u.id) !== 'true');
-                        });
-
-                        if (activeAlert) {
-                            localStorage.setItem('sms_alert_shown_' + activeAlert.id, 'true');
-                            setTimeout(function() {
-                                viewUpdateDetailById(activeAlert.id);
-                            }, 800);
-                        }
+                        // NO AUTO-POPUP: Updates are only visible when user clicks the notification bell
                     }
                 })
                 .catch(function(err) {
@@ -1266,61 +1269,6 @@ body:not(.modal-open) {
                 <text>loadDeveloperNotifications();</text>
             }
         });
-    </script>
-
-    <!-- Global Modal: What's New & System Update Notification (Strict Monochrome Theme) -->
-    <div class="modal fade" id="layoutWhatsNewModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="border-radius:0; border:2px solid #000000; box-shadow:0 12px 30px rgba(0,0,0,0.3);">
-                <div class="modal-header bg-black text-white py-2 px-3 d-flex align-items-center justify-content-between" style="border-radius:0;">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-broadcast fs-6 text-white"></i>
-                        <span class="fw-bold font-monospace text-uppercase" style="font-size:13px; letter-spacing:0.04em;">PEMBERITAHUAN &amp; CATATAN RILIS SISTEM</span>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
-                </div>
-                <div class="modal-body p-4" style="background:#ffffff; color:#000000;">
-                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span id="layoutModalTypeBadge" class="badge bg-black text-white font-monospace px-2 py-1" style="border-radius:0; font-size:11px;">UPDATE</span>
-                            <span id="layoutModalVersion" class="badge bg-white text-black border border-dark font-monospace px-2 py-1" style="border-radius:0; font-size:11px;">v1.0.0</span>
-                        </div>
-                        <span id="layoutModalDate" class="text-muted small font-monospace"></span>
-                    </div>
-
-                    <h5 id="layoutModalTitle" class="fw-bold text-black mb-3" style="font-size:17px; line-height:1.35;"></h5>
-
-                    <div class="mb-3">
-                        <div class="fw-bold small text-uppercase font-monospace text-secondary mb-1" style="font-size:10.5px; letter-spacing:0.05em;">RINCIAN PERUBAHAN &amp; FITUR:</div>
-                        <div id="layoutModalDescription" class="p-3 border border-dark bg-light font-monospace small" style="white-space:pre-wrap; line-height:1.6; max-height:260px; overflow-y:auto; font-size:12px;"></div>
-                    </div>
-
-                    <div id="layoutModalActionSection" class="mb-3 d-none">
-                        <div class="p-2 border border-dark bg-white font-monospace small" style="font-size:12px;">
-                            <strong class="text-black"><i class="bi bi-exclamation-diamond-fill me-1"></i> INSTRUKSI / ACTION REQUIRED:</strong>
-                            <div id="layoutModalActionRequired" class="mt-1 text-dark"></div>
-                        </div>
-                    </div>
-
-                    <div class="text-muted small border-top pt-2 d-flex justify-content-between" style="font-size:11px;">
-                        <span>Dipublikasikan oleh: <strong id="layoutModalAuthor" class="text-dark">Developer</strong></span>
-                        <span class="font-monospace text-dark">SMS Automation Enterprise</span>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light py-2 px-3 border-top d-flex justify-content-between" style="border-radius:0;">
-                    <button type="button" class="btn btn-outline-dark btn-sm px-3 font-monospace" style="border-radius:0; font-size:12px;" data-bs-dismiss="modal">
-                        <i class="bi bi-check2 me-1"></i> Mengerti &amp; Tutup
-                    </button>
-                    @if (isUserAdmin)
-                    {
-                        <a asp-controller="DeveloperUpdates" asp-action="Index" class="btn btn-black btn-sm text-white px-3 font-monospace" style="background:#000000; border-radius:0; font-size:12px;">
-                            Buka Developer Portal &rarr;
-                        </a>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
