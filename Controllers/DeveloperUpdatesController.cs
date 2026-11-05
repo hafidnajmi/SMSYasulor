@@ -38,12 +38,43 @@ namespace UPMS.Web.Controllers
         }
 
         // GET: /DeveloperUpdates
-        public async Task<IActionResult> Index(string? type, string? status, string? search)
+        public async Task<IActionResult> Index(string? type, string? status, string? search, string? filter)
         {
             if (!await IsAdminOrDeveloperAsync())
             {
                 TempData["Error"] = "Access Denied: Developer Updates is restricted to Administrators & Developers.";
                 return RedirectToAction("Index", "Dashboard");
+            }
+
+            // Parse unified filter dropdown if provided
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                string f = filter.Trim();
+                if (f.StartsWith("status:", StringComparison.OrdinalIgnoreCase))
+                {
+                    status = f.Substring(7);
+                    type = "all";
+                }
+                else if (f.StartsWith("type:", StringComparison.OrdinalIgnoreCase))
+                {
+                    type = f.Substring(5);
+                    status = "all";
+                }
+                else if (f.Equals("Published", StringComparison.OrdinalIgnoreCase) || f.Equals("Draft", StringComparison.OrdinalIgnoreCase))
+                {
+                    status = f;
+                    type = "all";
+                }
+                else if (f.Equals("Bug Fix", StringComparison.OrdinalIgnoreCase) || f.Equals("Improvement", StringComparison.OrdinalIgnoreCase) || f.Equals("New Feature", StringComparison.OrdinalIgnoreCase))
+                {
+                    type = f;
+                    status = "all";
+                }
+                else if (f.Equals("all", StringComparison.OrdinalIgnoreCase))
+                {
+                    type = "all";
+                    status = "all";
+                }
             }
 
             var query = _db.SystemUpdates.AsNoTracking().AsQueryable();
@@ -78,6 +109,17 @@ namespace UPMS.Web.Controllers
             ViewBag.NewFeatureCount = allList.Count(u => u.UpdateType.Equals("New Feature", StringComparison.OrdinalIgnoreCase));
             ViewBag.ActiveAlertCount = allList.Count(u => u.IsActive && u.ShowPopupAlert);
 
+            string selectedFilter = "all";
+            if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                selectedFilter = "status:" + status;
+            }
+            else if (!string.IsNullOrWhiteSpace(type) && !string.Equals(type, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                selectedFilter = "type:" + type;
+            }
+
+            ViewBag.SelectedFilter = selectedFilter;
             ViewBag.SelectedType = type ?? "all";
             ViewBag.SelectedStatus = status ?? "all";
             ViewBag.SearchQuery = search ?? "";
