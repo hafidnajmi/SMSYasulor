@@ -366,6 +366,32 @@
                                 <div class="text-dark fw-medium">
                                     @item.UpdateType
                                 </div>
+                                @{
+                                    var duration = item.PopupDurationDays > 0 ? item.PopupDurationDays : 7;
+                                    var relDate = item.ReleaseDate ?? item.CreatedAt;
+                                    var expiry = relDate.AddDays(duration);
+                                    var isPopupActive = item.ShowPopupAlert && item.ReleaseStatus == "Published" && DateTime.Now <= expiry;
+                                    var daysRemaining = isPopupActive ? Math.Max(1, (int)Math.Ceiling((expiry - DateTime.Now).TotalDays)) : 0;
+                                }
+                                @if (item.ShowPopupAlert)
+                                {
+                                    if (isPopupActive)
+                                    {
+                                        <div class="mt-1">
+                                            <span class="badge text-white" style="background:#032954; font-size:10px; font-weight:500; border-radius:0px !important;" title="Pop-up reminder is active upon login (@daysRemaining days remaining)">
+                                                <i class="bi bi-window-stack me-1"></i>Popup: @(daysRemaining)d left
+                                            </span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-muted border" style="font-size:10px; font-weight:400; border-radius:0px !important;" title="Pop-up reminder duration expired">
+                                                <i class="bi bi-clock-history me-1"></i>Popup Expired
+                                            </span>
+                                        </div>
+                                    }
+                                }
                             </td>
                             <td>
                                 <div class="fw-semibold text-dark" style="font-size: 13.5px;">@item.Title</div>
@@ -413,7 +439,7 @@
                                     <button type="button" class="dev-action-btn" title="Resend Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
                                         <i class="bi bi-envelope-arrow-up"></i>
                                     </button>
-                                    <button type="button" class="dev-action-btn" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.IsActive.ToString().ToLower()))">
+                                    <button type="button" class="dev-action-btn" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.PopupDurationDays > 0 ? item.PopupDurationDays : 7), @(item.IsActive.ToString().ToLower()))">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this release record?');">
@@ -517,6 +543,43 @@
                                     <i class="bi bi-send-check me-1"></i> Send Preview Test Email
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Pop-up Reminder upon Login Options -->
+                    <div class="pt-3 border-top mb-2">
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" name="ShowPopupAlert" value="true" id="createShowPopupAlert" checked onchange="togglePopupDuration('create', this.checked)">
+                            <label class="form-check-label small fw-semibold text-dark" for="createShowPopupAlert">
+                                <i class="bi bi-window-stack text-primary me-1"></i> Enable Pop-up Reminder on Login
+                            </label>
+                        </div>
+                        <small class="text-muted d-block" style="font-size: 11.5px;">Displays an announcement pop-up to users upon logging into the SMS system.</small>
+
+                        <div id="createPopupDurationWrapper" class="mt-2 pt-2 border-top">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-6 col-12">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Reminder Active Duration:</label>
+                                    <select id="createPopupDurationPreset" class="form-select form-select-sm" onchange="onPopupPresetChange('create', this.value)">
+                                        <option value="3">3 Days after release</option>
+                                        <option value="7" selected>7 Days after release (Default)</option>
+                                        <option value="14">14 Days after release</option>
+                                        <option value="30">30 Days after release</option>
+                                        <option value="custom">Custom duration (days)...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 col-8" id="createCustomDurationCol" style="display: none;">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Custom Days:</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" id="createPopupDurationCustom" class="form-control form-control-sm" min="1" max="365" value="7" oninput="onCustomDurationInput('create', this.value)">
+                                        <span class="input-group-text bg-light text-muted">Days</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="PopupDurationDays" id="createPopupDurationDays" value="7" />
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                <i class="bi bi-info-circle me-1"></i> The pop-up will remind users upon login until the duration expires, after which it remains accessible via the notification bell.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -649,11 +712,44 @@
                         <input type="text" name="actionRequired" id="editActionRequired" class="form-control form-control-sm" style="border-radius: 4px;" />
                     </div>
 
-                    <div class="d-flex gap-3 pt-2">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="showPopupAlert" value="true" id="editShowPopupAlert">
-                            <label class="form-check-label small fw-semibold text-dark" for="editShowPopupAlert">Display in Notification Bell</label>
+                    <!-- Pop-up Reminder upon Login Options -->
+                    <div class="pt-3 border-top mb-2">
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" name="showPopupAlert" value="true" id="editShowPopupAlert" onchange="togglePopupDuration('edit', this.checked)">
+                            <label class="form-check-label small fw-semibold text-dark" for="editShowPopupAlert">
+                                <i class="bi bi-window-stack text-primary me-1"></i> Enable Pop-up Reminder on Login
+                            </label>
                         </div>
+                        <small class="text-muted d-block" style="font-size: 11.5px;">Displays an announcement pop-up to users upon logging into the SMS system.</small>
+
+                        <div id="editPopupDurationWrapper" class="mt-2 pt-2 border-top">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-6 col-12">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Reminder Active Duration:</label>
+                                    <select id="editPopupDurationPreset" class="form-select form-select-sm" onchange="onPopupPresetChange('edit', this.value)">
+                                        <option value="3">3 Days after release</option>
+                                        <option value="7">7 Days after release</option>
+                                        <option value="14">14 Days after release</option>
+                                        <option value="30">30 Days after release</option>
+                                        <option value="custom">Custom duration (days)...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 col-8" id="editCustomDurationCol" style="display: none;">
+                                    <label class="form-label small fw-semibold text-dark mb-1">Custom Days:</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" id="editPopupDurationCustom" class="form-control form-control-sm" min="1" max="365" value="7" oninput="onCustomDurationInput('edit', this.value)">
+                                        <span class="input-group-text bg-light text-muted">Days</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="popupDurationDays" id="editPopupDurationDays" value="7" />
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                <i class="bi bi-info-circle me-1"></i> The pop-up will remind users upon login until the duration expires, after which it remains accessible via the notification bell.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 pt-2">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="isActive" value="true" id="editIsActive">
                             <label class="form-check-label small fw-semibold text-dark" for="editIsActive">Active Release Status</label>
@@ -748,7 +844,33 @@
         modal.show();
     }
 
-    function openEditModal(id, title, version, type, status, releaseDate, description, actionRequired, audience, showPopup, isActive) {
+    function togglePopupDuration(prefix, isChecked) {
+        const wrapper = document.getElementById(prefix + 'PopupDurationWrapper');
+        if (wrapper) wrapper.style.display = isChecked ? 'block' : 'none';
+    }
+
+    function onPopupPresetChange(prefix, value) {
+        const customCol = document.getElementById(prefix + 'CustomDurationCol');
+        const hiddenInput = document.getElementById(prefix + (prefix === 'create' ? 'PopupDurationDays' : 'PopupDurationDays'));
+        const customInput = document.getElementById(prefix + 'PopupDurationCustom');
+        
+        if (value === 'custom') {
+            if (customCol) customCol.style.display = 'block';
+            if (hiddenInput && customInput) hiddenInput.value = customInput.value || 7;
+        } else {
+            if (customCol) customCol.style.display = 'none';
+            if (hiddenInput) hiddenInput.value = value;
+        }
+    }
+
+    function onCustomDurationInput(prefix, value) {
+        const hiddenInput = document.getElementById(prefix + (prefix === 'create' ? 'PopupDurationDays' : 'PopupDurationDays'));
+        if (hiddenInput) {
+            hiddenInput.value = parseInt(value, 10) > 0 ? parseInt(value, 10) : 7;
+        }
+    }
+
+    function openEditModal(id, title, version, type, status, releaseDate, description, actionRequired, audience, showPopup, popupDurationDays, isActive) {
         document.getElementById('editId').value = id;
         document.getElementById('editTitle').value = title;
         document.getElementById('editVersion').value = version;
@@ -758,7 +880,26 @@
         document.getElementById('editDescription').value = description;
         document.getElementById('editActionRequired').value = actionRequired || '';
         document.getElementById('editTargetAudience').value = audience || 'All Users';
+        
         document.getElementById('editShowPopupAlert').checked = showPopup;
+        togglePopupDuration('edit', showPopup);
+
+        const duration = parseInt(popupDurationDays, 10) > 0 ? parseInt(popupDurationDays, 10) : 7;
+        document.getElementById('editPopupDurationDays').value = duration;
+
+        const presetSelect = document.getElementById('editPopupDurationPreset');
+        const customCol = document.getElementById('editCustomDurationCol');
+        const customInput = document.getElementById('editPopupDurationCustom');
+
+        if (['3', '7', '14', '30'].includes(duration.toString())) {
+            presetSelect.value = duration.toString();
+            if (customCol) customCol.style.display = 'none';
+        } else {
+            presetSelect.value = 'custom';
+            if (customCol) customCol.style.display = 'block';
+            if (customInput) customInput.value = duration;
+        }
+
         document.getElementById('editIsActive').checked = isActive;
 
         const modal = new bootstrap.Modal(document.getElementById('editUpdateModal'));

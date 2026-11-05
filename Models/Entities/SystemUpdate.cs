@@ -59,6 +59,9 @@ namespace UPMS.Web.Models.Entities
         [Column("show_popup_alert")]
         public bool ShowPopupAlert { get; set; } = true;
 
+        [Column("popup_duration_days")]
+        public int PopupDurationDays { get; set; } = 7;
+
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
 

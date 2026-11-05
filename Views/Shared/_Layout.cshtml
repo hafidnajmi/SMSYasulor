@@ -677,6 +677,74 @@ body:not(.modal-open) {
     <!-- Global Toast Container -->
     <div id="ems-toast-container" style="position:fixed; top:70px; right:20px; z-index:10000; pointer-events:none;"></div>
 
+    <!-- Login Pop-up Notification Modal -->
+    <div class="modal fade" id="loginNotificationModal" tabindex="-1" aria-labelledby="loginNotificationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 0px !important;">
+                <!-- Microsoft Deep Blue Header -->
+                <div class="modal-header text-white py-3 px-4" style="background: #032954; border-bottom: 3px solid #021f3f; border-radius: 0px !important;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-bell-fill fs-5 text-warning"></i>
+                        <div>
+                            <h6 class="modal-title fw-bold mb-0 text-white" id="loginNotificationModalLabel" style="font-size: 15px; letter-spacing: 0.02em;">
+                                SYSTEM UPDATE &amp; RELEASE NOTICE
+                            </h6>
+                            <span class="small text-light opacity-75" style="font-size: 11px;">Sparepart Management System &bull; Active Announcement</span>
+                        </div>
+                    </div>
+                    <span id="loginPopupVersionBadge" class="badge bg-white text-dark fw-bold px-2 py-1" style="border-radius: 0px !important; font-size: 11px;">v...</span>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body p-4 bg-white" style="font-size: 13px; color: #0f172a;">
+                    <!-- Badge & Days Remaining Banner -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="loginPopupTypeBadge" class="badge text-white px-2 py-1" style="background:#032954; font-size: 10px; text-transform: uppercase; border-radius: 0px !important;">IMPROVEMENT</span>
+                            <span id="loginPopupDate" class="text-muted" style="font-size: 11.5px;">-</span>
+                        </div>
+                        <span id="loginPopupReminderDays" class="badge bg-light text-primary border px-2 py-1" style="font-size: 11px; font-weight: 500; border-radius: 0px !important;">
+                            <i class="bi bi-clock-history me-1"></i>Reminder Active
+                        </span>
+                    </div>
+
+                    <!-- Title -->
+                    <h5 id="loginPopupTitle" class="fw-bold text-dark mb-2" style="font-size: 16px; line-height: 1.4;">
+                        Update Title
+                    </h5>
+
+                    <!-- Description -->
+                    <div id="loginPopupDescription" class="text-secondary mb-3" style="font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; max-height: 220px; overflow-y: auto;">
+                        Description
+                    </div>
+
+                    <!-- Action Required (if any) -->
+                    <div id="loginPopupActionBox" class="p-2 border-top mb-2" style="display: none;">
+                        <div class="small fw-bold text-primary mb-1" style="font-size: 11.5px;">
+                            <i class="bi bi-info-circle me-1"></i>ACTION REQUIRED:
+                        </div>
+                        <div id="loginPopupActionText" class="small text-dark" style="font-size: 12px; line-height: 1.5;"></div>
+                    </div>
+                </div>
+
+                <!-- Footer with "Don't show again today" and Close -->
+                <div class="modal-footer bg-light py-2 px-4 border-top d-flex align-items-center justify-content-between" style="border-radius: 0px !important;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="loginPopupDontShowToday" style="border-radius: 0px !important;">
+                        <label class="form-check-label small text-muted" for="loginPopupDontShowToday" style="font-size: 11.5px;">
+                            Don't remind me again today
+                        </label>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn text-white btn-sm px-3" style="background: #032954; border: 1px solid #032954; border-radius: 0px !important; font-size: 12.5px;" onclick="dismissLoginPopup()">
+                            Got It &bull; Dismiss
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="ems-sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     <div class="app-wrapper">
         <!-- Sidebar Navigation -->
@@ -1300,6 +1368,92 @@ body:not(.modal-open) {
             });
         }
 
+        var _activeLoginPopupUpdate = null;
+
+        function checkAndShowLoginPopup(updates) {
+            if (!Array.isArray(updates) || updates.length === 0) return;
+
+            // Find the latest active popup update
+            var activePopupUpdate = null;
+            for (var i = 0; i < updates.length; i++) {
+                var u = updates[i];
+                if (u.isPopupActive) {
+                    activePopupUpdate = u;
+                    break;
+                }
+            }
+
+            if (!activePopupUpdate) return;
+            _activeLoginPopupUpdate = activePopupUpdate;
+
+            // Check if dismissed today in localStorage
+            var todayStr = new Date().toISOString().slice(0, 10);
+            var dismissedTodayKey = 'sms_popup_dismissed_today_' + activePopupUpdate.id;
+            if (localStorage.getItem(dismissedTodayKey) === todayStr) {
+                return; // User already chose "Don't remind me again today"
+            }
+
+            // Check if seen in current session (sessionStorage)
+            var seenSessionKey = 'sms_popup_seen_session_' + activePopupUpdate.id;
+            if (sessionStorage.getItem(seenSessionKey) === 'true') {
+                return; // Already seen in this browser tab/session
+            }
+
+            // Populate modal fields
+            var titleEl = document.getElementById('loginPopupTitle');
+            var verEl = document.getElementById('loginPopupVersionBadge');
+            var typeEl = document.getElementById('loginPopupTypeBadge');
+            var dateEl = document.getElementById('loginPopupDate');
+            var descEl = document.getElementById('loginPopupDescription');
+            var daysEl = document.getElementById('loginPopupReminderDays');
+            var actionBox = document.getElementById('loginPopupActionBox');
+            var actionText = document.getElementById('loginPopupActionText');
+
+            if (titleEl) titleEl.textContent = activePopupUpdate.title;
+            if (verEl) verEl.textContent = activePopupUpdate.version;
+            if (typeEl) typeEl.textContent = activePopupUpdate.type;
+            if (dateEl) dateEl.textContent = activePopupUpdate.releaseDate || activePopupUpdate.createdAt;
+            if (descEl) descEl.textContent = activePopupUpdate.description;
+
+            if (daysEl) {
+                var dLeft = activePopupUpdate.daysRemaining;
+                daysEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Reminder: ' + dLeft + ' day' + (dLeft > 1 ? 's' : '') + ' left';
+            }
+
+            if (actionBox && actionText) {
+                if (activePopupUpdate.actionRequired && activePopupUpdate.actionRequired.trim().length > 0) {
+                    actionText.textContent = activePopupUpdate.actionRequired;
+                    actionBox.style.display = 'block';
+                } else {
+                    actionBox.style.display = 'none';
+                }
+            }
+
+            // Show Bootstrap Modal
+            var modalEl = document.getElementById('loginNotificationModal');
+            if (modalEl) {
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        }
+
+        function dismissLoginPopup() {
+            if (_activeLoginPopupUpdate) {
+                var chk = document.getElementById('loginPopupDontShowToday');
+                if (chk && chk.checked) {
+                    var todayStr = new Date().toISOString().slice(0, 10);
+                    localStorage.setItem('sms_popup_dismissed_today_' + _activeLoginPopupUpdate.id, todayStr);
+                }
+                sessionStorage.setItem('sms_popup_seen_session_' + _activeLoginPopupUpdate.id, 'true');
+                markUpdateAsRead(_activeLoginPopupUpdate.id);
+            }
+            var modalEl = document.getElementById('loginNotificationModal');
+            if (modalEl) {
+                var instance = bootstrap.Modal.getInstance(modalEl);
+                if (instance) instance.hide();
+            }
+        }
+
         function loadDeveloperNotifications() {
             fetch('/DeveloperUpdates/GetLatestNotifications')
                 .then(function(res) { return res.json(); })
@@ -1308,7 +1462,7 @@ body:not(.modal-open) {
                         _globalCachedUpdates = res.data;
                         updateNotifBadge();
                         renderNotifList();
-                        // NO AUTO-POPUP: Updates are only visible when user clicks the notification bell
+                        checkAndShowLoginPopup(_globalCachedUpdates);
                     }
                 })
                 .catch(function(err) {

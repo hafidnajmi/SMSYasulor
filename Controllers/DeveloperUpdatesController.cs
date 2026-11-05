@@ -208,7 +208,7 @@ namespace UPMS.Web.Controllers
         // POST: /DeveloperUpdates/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string title, string version, string updateType, string description, string? actionRequired, string targetAudience, string? releaseStatus, DateTime? releaseDate, bool showPopupAlert, bool isActive)
+        public async Task<IActionResult> Edit(int id, string title, string version, string updateType, string description, string? actionRequired, string targetAudience, string? releaseStatus, DateTime? releaseDate, bool showPopupAlert, int popupDurationDays, bool isActive)
         {
             if (!await IsAdminOrDeveloperAsync()) return Forbid();
 
@@ -242,6 +242,7 @@ namespace UPMS.Web.Controllers
             item.ReleaseStatus = newStatus;
 
             item.ShowPopupAlert = showPopupAlert;
+            item.PopupDurationDays = popupDurationDays > 0 ? popupDurationDays : 7;
             item.IsActive = isActive;
             item.UpdatedAt = DateTime.Now;
 
@@ -383,7 +384,7 @@ namespace UPMS.Web.Controllers
             return Json(new { success = false, message = $"Failed to send test email: {error}" });
         }
 
-        // GET: /DeveloperUpdates/GetLatestNotifications (Accessible by all logged-in users for Notification Bell)
+        // GET: /DeveloperUpdates/GetLatestNotifications (Accessible by all logged-in users for Notification Bell & Login Pop-up)
         [HttpGet]
         public async Task<IActionResult> GetLatestNotifications()
         {
@@ -396,21 +397,34 @@ namespace UPMS.Web.Controllers
                     .Take(15)
                     .ToListAsync();
 
-                var list = updates.Select(u => new
+                var now = DateTime.Now;
+                var list = updates.Select(u =>
                 {
-                    id = u.Id,
-                    title = u.Title,
-                    version = u.Version,
-                    type = u.UpdateType,
-                    status = u.ReleaseStatus,
-                    description = u.Description,
-                    actionRequired = u.ActionRequired ?? "",
-                    createdBy = u.CreatedBy,
-                    releaseDate = (u.ReleaseDate ?? u.CreatedAt).ToString("dd MMM yyyy HH:mm"),
-                    createdAt = (u.ReleaseDate ?? u.CreatedAt).ToString("dd MMM yyyy HH:mm"),
-                    timeAgo = GetRelativeTime(u.ReleaseDate ?? u.CreatedAt),
-                    showAlert = u.ShowPopupAlert,
-                    isRecent = (DateTime.Now - (u.ReleaseDate ?? u.CreatedAt)).TotalHours < 72
+                    var relDate = u.ReleaseDate ?? u.CreatedAt;
+                    var durationDays = u.PopupDurationDays > 0 ? u.PopupDurationDays : 7;
+                    var expiryDate = relDate.AddDays(durationDays);
+                    var isPopupActive = u.ShowPopupAlert && now <= expiryDate;
+                    var daysRemaining = isPopupActive ? Math.Max(1, (int)Math.Ceiling((expiryDate - now).TotalDays)) : 0;
+
+                    return new
+                    {
+                        id = u.Id,
+                        title = u.Title,
+                        version = u.Version,
+                        type = u.UpdateType,
+                        status = u.ReleaseStatus,
+                        description = u.Description,
+                        actionRequired = u.ActionRequired ?? "",
+                        createdBy = u.CreatedBy,
+                        releaseDate = relDate.ToString("dd MMM yyyy HH:mm"),
+                        createdAt = relDate.ToString("dd MMM yyyy HH:mm"),
+                        timeAgo = GetRelativeTime(relDate),
+                        showAlert = u.ShowPopupAlert,
+                        popupDurationDays = durationDays,
+                        isPopupActive = isPopupActive,
+                        daysRemaining = daysRemaining,
+                        isRecent = (now - relDate).TotalHours < 72
+                    };
                 });
 
                 return Json(new { success = true, data = list });

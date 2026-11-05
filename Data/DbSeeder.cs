@@ -190,8 +190,10 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS pu_number VARCHAR(100);");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""System_Updates"" ADD COLUMN IF NOT EXISTS release_status VARCHAR(50) DEFAULT 'Published';");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""System_Updates"" ADD COLUMN IF NOT EXISTS release_date TIMESTAMP;");
+                    await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""System_Updates"" ADD COLUMN IF NOT EXISTS popup_duration_days INT DEFAULT 7;");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_status = 'Published' WHERE release_status IS NULL OR release_status = '';");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_date = created_at WHERE release_date IS NULL;");
+                    await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET popup_duration_days = 7 WHERE popup_duration_days IS NULL;");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS unit_price NUMERIC(18,2);");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""Barang_Masuk"" SET pu_number = po_number WHERE (pu_number IS NULL OR pu_number = '') AND po_number IS NOT NULL AND po_number <> '';");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""Barang_Masuk"" SET po_number = pu_number WHERE (po_number IS NULL OR po_number = '') AND pu_number IS NOT NULL AND pu_number <> '';");
