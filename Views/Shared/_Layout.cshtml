@@ -677,69 +677,52 @@ body:not(.modal-open) {
     <!-- Global Toast Container -->
     <div id="ems-toast-container" style="position:fixed; top:70px; right:20px; z-index:10000; pointer-events:none;"></div>
 
-    <!-- Login Pop-up Notification Modal -->
+    <!-- Login Pop-up Notification Modal (Simple Minimalist Centered Design) -->
     <div class="modal fade" id="loginNotificationModal" tabindex="-1" aria-labelledby="loginNotificationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 0px !important;">
-                <!-- Microsoft Deep Blue Header -->
-                <div class="modal-header text-white py-3 px-4" style="background: #032954; border-bottom: 3px solid #021f3f; border-radius: 0px !important;">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-bell-fill fs-5 text-warning"></i>
-                        <div>
-                            <h6 class="modal-title fw-bold mb-0 text-white" id="loginNotificationModalLabel" style="font-size: 15px; letter-spacing: 0.02em;">
-                                SYSTEM UPDATE &amp; RELEASE NOTICE
-                            </h6>
-                            <span class="small text-light opacity-75" style="font-size: 11px;">Sparepart Management System &bull; Active Announcement</span>
-                        </div>
-                    </div>
-                    <span id="loginPopupVersionBadge" class="badge bg-white text-dark fw-bold px-2 py-1" style="border-radius: 0px !important; font-size: 11px;">v...</span>
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+            <div class="modal-content border shadow-lg bg-white position-relative" style="border-radius: 0px !important; border-color: #cbd5e1 !important; padding: 36px 32px 28px; text-align: center;">
+                <!-- Close 'X' Button at Top-Right -->
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" onclick="dismissLoginPopup(false)" aria-label="Close" style="font-size: 13px; opacity: 0.6; cursor: pointer;"></button>
+
+                <!-- Version & Category Meta -->
+                <div class="mb-2 text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 11px; color: #64748b;">
+                    <span id="loginPopupVersionBadge" style="color: #032954; font-weight: 700;">v...</span>
+                    <span>&bull;</span>
+                    <span id="loginPopupTypeBadge" style="color: #475569;">IMPROVEMENT</span>
                 </div>
 
-                <!-- Modal Body -->
-                <div class="modal-body p-4 bg-white" style="font-size: 13px; color: #0f172a;">
-                    <!-- Badge & Days Remaining Banner -->
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <span id="loginPopupTypeBadge" class="badge text-white px-2 py-1" style="background:#032954; font-size: 10px; text-transform: uppercase; border-radius: 0px !important;">IMPROVEMENT</span>
-                            <span id="loginPopupDate" class="text-muted" style="font-size: 11.5px;">-</span>
-                        </div>
-                        <span id="loginPopupReminderDays" class="badge bg-light text-primary border px-2 py-1" style="font-size: 11px; font-weight: 500; border-radius: 0px !important;">
-                            <i class="bi bi-clock-history me-1"></i>Reminder Active
-                        </span>
-                    </div>
+                <!-- Big Bold Centered Blue Headline -->
+                <h2 id="loginPopupTitle" class="fw-bold mb-3" style="color: #032954; font-size: 23px; line-height: 1.25; font-family: 'Avenir', 'Segoe UI', Arial, sans-serif;">
+                    Update Title
+                </h2>
 
-                    <!-- Title -->
-                    <h5 id="loginPopupTitle" class="fw-bold text-dark mb-2" style="font-size: 16px; line-height: 1.4;">
-                        Update Title
-                    </h5>
-
-                    <!-- Description -->
-                    <div id="loginPopupDescription" class="text-secondary mb-3" style="font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; max-height: 220px; overflow-y: auto;">
-                        Description
-                    </div>
-
-                    <!-- Action Required (if any) -->
-                    <div id="loginPopupActionBox" class="p-2 border-top mb-2" style="display: none;">
-                        <div class="small fw-bold text-primary mb-1" style="font-size: 11.5px;">
-                            <i class="bi bi-info-circle me-1"></i>ACTION REQUIRED:
-                        </div>
-                        <div id="loginPopupActionText" class="small text-dark" style="font-size: 12px; line-height: 1.5;"></div>
-                    </div>
+                <!-- Centered Description / Changelog -->
+                <div id="loginPopupDescription" class="text-secondary mx-auto mb-3" style="font-size: 13.5px; line-height: 1.6; max-width: 420px; color: #475569; max-height: 180px; overflow-y: auto;">
+                    Description
                 </div>
 
-                <!-- Footer with "Don't show again today" and Close -->
-                <div class="modal-footer bg-light py-2 px-4 border-top d-flex align-items-center justify-content-between" style="border-radius: 0px !important;">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="loginPopupDontShowToday" style="border-radius: 0px !important;">
-                        <label class="form-check-label small text-muted" for="loginPopupDontShowToday" style="font-size: 11.5px;">
-                            Don't remind me again today
-                        </label>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn text-white btn-sm px-3" style="background: #032954; border: 1px solid #032954; border-radius: 0px !important; font-size: 12.5px;" onclick="dismissLoginPopup()">
-                            Got It &bull; Dismiss
-                        </button>
-                    </div>
+                <!-- Action Required Box (if any) -->
+                <div id="loginPopupActionBox" class="p-2 mb-3 mx-auto text-start" style="display: none; max-width: 420px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; color: #032954;">
+                    <i class="bi bi-info-circle me-1"></i><strong>Action:</strong> <span id="loginPopupActionText"></span>
+                </div>
+
+                <!-- Primary Action Button (Solid Blue, Centered) -->
+                <div class="mt-3">
+                    <button type="button" class="btn text-white fw-semibold px-4 py-2" style="background: #032954; border: 1px solid #032954; border-radius: 0px !important; font-size: 13.5px; min-width: 220px; letter-spacing: 0.02em;" onclick="dismissLoginPopup(false)">
+                        Got It &bull; Continue
+                    </button>
+                </div>
+
+                <!-- Secondary Link: Don't show again today -->
+                <div class="mt-3">
+                    <a href="javascript:void(0)" class="text-muted small text-decoration-underline" style="font-size: 12px;" onclick="dismissLoginPopup(true)">
+                        Don't show again today
+                    </a>
+                </div>
+
+                <!-- Reminder Duration Remaining -->
+                <div class="mt-2 text-muted" style="font-size: 10.5px;" id="loginPopupReminderDays">
+                    Reminder: Active
                 </div>
             </div>
         </div>
@@ -1413,7 +1396,19 @@ body:not(.modal-open) {
             if (verEl) verEl.textContent = activePopupUpdate.version;
             if (typeEl) typeEl.textContent = activePopupUpdate.type;
             if (dateEl) dateEl.textContent = activePopupUpdate.releaseDate || activePopupUpdate.createdAt;
-            if (descEl) descEl.textContent = activePopupUpdate.description;
+            if (descEl) {
+                var lines = (activePopupUpdate.description || '').split('\n');
+                var descHtml = '';
+                lines.forEach(function(l) {
+                    var trimmed = l.trim();
+                    if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+                        descHtml += '<div style="margin-bottom: 5px; text-align: left; padding-left: 12px;">&bull; ' + escapeHtmlNotif(trimmed.replace(/^[-*•]\s*/, '')) + '</div>';
+                    } else if (trimmed) {
+                        descHtml += '<p style="margin-bottom: 8px;">' + escapeHtmlNotif(trimmed) + '</p>';
+                    }
+                });
+                descEl.innerHTML = descHtml || escapeHtmlNotif(activePopupUpdate.description);
+            }
 
             if (daysEl) {
                 var dLeft = activePopupUpdate.daysRemaining;
@@ -1437,10 +1432,9 @@ body:not(.modal-open) {
             }
         }
 
-        function dismissLoginPopup() {
+        function dismissLoginPopup(dontShowToday) {
             if (_activeLoginPopupUpdate) {
-                var chk = document.getElementById('loginPopupDontShowToday');
-                if (chk && chk.checked) {
+                if (dontShowToday) {
                     var todayStr = new Date().toISOString().slice(0, 10);
                     localStorage.setItem('sms_popup_dismissed_today_' + _activeLoginPopupUpdate.id, todayStr);
                 }
