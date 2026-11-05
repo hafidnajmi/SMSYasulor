@@ -194,6 +194,18 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_status = 'Published' WHERE release_status IS NULL OR release_status = '';");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_date = created_at WHERE release_date IS NULL;");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET popup_duration_days = 7 WHERE popup_duration_days IS NULL;");
+                    await db.Database.ExecuteSqlRawAsync(@"
+                        UPDATE ""System_Updates"" 
+                        SET show_popup_alert = TRUE, 
+                            popup_duration_days = 7,
+                            release_date = CURRENT_TIMESTAMP
+                        WHERE version = 'v2.5.2' OR id = (
+                            SELECT id FROM ""System_Updates"" 
+                            WHERE release_status = 'Published' 
+                            ORDER BY COALESCE(release_date, created_at) DESC 
+                            LIMIT 1
+                        );
+                    ");
                     await db.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Barang_Masuk"" ADD COLUMN IF NOT EXISTS unit_price NUMERIC(18,2);");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""Barang_Masuk"" SET pu_number = po_number WHERE (pu_number IS NULL OR pu_number = '') AND po_number IS NOT NULL AND po_number <> '';");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""Barang_Masuk"" SET po_number = pu_number WHERE (po_number IS NULL OR po_number = '') AND pu_number IS NOT NULL AND pu_number <> '';");
@@ -638,7 +650,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Klik ikon lonceng di pojok kanan atas untuk melihat informasi rilis terbaru kapan saja.",
                         TargetAudience = "All Users",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now,
@@ -655,7 +668,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Perubahan tampilan langsung aktif pada menu Dashboard.",
                         TargetAudience = "All Users",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now.AddHours(-3),
@@ -672,7 +686,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Pengguna dapat langsung menggunakan kolom pencarian dengan mengetik kata kunci kombinasi.",
                         TargetAudience = "All Users",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now.AddDays(-1)
@@ -688,7 +703,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Tidak ada tindakan khusus yang diperlukan dari pengguna.",
                         TargetAudience = "All Users",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now.AddDays(-2)
@@ -704,7 +720,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Refresh halaman browser jika label belum ter-update.",
                         TargetAudience = "All Users",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now.AddDays(-3)
@@ -720,7 +737,8 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ActionRequired = "Masih dalam tahap perancangan teknis oleh tim developer.",
                         TargetAudience = "Admin Only",
                         SendEmail = false,
-                        ShowPopupAlert = false,
+                        ShowPopupAlert = true,
+                        PopupDurationDays = 7,
                         IsActive = true,
                         CreatedBy = "Developer",
                         CreatedAt = DateTime.Now,

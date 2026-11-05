@@ -1356,6 +1356,9 @@ body:not(.modal-open) {
         function checkAndShowLoginPopup(updates) {
             if (!Array.isArray(updates) || updates.length === 0) return;
 
+            var urlParams = new URLSearchParams(window.location.search);
+            var isTestPreview = urlParams.get('previewPopup') === 'true' || urlParams.get('testPopup') === 'true';
+
             // Find the latest active popup update
             var activePopupUpdate = null;
             for (var i = 0; i < updates.length; i++) {
@@ -1366,19 +1369,31 @@ body:not(.modal-open) {
                 }
             }
 
+            // In preview mode, fallback to first update if none specifically marked active
+            if (isTestPreview && !activePopupUpdate && updates.length > 0) {
+                activePopupUpdate = updates[0];
+            }
+
             if (!activePopupUpdate) return;
             _activeLoginPopupUpdate = activePopupUpdate;
 
-            // Check if dismissed today in localStorage
+            // If coming directly from Login page (/Account/Login), reset session flag so popup always shows upon login
+            try {
+                if (document.referrer && document.referrer.toLowerCase().indexOf('/account/login') !== -1) {
+                    sessionStorage.removeItem('sms_popup_seen_session_' + activePopupUpdate.id);
+                }
+            } catch(e) {}
+
+            // Check if dismissed today in localStorage (skip if previewing)
             var todayStr = new Date().toISOString().slice(0, 10);
             var dismissedTodayKey = 'sms_popup_dismissed_today_' + activePopupUpdate.id;
-            if (localStorage.getItem(dismissedTodayKey) === todayStr) {
-                return; // User already chose "Don't remind me again today"
+            if (!isTestPreview && localStorage.getItem(dismissedTodayKey) === todayStr) {
+                return; // User already chose "Don't show again today"
             }
 
-            // Check if seen in current session (sessionStorage)
+            // Check if seen in current session (sessionStorage) (skip if previewing)
             var seenSessionKey = 'sms_popup_seen_session_' + activePopupUpdate.id;
-            if (sessionStorage.getItem(seenSessionKey) === 'true') {
+            if (!isTestPreview && sessionStorage.getItem(seenSessionKey) === 'true') {
                 return; // Already seen in this browser tab/session
             }
 
@@ -1394,7 +1409,7 @@ body:not(.modal-open) {
 
             if (titleEl) titleEl.textContent = activePopupUpdate.title;
             if (verEl) verEl.textContent = activePopupUpdate.version;
-            if (typeEl) typeEl.textContent = activePopupUpdate.type;
+            if (typeEl) typeEl.textContent = (activePopupUpdate.type || 'IMPROVEMENT').toUpperCase();
             if (dateEl) dateEl.textContent = activePopupUpdate.releaseDate || activePopupUpdate.createdAt;
             if (descEl) {
                 var lines = (activePopupUpdate.description || '').split('\n');
@@ -1411,7 +1426,7 @@ body:not(.modal-open) {
             }
 
             if (daysEl) {
-                var dLeft = activePopupUpdate.daysRemaining;
+                var dLeft = activePopupUpdate.daysRemaining || activePopupUpdate.popupDurationDays || 7;
                 daysEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Reminder: ' + dLeft + ' day' + (dLeft > 1 ? 's' : '') + ' left';
             }
 
@@ -1427,10 +1442,69 @@ body:not(.modal-open) {
             // Show Bootstrap Modal
             var modalEl = document.getElementById('loginNotificationModal');
             if (modalEl) {
-                var modal = new bootstrap.Modal(modalEl);
+                var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modal.show();
             }
         }
+
+        window.previewLoginPopupModal = function(updateId) {
+            var target = null;
+            if (updateId && Array.isArray(_globalCachedUpdates)) {
+                target = _globalCachedUpdates.find(function(x) { return x.id == updateId; });
+            }
+            if (!target && Array.isArray(_globalCachedUpdates) && _globalCachedUpdates.length > 0) {
+                target = _globalCachedUpdates.find(function(x) { return x.isPopupActive; }) || _globalCachedUpdates[0];
+            }
+            if (target) {
+                _activeLoginPopupUpdate = target;
+                var titleEl = document.getElementById('loginPopupTitle');
+                var verEl = document.getElementById('loginPopupVersionBadge');
+                var typeEl = document.getElementById('loginPopupTypeBadge');
+                var descEl = document.getElementById('loginPopupDescription');
+                var daysEl = document.getElementById('loginPopupReminderDays');
+                var actionBox = document.getElementById('loginPopupActionBox');
+                var actionText = document.getElementById('loginPopupActionText');
+
+                if (titleEl) titleEl.textContent = target.title;
+                if (verEl) verEl.textContent = target.version;
+                if (typeEl) typeEl.textContent = (target.type || 'IMPROVEMENT').toUpperCase();
+                if (descEl) {
+                    var lines = (target.description || '').split('\n');
+                    var descHtml = '';
+                    lines.forEach(function(l) {
+                        var trimmed = l.trim();
+                        if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+                            descHtml += '<div style="margin-bottom: 5px; text-align: left; padding-left: 12px;">&bull; ' + escapeHtmlNotif(trimmed.replace(/^[-*•]\s*/, '')) + '</div>';
+                        } else if (trimmed) {
+                            descHtml += '<p style="margin-bottom: 8px;">' + escapeHtmlNotif(trimmed) + '</p>';
+                        }
+                    });
+                    descEl.innerHTML = descHtml || escapeHtmlNotif(target.description);
+                }
+
+                if (daysEl) {
+                    var dLeft = target.daysRemaining || target.popupDurationDays || 7;
+                    daysEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Reminder: ' + dLeft + ' day' + (dLeft > 1 ? 's' : '') + ' left';
+                }
+
+                if (actionBox && actionText) {
+                    if (target.actionRequired && target.actionRequired.trim().length > 0) {
+                        actionText.textContent = target.actionRequired;
+                        actionBox.style.display = 'block';
+                    } else {
+                        actionBox.style.display = 'none';
+                    }
+                }
+
+                var modalEl = document.getElementById('loginNotificationModal');
+                if (modalEl) {
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                }
+            } else {
+                alert('Belum ada data update yang tersimpan untuk ditampilkan.');
+            }
+        };
 
         function dismissLoginPopup(dontShowToday) {
             if (_activeLoginPopupUpdate) {
