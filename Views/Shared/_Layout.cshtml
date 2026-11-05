@@ -1191,9 +1191,9 @@ body:not(.modal-open) {
             _globalCachedUpdates.forEach(function(u) {
                 var isRead = readIds.includes(u.id);
                 var isExpanded = (_expandedNotifId === u.id);
-                var bgStyle = isRead ? 'background:#ffffff;' : 'background:#f8fafc; border-left:3px solid #0f172a;';
+                var bgStyle = isRead ? 'background:#ffffff;' : 'background:#f8fafc; border-left:3px solid #032954;';
                 var badgeClass = 'badge bg-light text-dark border';
-                if (u.type === 'New Feature') badgeClass = 'badge bg-dark text-white';
+                if (u.type === 'New Feature') badgeClass = 'badge text-white" style="background:#032954;';
 
                 html += '<div class="p-3 border-bottom notif-item" style="cursor:pointer; ' + bgStyle + '" onclick="toggleNotifDetail(' + u.id + ')">';
                 html += '  <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:12px;">';

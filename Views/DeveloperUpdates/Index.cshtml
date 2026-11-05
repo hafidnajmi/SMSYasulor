@@ -10,15 +10,15 @@
 }
 
 <style>
-    /* Uniform Font: Segoe UI / Inter / Helvetica Neue (Matching the SAS reference image) */
+    /* Uniform Font: Avenir Next / Avenir / Segoe UI (Matching SAS corporate typography) */
     *, *::before, *::after,
     .dev-portal, .dev-portal * {
-        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        font-family: 'Avenir Next', 'Avenir', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         letter-spacing: -0.01em;
     }
 
     .dev-portal {
-        color: #0f172a;
+        color: #032954;
     }
 
     .dev-header {
@@ -30,7 +30,7 @@
     .dev-title {
         font-size: 19px;
         font-weight: 600;
-        color: #0f172a;
+        color: #032954;
         margin: 0;
     }
 
@@ -64,7 +64,7 @@
     }
 
     .dev-stat-box strong {
-        color: #0f172a;
+        color: #032954;
         font-weight: 600;
     }
 
@@ -91,7 +91,7 @@
         border: 1px solid #e2e8f0;
         border-radius: 4px;
         background: #ffffff;
-        color: #0f172a;
+        color: #032954;
         font-size: 12.5px;
         padding: 5px 12px;
         text-decoration: none;
@@ -103,21 +103,21 @@
     }
 
     .dev-filter-btn:hover {
-        border-color: #cbd5e1;
-        background: #f8fafc;
-        color: #0f172a;
+        border-color: #032954;
+        background: #f0f4f9;
+        color: #032954;
     }
 
     .dev-filter-btn.active {
-        border: 1px solid #0f172a;
-        background: #0f172a;
+        border: 1px solid #032954;
+        background: #032954;
         color: #ffffff;
         font-weight: 500;
     }
 
     .dev-filter-btn.active:hover {
-        background: #1e293b;
-        border-color: #1e293b;
+        background: #021f3f;
+        border-color: #021f3f;
         color: #ffffff;
     }
 
@@ -152,7 +152,7 @@
         vertical-align: top;
         border-bottom: 1px solid #f1f5f9;
         font-size: 13px;
-        color: #0f172a;
+        color: #1e293b;
     }
 
     .dev-table tr:last-child td {
@@ -180,14 +180,14 @@
     }
 
     .dev-action-btn:hover {
-        border-color: #0f172a;
-        color: #0f172a;
-        background: #f8fafc;
+        border-color: #032954;
+        color: #032954;
+        background: #f0f4f9;
     }
 
     .dev-publish-btn {
-        background: #0f172a;
-        border: 1px solid #0f172a;
+        background: #032954;
+        border: 1px solid #032954;
         border-radius: 4px;
         color: #ffffff;
         padding: 4px 7px;
@@ -201,8 +201,8 @@
     }
 
     .dev-publish-btn:hover {
-        background: #1e293b;
-        border-color: #1e293b;
+        background: #021f3f;
+        border-color: #021f3f;
         color: #ffffff;
     }
 </style>
@@ -218,7 +218,7 @@
             <a asp-controller="EmailSettings" asp-action="Index" class="dev-action-btn" style="font-size: 13px;" title="Konfigurasi Pengiriman Email SMTP">
                 <i class="bi bi-gear me-1"></i> Pengaturan SMTP
             </a>
-            <button type="button" class="btn btn-dark btn-sm px-3 py-1 fw-medium" style="border-radius: 4px; font-size: 13px;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
+            <button type="button" class="btn btn-sm text-white px-3 py-1 fw-medium" style="border-radius: 4px; font-size: 13px; background: #032954; border: 1px solid #032954;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
                 <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan
             </button>
         </div>
@@ -227,7 +227,7 @@
     <!-- Alerts -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #0f172a; background: #fafafa;">
+        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #032954; background: #fafafa;">
             <div class="d-flex align-items-center">
                 <i class="bi bi-check2-circle me-2 text-dark fs-6"></i>
                 <div>@TempData["Success"]</div>
@@ -237,7 +237,7 @@
     }
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #0f172a; background: #fafafa;">
+        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #032954; background: #fafafa;">
             <div class="d-flex align-items-center">
                 <i class="bi bi-exclamation-circle me-2 text-dark fs-6"></i>
                 <div>@TempData["Error"]</div>
@@ -256,31 +256,31 @@
         <div class="dev-stat-box">Fitur Baru: <strong>@ViewBag.NewFeatureCount</strong></div>
     </div>
 
-    <!-- Filter Nav with Clean 1px Border Buttons -->
+    <!-- Filter Nav with Clean 1px Border Buttons (Strict Single Active Tab) -->
     <div class="dev-filter-nav">
         <div class="dev-filter-links">
             <a asp-action="Index" asp-route-type="all" asp-route-status="all" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentType == "all" && currentStatus == "all" ? "active" : "")">
                 Semua (@ViewBag.TotalCount)
             </a>
-            <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Published" asp-route-search="@searchQuery"
-               class="dev-filter-btn @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            <a asp-action="Index" asp-route-type="all" asp-route-status="Published" asp-route-search="@searchQuery"
+               class="dev-filter-btn @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) && currentType == "all" ? "active" : "")">
                 Rilis (@ViewBag.PublishedCount)
             </a>
-            <a asp-action="Index" asp-route-type="@currentType" asp-route-status="Draft" asp-route-search="@searchQuery"
-               class="dev-filter-btn @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            <a asp-action="Index" asp-route-type="all" asp-route-status="Draft" asp-route-search="@searchQuery"
+               class="dev-filter-btn @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) && currentType == "all" ? "active" : "")">
                 Draf (@ViewBag.DraftCount)
             </a>
-            <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-btn @(currentType == "Bug Fix" ? "active" : "")">
+            <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="all" asp-route-search="@searchQuery"
+               class="dev-filter-btn @(currentType.Equals("Bug Fix", StringComparison.OrdinalIgnoreCase) && currentStatus == "all" ? "active" : "")">
                 Bug Fix (@ViewBag.BugFixCount)
             </a>
-            <a asp-action="Index" asp-route-type="Improvement" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-btn @(currentType == "Improvement" ? "active" : "")">
+            <a asp-action="Index" asp-route-type="Improvement" asp-route-status="all" asp-route-search="@searchQuery"
+               class="dev-filter-btn @(currentType.Equals("Improvement", StringComparison.OrdinalIgnoreCase) && currentStatus == "all" ? "active" : "")">
                 Improvement (@ViewBag.ImprovementCount)
             </a>
-            <a asp-action="Index" asp-route-type="New Feature" asp-route-status="@currentStatus" asp-route-search="@searchQuery"
-               class="dev-filter-btn @(currentType == "New Feature" ? "active" : "")">
+            <a asp-action="Index" asp-route-type="New Feature" asp-route-status="all" asp-route-search="@searchQuery"
+               class="dev-filter-btn @(currentType.Equals("New Feature", StringComparison.OrdinalIgnoreCase) && currentStatus == "all" ? "active" : "")">
                 Fitur Baru (@ViewBag.NewFeatureCount)
             </a>
         </div>
@@ -290,7 +290,7 @@
             <input type="hidden" name="status" value="@currentStatus" />
             <div class="input-group input-group-sm" style="width: 260px;">
                 <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari catatan..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border: 1px solid #e2e8f0; border-right: none;" />
-                <button class="btn btn-dark" type="submit" style="border-radius: 0 4px 4px 0; font-size: 12.5px; padding: 5px 14px; border: 1px solid #0f172a;"><i class="bi bi-search me-1"></i> Cari</button>
+                <button class="btn text-white" type="submit" style="border-radius: 0 4px 4px 0; font-size: 12.5px; padding: 5px 14px; background: #032954; border: 1px solid #032954;"><i class="bi bi-search me-1"></i> Cari</button>
                 @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all" || currentStatus != "all")
                 {
                     <a asp-action="Index" class="btn btn-outline-secondary ms-1" style="border-radius: 4px; font-size: 12.5px; border: 1px solid #e2e8f0; padding: 5px 10px;" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
@@ -306,7 +306,7 @@
             <i class="bi bi-inbox fs-3 text-secondary opacity-50 d-block mb-2"></i>
             <div class="fw-medium text-dark mb-1">Belum ada catatan pembaruan</div>
             <div class="small text-muted mb-3">Klik tombol "Buat Pembaruan" untuk menambahkan perbaikan atau draf rilis baru.</div>
-            <button type="button" class="btn btn-dark btn-sm px-3" style="border-radius: 4px;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
+            <button type="button" class="btn text-white btn-sm px-3" style="border-radius: 4px; background: #032954; border: 1px solid #032954;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
                 <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan Pertama
             </button>
         </div>
@@ -499,7 +499,7 @@
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">
+                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">
                         Simpan Catatan Rilis
                     </button>
                 </div>
@@ -639,7 +639,7 @@
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">Simpan Perubahan</button>
+                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -672,7 +672,7 @@
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-dark btn-sm px-4" style="border-radius: 4px;">Kirim Sekarang</button>
+                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Kirim Sekarang</button>
                 </div>
             </form>
         </div>
