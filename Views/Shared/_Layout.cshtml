@@ -1221,8 +1221,8 @@ body:not(.modal-open) {
                     html += '  <div class="mt-2 pt-2 border-top">';
                     html += '    <div class="small text-secondary" style="font-size:12px; white-space:pre-wrap; line-height:1.5;">' + escapeHtmlNotif(u.description) + '</div>';
                     if (u.actionRequired && u.actionRequired.trim().length > 0) {
-                        html += '    <div class="mt-2 p-2 bg-light border rounded-1 small" style="font-size:11.5px;">';
-                        html += '      <strong class="text-dark"><i class="bi bi-info-circle me-1"></i> Instructions:</strong> ' + escapeHtmlNotif(u.actionRequired);
+                        html += '    <div class="mt-2 pt-1 border-top small" style="font-size:12px;">';
+                        html += '      <strong style="color:#032954;"><i class="bi bi-info-circle me-1"></i> Instructions:</strong> <span class="text-dark">' + escapeHtmlNotif(u.actionRequired) + '</span>';
                         html += '    </div>';
                     }
                     html += '    <div class="mt-2 d-flex justify-content-between align-items-center text-muted" style="font-size:10.5px;">';

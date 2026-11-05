@@ -481,18 +481,18 @@ namespace UPMS.Web.Controllers
             }
         }
 
-        // High-standard professional monochrome email template (White & Black strictly)
+        // High-standard professional corporate email template (Microsoft / SAS Blue & High Contrast)
         private static string BuildMonochromeEmailBody(SystemUpdate update, bool isTest = false)
         {
             string typeBadgeStyle = update.UpdateType.ToLower() switch
             {
-                "bug fix" => "background:#000000; color:#ffffff; border:1px solid #000000;",
-                "new feature" => "background:#000000; color:#ffffff; border:1px solid #000000;",
-                "system alert" => "background:#ffffff; color:#000000; border:2px solid #000000; font-weight:bold;",
-                _ => "background:#ffffff; color:#000000; border:1px solid #000000;"
+                "bug fix" => "background:#032954; color:#ffffff; border:1px solid #032954;",
+                "new feature" => "background:#032954; color:#ffffff; border:1px solid #032954;",
+                "system alert" => "background:#991b1b; color:#ffffff; border:1px solid #991b1b; font-weight:bold;",
+                _ => "background:#032954; color:#ffffff; border:1px solid #032954;"
             };
 
-            // Format multiline description into clean paragraphs / list items
+            // Format multiline description into clean paragraphs / list items with high contrast
             var lines = (update.Description ?? "").Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             var descHtml = new StringBuilder();
             foreach (var line in lines)
@@ -500,18 +500,19 @@ namespace UPMS.Web.Controllers
                 var clean = line.Trim();
                 if (clean.StartsWith("-") || clean.StartsWith("*") || clean.StartsWith("•"))
                 {
-                    descHtml.Append($"<li style=\"margin-bottom:6px; color:#1e293b; font-size:13.5px; line-height:1.5;\">{System.Net.WebUtility.HtmlEncode(clean.TrimStart('-', '*', '•', ' '))}</li>");
+                    descHtml.Append($"<li style=\"margin-bottom:7px; color:#0f172a; font-size:13.5px; line-height:1.6;\">{System.Net.WebUtility.HtmlEncode(clean.TrimStart('-', '*', '•', ' '))}</li>");
                 }
                 else
                 {
-                    descHtml.Append($"<p style=\"margin:0 0 10px 0; color:#1e293b; font-size:13.5px; line-height:1.6;\">{System.Net.WebUtility.HtmlEncode(clean)}</p>");
+                    descHtml.Append($"<p style=\"margin:0 0 10px 0; color:#0f172a; font-size:13.5px; line-height:1.6;\">{System.Net.WebUtility.HtmlEncode(clean)}</p>");
                 }
             }
 
+            // No nested card inside card: clean border-top with strong contrast
             string actionRequiredSection = !string.IsNullOrWhiteSpace(update.ActionRequired) ? $@"
-                <div style=""margin-top:20px; padding:12px 16px; background:#f8fafc; border-left:4px solid #000000; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;"">
-                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#000000; letter-spacing:0.05em; margin-bottom:4px;"">ACTION REQUIRED:</div>
-                    <div style=""font-size:13px; color:#0f172a; line-height:1.5;"">{System.Net.WebUtility.HtmlEncode(update.ActionRequired)}</div>
+                <div style=""margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;"">
+                    <div style=""font-size:11.5px; font-weight:bold; text-transform:uppercase; color:#032954; letter-spacing:0.04em; margin-bottom:6px;"">ACTION REQUIRED:</div>
+                    <div style=""font-size:13.5px; color:#0f172a; line-height:1.6;"">{System.Net.WebUtility.HtmlEncode(update.ActionRequired)}</div>
                 </div>" : "";
 
             return $@"
@@ -521,33 +522,33 @@ namespace UPMS.Web.Controllers
     <meta charset=""utf-8"" />
     <title>System Update Notification</title>
 </head>
-<body style=""margin:0; padding:25px 0; background-color:#f1f5f9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#000000;"">
-    <table align=""center"" border=""0"" cellpadding=""0"" cellspacing=""0"" width=""620"" style=""max-width:620px; background:#ffffff; border:1px solid #cbd5e1; box-shadow:0 1px 3px rgba(0,0,0,0.05);"">
-        <!-- Top Monochrome Header -->
+<body style=""margin:0; padding:25px 0; background-color:#f1f5f9; font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; color:#0f172a;"">
+    <table align=""center"" border=""0"" cellpadding=""0"" cellspacing=""0"" width=""620"" style=""max-width:620px; background:#ffffff; border:1px solid #cbd5e1; box-shadow:0 1px 3px rgba(0,0,0,0.05); border-radius:0px;"">
+        <!-- Top Microsoft / SAS Deep Blue Header -->
         <tr>
-            <td style=""background:#000000; padding:22px 28px; border-bottom:3px solid #334155;"">
+            <td style=""background:#032954; padding:22px 28px; border-bottom:3px solid #021f3f;"">
                 <table border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"">
                     <tr>
                         <td>
                             <div style=""color:#ffffff; font-size:15px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase;"">SPAREPART MANAGEMENT SYSTEM</div>
-                            <div style=""color:#94a3b8; font-size:11px; margin-top:2px; letter-spacing:0.08em; text-transform:uppercase;"">ENTERPRISE MANAGEMENT SUITE &bull; DEVELOPER NOTICE</div>
+                            <div style=""color:#93c5fd; font-size:11px; margin-top:3px; letter-spacing:0.08em; text-transform:uppercase;"">ENTERPRISE MANAGEMENT SUITE &bull; DEVELOPER NOTICE</div>
                         </td>
                         <td align=""right"">
-                            <span style=""font-family:monospace; background:#ffffff; color:#000000; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:2px;"">{System.Net.WebUtility.HtmlEncode(update.Version)}</span>
+                            <span style=""font-family:'Segoe UI', sans-serif; background:#ffffff; color:#032954; font-size:11.5px; font-weight:bold; padding:4px 9px; border-radius:0px;"">{System.Net.WebUtility.HtmlEncode(update.Version)}</span>
                         </td>
                     </tr>
                 </table>
             </td>
         </tr>
 
-        <!-- Content Area -->
+        <!-- Content Area: Crisp White Background with High-Contrast Dark Text -->
         <tr>
             <td style=""padding:30px 28px;"">
-                {(isTest ? @"<div style=""margin-bottom:18px; padding:8px 12px; background:#f8fafc; border:1px dashed #000000; font-size:11.5px; font-weight:bold; text-align:center;"">[DEVELOPER PORTAL TEST PREVIEW]</div>" : "")}
+                {(isTest ? @"<div style=""margin-bottom:18px; padding:9px 14px; background:#eff6ff; border:1px solid #032954; color:#032954; font-size:11.5px; font-weight:bold; text-align:center; border-radius:0px;"">[DEVELOPER PORTAL TEST PREVIEW]</div>" : "")}
 
                 <!-- Category Badge & Date -->
-                <div style=""margin-bottom:12px;"">
-                    <span style=""display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; padding:3px 9px; {typeBadgeStyle}"">
+                <div style=""margin-bottom:14px;"">
+                    <span style=""display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:3px 9px; border-radius:0px; {typeBadgeStyle}"">
                         {System.Net.WebUtility.HtmlEncode(update.UpdateType)}
                     </span>
                     <span style=""font-size:12px; color:#64748b; margin-left:10px;"">
@@ -556,7 +557,7 @@ namespace UPMS.Web.Controllers
                 </div>
 
                 <!-- Update Title -->
-                <h2 style=""margin:0 0 16px 0; font-size:20px; font-weight:700; color:#000000; line-height:1.35; letter-spacing:-0.01em;"">
+                <h2 style=""margin:0 0 16px 0; font-size:20px; font-weight:700; color:#0f172a; line-height:1.35; letter-spacing:-0.01em;"">
                     {System.Net.WebUtility.HtmlEncode(update.Title)}
                 </h2>
 
@@ -564,7 +565,7 @@ namespace UPMS.Web.Controllers
 
                 <!-- Release Notes / Description -->
                 <div style=""margin-bottom:20px;"">
-                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#475569; letter-spacing:0.05em; margin-bottom:8px;"">CHANGELOG &amp; IMPROVEMENTS:</div>
+                    <div style=""font-size:11.5px; font-weight:bold; text-transform:uppercase; color:#032954; letter-spacing:0.04em; margin-bottom:8px;"">CHANGELOG &amp; IMPROVEMENTS:</div>
                     <ul style=""margin:0; padding-left:18px;"">
                         {descHtml}
                     </ul>
@@ -572,22 +573,22 @@ namespace UPMS.Web.Controllers
 
                 {actionRequiredSection}
 
-                <!-- CTA Button -->
+                <!-- CTA Button in Microsoft / SAS Blue -->
                 <div style=""margin-top:28px; padding-top:20px; border-top:1px solid #e2e8f0; text-align:center;"">
-                    <a href=""http://localhost:5005"" target=""_blank"" style=""display:inline-block; background:#000000; color:#ffffff; text-decoration:none; font-size:13px; font-weight:600; padding:11px 26px; border:1px solid #000000; letter-spacing:0.02em;"">
+                    <a href=""http://localhost:5005"" target=""_blank"" style=""display:inline-block; background:#032954; color:#ffffff; text-decoration:none; font-size:13px; font-weight:600; padding:11px 26px; border:1px solid #032954; letter-spacing:0.02em; border-radius:0px;"">
                         OPEN SMS SYSTEM &rarr;
                     </a>
                 </div>
             </td>
         </tr>
 
-        <!-- Professional Monochrome Footer -->
+        <!-- Professional Footer -->
         <tr>
             <td style=""background:#f8fafc; padding:18px 28px; border-top:1px solid #cbd5e1; font-size:11px; color:#64748b; line-height:1.6;"">
                 <table border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"">
                     <tr>
                         <td>
-                            <strong>SMS Yasulor Automation</strong> &bull; Published by <em>{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</em><br />
+                            <strong style=""color:#0f172a;"">SMS Yasulor Automation</strong> &bull; Published by <span style=""color:#032954; font-weight:600;"">{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</span><br />
                             Official system notification &amp; release notes.
                         </td>
                         <td align=""right"" style=""font-size:10px; color:#94a3b8;"">
