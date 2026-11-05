@@ -1,7 +1,7 @@
 @model IEnumerable<UPMS.Web.Models.Entities.SystemUpdate>
 @using System.Text.Encodings.Web
 @{
-    ViewData["Title"] = "Pembaruan Sistem & Catatan Rilis";
+    ViewData["Title"] = "System Updates & Release Notes";
     string currentType = ViewBag.SelectedType as string ?? "all";
     string currentStatus = ViewBag.SelectedStatus as string ?? "all";
     string searchQuery = ViewBag.SearchQuery as string ?? "";
@@ -10,9 +10,12 @@
 }
 
 <style>
-    /* Uniform Font: Avenir Next / Avenir / Segoe UI (Matching SAS corporate typography) */
-    *, *::before, *::after,
-    .dev-portal, .dev-portal * {
+    /* Uniform Font strictly scoped to Developer Updates portal & its modals so layout/sidebar font is never overridden */
+    .dev-portal, .dev-portal *,
+    #createUpdateModal, #createUpdateModal *,
+    #viewDetailModal, #viewDetailModal *,
+    #editUpdateModal, #editUpdateModal *,
+    #resendEmailModal, #resendEmailModal * {
         font-family: 'Avenir Next', 'Avenir', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
         letter-spacing: -0.01em;
     }
@@ -211,15 +214,15 @@
     <!-- Header -->
     <div class="dev-header d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
-            <h4 class="dev-title">Pembaruan Sistem &amp; Catatan Rilis</h4>
-            <p class="dev-subtitle">Dokumentasi riwayat rilis, draf pembaruan, perbaikan bug, dan notifikasi sistem.</p>
+            <h4 class="dev-title">System Updates &amp; Release Notes</h4>
+            <p class="dev-subtitle">Documentation of release history, draft updates, bug fixes, and system notifications.</p>
         </div>
         <div class="d-flex align-items-center gap-3 flex-wrap">
-            <a asp-controller="EmailSettings" asp-action="Index" class="dev-action-btn" style="font-size: 13px;" title="Konfigurasi Pengiriman Email SMTP">
-                <i class="bi bi-gear me-1"></i> Pengaturan SMTP
+            <a asp-controller="EmailSettings" asp-action="Index" class="dev-action-btn" style="font-size: 13px;" title="Configure SMTP Email Delivery">
+                <i class="bi bi-gear me-1"></i> SMTP Settings
             </a>
             <button type="button" class="btn btn-sm text-white px-3 py-1 fw-medium" style="border-radius: 4px; font-size: 13px; background: #032954; border: 1px solid #032954;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
-                <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan
+                <i class="bi bi-plus-lg me-1"></i> Create Update
             </button>
         </div>
     </div>
@@ -231,6 +234,16 @@
             <div class="d-flex align-items-center">
                 <i class="bi bi-check2-circle me-2 text-dark fs-6"></i>
                 <div>@TempData["Success"]</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-light border d-flex align-items-center justify-content-between py-2 px-3 mb-3" role="alert" style="border-radius: 4px; font-size: 13px; color: #b45309; background: #fffbeb;">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle me-2 text-warning fs-6"></i>
+                <div>@TempData["Warning"]</div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -248,12 +261,12 @@
 
     <!-- Summary Stats Bar with Clean 1px Borders -->
     <div class="dev-summary-bar">
-        <div class="dev-stat-box">Total Catatan: <strong>@ViewBag.TotalCount</strong></div>
-        <div class="dev-stat-box">Rilis Aktif: <strong>@ViewBag.PublishedCount</strong></div>
-        <div class="dev-stat-box">Draf: <strong>@ViewBag.DraftCount</strong></div>
-        <div class="dev-stat-box">Perbaikan Bug: <strong>@ViewBag.BugFixCount</strong></div>
-        <div class="dev-stat-box">Peningkatan: <strong>@ViewBag.ImprovementCount</strong></div>
-        <div class="dev-stat-box">Fitur Baru: <strong>@ViewBag.NewFeatureCount</strong></div>
+        <div class="dev-stat-box">Total Logs: <strong>@ViewBag.TotalCount</strong></div>
+        <div class="dev-stat-box">Published: <strong>@ViewBag.PublishedCount</strong></div>
+        <div class="dev-stat-box">Drafts: <strong>@ViewBag.DraftCount</strong></div>
+        <div class="dev-stat-box">Bug Fixes: <strong>@ViewBag.BugFixCount</strong></div>
+        <div class="dev-stat-box">Improvements: <strong>@ViewBag.ImprovementCount</strong></div>
+        <div class="dev-stat-box">New Features: <strong>@ViewBag.NewFeatureCount</strong></div>
     </div>
 
     <!-- Filter Nav with Clean 1px Border Buttons (Strict Single Active Tab) -->
@@ -261,15 +274,15 @@
         <div class="dev-filter-links">
             <a asp-action="Index" asp-route-type="all" asp-route-status="all" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentType == "all" && currentStatus == "all" ? "active" : "")">
-                Semua (@ViewBag.TotalCount)
+                All (@ViewBag.TotalCount)
             </a>
             <a asp-action="Index" asp-route-type="all" asp-route-status="Published" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentStatus.Equals("Published", StringComparison.OrdinalIgnoreCase) && currentType == "all" ? "active" : "")">
-                Rilis (@ViewBag.PublishedCount)
+                Published (@ViewBag.PublishedCount)
             </a>
             <a asp-action="Index" asp-route-type="all" asp-route-status="Draft" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentStatus.Equals("Draft", StringComparison.OrdinalIgnoreCase) && currentType == "all" ? "active" : "")">
-                Draf (@ViewBag.DraftCount)
+                Drafts (@ViewBag.DraftCount)
             </a>
             <a asp-action="Index" asp-route-type="Bug Fix" asp-route-status="all" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentType.Equals("Bug Fix", StringComparison.OrdinalIgnoreCase) && currentStatus == "all" ? "active" : "")">
@@ -281,19 +294,19 @@
             </a>
             <a asp-action="Index" asp-route-type="New Feature" asp-route-status="all" asp-route-search="@searchQuery"
                class="dev-filter-btn @(currentType.Equals("New Feature", StringComparison.OrdinalIgnoreCase) && currentStatus == "all" ? "active" : "")">
-                Fitur Baru (@ViewBag.NewFeatureCount)
+                New Feature (@ViewBag.NewFeatureCount)
             </a>
         </div>
 
         <form method="get" asp-action="Index" class="d-flex align-items-center">
             <input type="hidden" name="type" value="@currentType" />
             <input type="hidden" name="status" value="@currentStatus" />
-            <div class="input-group input-group-sm" style="width: 260px;">
-                <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Cari catatan..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border: 1px solid #e2e8f0; border-right: none;" />
-                <button class="btn text-white" type="submit" style="border-radius: 0 4px 4px 0; font-size: 12.5px; padding: 5px 14px; background: #032954; border: 1px solid #032954;"><i class="bi bi-search me-1"></i> Cari</button>
+            <div class="input-group input-group-sm" style="width: 280px;">
+                <input type="text" name="search" value="@searchQuery" class="form-control" placeholder="Search updates, version..." style="border-radius: 4px 0 0 4px; font-size: 12.5px; border: 1px solid #e2e8f0; border-right: none;" />
+                <button class="btn text-white" type="submit" style="border-radius: 0 4px 4px 0; font-size: 12.5px; padding: 5px 14px; background: #032954; border: 1px solid #032954;"><i class="bi bi-search me-1"></i> Search</button>
                 @if (!string.IsNullOrWhiteSpace(searchQuery) || currentType != "all" || currentStatus != "all")
                 {
-                    <a asp-action="Index" class="btn btn-outline-secondary ms-1" style="border-radius: 4px; font-size: 12.5px; border: 1px solid #e2e8f0; padding: 5px 10px;" title="Reset Pencarian"><i class="bi bi-x-lg"></i></a>
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-1" style="border-radius: 4px; font-size: 12.5px; border: 1px solid #e2e8f0; padding: 5px 10px;" title="Reset Search"><i class="bi bi-x-lg"></i></a>
                 }
             </div>
         </form>
@@ -304,10 +317,10 @@
     {
         <div class="p-5 text-center text-muted border" style="border-radius: 4px; background: #ffffff;">
             <i class="bi bi-inbox fs-3 text-secondary opacity-50 d-block mb-2"></i>
-            <div class="fw-medium text-dark mb-1">Belum ada catatan pembaruan</div>
-            <div class="small text-muted mb-3">Klik tombol "Buat Pembaruan" untuk menambahkan perbaikan atau draf rilis baru.</div>
+            <div class="fw-medium text-dark mb-1">No update records found</div>
+            <div class="small text-muted mb-3">Click the "Create Update" button to document a new bug fix, improvement, or release draft.</div>
             <button type="button" class="btn text-white btn-sm px-3" style="border-radius: 4px; background: #032954; border: 1px solid #032954;" data-bs-toggle="modal" data-bs-target="#createUpdateModal">
-                <i class="bi bi-plus-lg me-1"></i> Buat Pembaruan Pertama
+                <i class="bi bi-plus-lg me-1"></i> Create First Update
             </button>
         </div>
     }
@@ -317,12 +330,12 @@
             <table class="dev-table">
                 <thead>
                     <tr>
-                        <th style="width: 140px;">Versi &amp; Status</th>
-                        <th style="width: 130px;">Kategori</th>
-                        <th>Judul Pembaruan &amp; Rincian Perubahan</th>
-                        <th style="width: 170px;">Tanggal Rilis &amp; Update</th>
-                        <th style="width: 130px;">Email Status</th>
-                        <th style="width: 140px; text-align: center;">Aksi</th>
+                        <th style="width: 140px;">VERSION &amp; STATUS</th>
+                        <th style="width: 130px;">CATEGORY</th>
+                        <th>UPDATE TITLE &amp; CHANGELOG</th>
+                        <th style="width: 170px;">RELEASE DATE &amp; UPDATED</th>
+                        <th style="width: 140px;">EMAIL STATUS</th>
+                        <th style="width: 140px; text-align: center;">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -333,7 +346,7 @@
                         <tr>
                             <td>
                                 <div class="fw-semibold text-dark">
-                                    @item.Version &bull; @(isDraft ? "Draft" : "Rilis")
+                                    @item.Version &bull; @(isDraft ? "Draft" : "Published")
                                 </div>
                                 <div class="text-muted" style="font-size: 11.5px; margin-top: 2px;">
                                     Target: @item.TargetAudience
@@ -357,17 +370,17 @@
                                 }
                             </td>
                             <td>
-                                <div style="font-size: 12px; color: #0f172a;">
-                                    <span class="text-muted">Rilis:</span> 
-                                    @(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMM yyyy HH:mm") : "- (Belum Rilis)")
+                                <div style="font-size: 12px; color: #032954;">
+                                    <span class="text-muted">Released:</span> 
+                                    @(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMM yyyy HH:mm") : "- (Draft)")
                                 </div>
                                 <div class="text-muted" style="font-size: 11px; margin-top: 2px;">
-                                    Update: @((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMM yyyy HH:mm"))
+                                    Updated: @((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMM yyyy HH:mm"))
                                 </div>
                             </td>
                             <td>
-                                <div style="font-size: 12px; color: #0f172a;">
-                                    @(item.SendEmail && item.EmailSentCount > 0 ? $"Email Terkirim ({item.EmailSentCount})" : "In-App Lonceng")
+                                <div style="font-size: 12px; color: #032954;">
+                                    @(item.SendEmail && item.EmailSentCount > 0 ? $"Email Sent ({item.EmailSentCount})" : "In-App Bell Only")
                                 </div>
                                 <div class="text-muted" style="font-size: 11px; margin-top: 2px;">
                                     By: @item.CreatedBy
@@ -377,25 +390,25 @@
                                 <div class="d-inline-flex align-items-center gap-1">
                                     @if (isDraft)
                                     {
-                                        <form asp-action="PublishDraft" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Publikasikan draf ini ke sistem dan ikon lonceng sekarang?');">
+                                        <form asp-action="PublishDraft" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Publish this draft to the live system and bell notifications now?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="dev-publish-btn" title="Publikasikan Draf Ini Sekarang">
+                                            <button type="submit" class="dev-publish-btn" title="Publish This Draft Now">
                                                 <i class="bi bi-send-check"></i>
                                             </button>
                                         </form>
                                     }
-                                    <button type="button" class="dev-action-btn" title="Lihat Rincian Rilis" onclick="openViewModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMMM yyyy HH:mm") : "-")', '@((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMMM yyyy HH:mm"))', '@item.CreatedBy')">
+                                    <button type="button" class="dev-action-btn" title="View Release Details" onclick="openViewModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("dd MMMM yyyy HH:mm") : "-")', '@((item.UpdatedAt ?? item.CreatedAt).ToString("dd MMMM yyyy HH:mm"))', '@item.CreatedBy')">
                                         <i class="bi bi-eye"></i>
                                     </button>
-                                    <button type="button" class="dev-action-btn" title="Kirim Ulang Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
+                                    <button type="button" class="dev-action-btn" title="Resend Email Broadcast" onclick="openResendModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.RecipientEmails ?? defaultReceiver))')">
                                         <i class="bi bi-envelope-arrow-up"></i>
                                     </button>
                                     <button type="button" class="dev-action-btn" title="Edit Update" onclick="openEditModal(@item.Id, '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Title))', '@item.Version', '@item.UpdateType', '@item.ReleaseStatus', '@(item.ReleaseDate.HasValue ? item.ReleaseDate.Value.ToString("yyyy-MM-ddTHH:mm") : "")', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.Description))', '@Html.Raw(JavaScriptEncoder.Default.Encode(item.ActionRequired ?? ""))', '@item.TargetAudience', @(item.ShowPopupAlert.ToString().ToLower()), @(item.IsActive.ToString().ToLower()))">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan rilis ini?');">
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this release record?');">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="dev-action-btn" title="Hapus Update">
+                                        <button type="submit" class="dev-action-btn" title="Delete Update">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -418,57 +431,57 @@
                 <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <div>
                         <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                            Buat Catatan Rilis &amp; Draf Pembaruan
+                            Create Release Note &amp; Draft Update
                         </h5>
-                        <p class="text-muted small mb-0 mt-1" style="font-size: 12px;">Dokumentasikan perubahan sistem secara terstruktur.</p>
+                        <p class="text-muted small mb-0 mt-1" style="font-size: 12px;">Document system changes in a structured format.</p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-white">
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Status Rilis <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Release Status <span class="text-danger">*</span></label>
                             <select name="ReleaseStatus" id="createReleaseStatus" class="form-select form-select-sm" style="border-radius: 4px;" required onchange="toggleReleaseDateSection(this.value)">
-                                <option value="Published">Published (Rilis)</option>
-                                <option value="Draft">Draft (Simpan Draf)</option>
+                                <option value="Published">Published (Live Release)</option>
+                                <option value="Draft">Draft (Save Draft)</option>
                             </select>
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Versi Rilis <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Version <span class="text-danger">*</span></label>
                             <input type="text" name="Version" id="createVersion" class="form-control form-control-sm font-monospace" placeholder="e.g. v2.5.3" value="v2.5.3" style="border-radius: 4px;" required />
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Kategori <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Category <span class="text-danger">*</span></label>
                             <select name="UpdateType" id="createUpdateType" class="form-select form-select-sm" style="border-radius: 4px;" required>
-                                <option value="Improvement">Improvement (Peningkatan)</option>
-                                <option value="Bug Fix">Bug Fix (Perbaikan Bug)</option>
-                                <option value="New Feature">New Feature (Fitur Baru)</option>
-                                <option value="System Alert">System Alert (Pemberitahuan Sistem)</option>
+                                <option value="Improvement">Improvement</option>
+                                <option value="Bug Fix">Bug Fix</option>
+                                <option value="New Feature">New Feature</option>
+                                <option value="System Alert">System Alert</option>
                             </select>
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Target Pengguna</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Target Audience</label>
                             <select name="TargetAudience" class="form-select form-select-sm" style="border-radius: 4px;">
-                                <option value="All Users">Semua Pengguna</option>
-                                <option value="Admin Only">Khusus Admin</option>
-                                <option value="Technician Only">Khusus Teknisi</option>
+                                <option value="All Users">All Users</option>
+                                <option value="Admin Only">Admin Only</option>
+                                <option value="Technician Only">Technician Only</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Judul Pembaruan <span class="text-danger">*</span></label>
-                        <input type="text" name="Title" id="createTitle" class="form-control form-control-sm" placeholder="Contoh: Penyempurnaan Tampilan UI/UX & Notifikasi Lonceng Sistem" style="border-radius: 4px;" required />
+                        <label class="form-label small fw-semibold text-dark mb-1">Update Title <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" id="createTitle" class="form-control form-control-sm" placeholder="e.g. UI/UX Enhancements & System Notification Bell" style="border-radius: 4px;" required />
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Rincian Perubahan / Changelog <span class="text-danger">*</span></label>
-                        <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Gunakan tanda strip (-) untuk membuat poin changelog:&#10;- Pembaruan komponen A untuk performa lebih cepat&#10;- Perbaikan bug validasi form pada menu B&#10;- Penambahan indikator status rilis dan tanggal update" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
+                        <label class="form-label small fw-semibold text-dark mb-1">Changelog Details <span class="text-danger">*</span></label>
+                        <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Use dash (-) to format changelog bullet points:&#10;- Optimized component A for faster load times&#10;- Resolved form validation issue on menu B&#10;- Added release status indicator and timestamp" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Petunjuk / Tindakan Pengguna (Action Required) <span class="text-muted fw-normal">(Opsional)</span></label>
-                        <input type="text" name="ActionRequired" id="createActionRequired" class="form-control form-control-sm" placeholder="Contoh: Klik ikon lonceng di pojok kanan atas untuk melihat ringkasan rilis." style="border-radius: 4px;" />
+                        <label class="form-label small fw-semibold text-dark mb-1">User Instructions (Action Required) <span class="text-muted fw-normal">(Optional)</span></label>
+                        <input type="text" name="ActionRequired" id="createActionRequired" class="form-control form-control-sm" placeholder="e.g. Click the notification bell in the top right corner to view release highlights." style="border-radius: 4px;" />
                     </div>
 
                     <!-- Email Broadcast Options -->
@@ -476,31 +489,31 @@
                         <div class="form-check form-switch mb-1">
                             <input class="form-check-input" type="checkbox" name="SendEmail" value="true" id="checkSendEmail" onchange="toggleEmailRecipientSection(this.checked)">
                             <label class="form-check-label small fw-semibold text-dark" for="checkSendEmail">
-                                Kirim Email Broadcast Otomatis ke Tim (via SMTP)
+                                Automatically Broadcast Email to Team (via SMTP)
                             </label>
                         </div>
-                        <small class="text-muted d-block" style="font-size: 11.5px;">Jika disimpan sebagai Draf, email dan lonceng belum akan aktif hingga draf dipublikasikan.</small>
+                        <small class="text-muted d-block" style="font-size: 11.5px;">If saved as Draft, email and bell notifications will not be sent until the draft is published.</small>
 
                         <div id="emailRecipientSection" style="display: none;" class="mt-3 pt-2 border-top">
                             <label class="form-label small fw-semibold text-dark mb-1">
-                                Daftar Email Penerima (Pisahkan dengan tanda koma):
+                                Recipient Email List (Comma-separated):
                             </label>
                             <input type="text" name="customRecipients" id="customRecipients" class="form-control form-control-sm" value="@defaultReceiver" placeholder="e.g. user1@yasulor.com, user2@yasulor.com" style="border-radius: 4px;" />
                             <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
                                 <span class="text-muted small" style="font-size: 11.5px;">
-                                    Status SMTP: <strong>@(emailEnabled ? "Aktif & Siap Kirim" : "Belum Diaktifkan di Email Settings")</strong>
+                                    SMTP Status: <strong>@(emailEnabled ? "Active & Ready to Send" : "Not Enabled in Email Settings")</strong>
                                 </span>
                                 <button type="button" class="btn btn-outline-secondary btn-xs py-1 px-2" style="font-size: 11px; border-radius: 4px;" onclick="sendPreviewTestEmail()">
-                                    <i class="bi bi-send-check me-1"></i> Kirim Test Email Preview
+                                    <i class="bi bi-send-check me-1"></i> Send Preview Test Email
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">
-                        Simpan Catatan Rilis
+                        Save Release Record
                     </button>
                 </div>
             </form>
@@ -519,42 +532,42 @@
                         <span>&bull;</span>
                         <span id="viewTypeBadge" class="text-dark">IMPROVEMENT</span>
                     </div>
-                    <h5 class="modal-title fw-semibold text-dark mb-0" id="viewModalTitle">Judul Update</h5>
+                    <h5 class="modal-title fw-semibold text-dark mb-0" id="viewModalTitle">Update Title</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 bg-white">
                 <div class="row g-2 border-bottom pb-2 mb-3 small">
                     <div class="col-md-3 col-6">
-                        <span class="text-muted">Versi:</span>
+                        <span class="text-muted">Version:</span>
                         <strong class="text-dark d-block" id="viewVersionTag">v1.0.0</strong>
                     </div>
                     <div class="col-md-4 col-6">
-                        <span class="text-muted">Tanggal Rilis:</span>
+                        <span class="text-muted">Release Date:</span>
                         <strong class="text-dark d-block" id="viewReleaseDate">-</strong>
                     </div>
                     <div class="col-md-5 col-12">
-                        <span class="text-muted">Terakhir Diperbarui:</span>
+                        <span class="text-muted">Last Updated:</span>
                         <span class="text-dark d-block" id="viewUpdatedAt">-</span>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <div class="fw-semibold text-dark small text-uppercase mb-2" style="font-size: 11.5px;">Rincian Perubahan &amp; Peningkatan:</div>
+                    <div class="fw-semibold text-dark small text-uppercase mb-2" style="font-size: 11.5px;">Changelog Details &amp; Improvements:</div>
                     <div class="p-3 bg-light border rounded-1" id="viewChangelogBody" style="font-size: 13px; line-height: 1.6;"></div>
                 </div>
 
                 <div id="viewActionContainer" style="display: none;" class="p-3 bg-light border rounded-1 mb-3">
-                    <div class="fw-semibold text-dark small text-uppercase mb-1" style="font-size: 11.5px;">Tindakan yang Diperlukan:</div>
+                    <div class="fw-semibold text-dark small text-uppercase mb-1" style="font-size: 11.5px;">Action Required:</div>
                     <div id="viewActionText" class="text-dark small"></div>
                 </div>
 
                 <div class="text-muted small mt-3" style="font-size: 11.5px;">
-                    Dipublikasikan oleh: <strong id="viewAuthor" class="text-dark">Developer</strong>
+                    Published by: <strong id="viewAuthor" class="text-dark">Developer</strong>
                 </div>
             </div>
             <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
-                <button type="button" class="btn btn-outline-secondary btn-sm px-4" style="border-radius: 4px;" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-4" style="border-radius: 4px;" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -569,25 +582,25 @@
                 <input type="hidden" name="id" id="editId" />
                 <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                        Edit Catatan Rilis
+                        Edit Release Note
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-white">
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Status Rilis</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Release Status</label>
                             <select name="releaseStatus" id="editReleaseStatus" class="form-select form-select-sm" style="border-radius: 4px;" required>
-                                <option value="Published">Published (Rilis)</option>
-                                <option value="Draft">Draft (Simpan Draf)</option>
+                                <option value="Published">Published (Live Release)</option>
+                                <option value="Draft">Draft (Save Draft)</option>
                             </select>
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Versi</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Version</label>
                             <input type="text" name="version" id="editVersion" class="form-control form-control-sm font-monospace" style="border-radius: 4px;" required />
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Kategori</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Category</label>
                             <select name="updateType" id="editUpdateType" class="form-select form-select-sm" style="border-radius: 4px;" required>
                                 <option value="Improvement">Improvement</option>
                                 <option value="Bug Fix">Bug Fix</option>
@@ -596,50 +609,50 @@
                             </select>
                         </div>
                         <div class="col-md-3 col-6">
-                            <label class="form-label small fw-semibold text-dark mb-1">Target</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Target Audience</label>
                             <select name="targetAudience" id="editTargetAudience" class="form-select form-select-sm" style="border-radius: 4px;">
-                                <option value="All Users">Semua Pengguna</option>
-                                <option value="Admin Only">Khusus Admin</option>
-                                <option value="Technician Only">Khusus Teknisi</option>
+                                <option value="All Users">All Users</option>
+                                <option value="Admin Only">Admin Only</option>
+                                <option value="Technician Only">Technician Only</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-8 col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1">Judul Pembaruan</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Update Title</label>
                             <input type="text" name="title" id="editTitle" class="form-control form-control-sm" style="border-radius: 4px;" required />
                         </div>
                         <div class="col-md-4 col-12">
-                            <label class="form-label small fw-semibold text-dark mb-1">Tanggal Rilis (Opsional)</label>
+                            <label class="form-label small fw-semibold text-dark mb-1">Release Date (Optional)</label>
                             <input type="datetime-local" name="releaseDate" id="editReleaseDate" class="form-control form-control-sm" style="border-radius: 4px;" />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Rincian Perubahan / Changelog</label>
+                        <label class="form-label small fw-semibold text-dark mb-1">Changelog Details</label>
                         <textarea name="description" id="editDescription" rows="5" class="form-control form-control-sm" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Petunjuk Pengguna (Action Required)</label>
+                        <label class="form-label small fw-semibold text-dark mb-1">User Instructions (Action Required)</label>
                         <input type="text" name="actionRequired" id="editActionRequired" class="form-control form-control-sm" style="border-radius: 4px;" />
                     </div>
 
                     <div class="d-flex gap-3 pt-2">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="showPopupAlert" value="true" id="editShowPopupAlert">
-                            <label class="form-check-label small fw-semibold text-dark" for="editShowPopupAlert">Tampilkan di Lonceng</label>
+                            <label class="form-check-label small fw-semibold text-dark" for="editShowPopupAlert">Display in Notification Bell</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="isActive" value="true" id="editIsActive">
-                            <label class="form-check-label small fw-semibold text-dark" for="editIsActive">Status Rilis Aktif</label>
+                            <label class="form-check-label small fw-semibold text-dark" for="editIsActive">Active Release Status</label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -655,24 +668,24 @@
                 <input type="hidden" name="id" id="resendId" />
                 <div class="modal-header bg-white border-bottom py-3 px-4" style="border-radius: 6px 6px 0 0;">
                     <h5 class="modal-title fw-semibold text-dark mb-0" style="font-size: 16px;">
-                        Kirim Ulang Email Broadcast
+                        Resend Email Broadcast
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-white">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Rilis yang Dikirimkan:</label>
+                        <label class="form-label small fw-semibold text-dark mb-1">Release to Broadcast:</label>
                         <div class="p-2 bg-light border rounded-1 small" id="resendReleaseInfo"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">Daftar Email Penerima <span class="text-danger">*</span></label>
+                        <label class="form-label small fw-semibold text-dark mb-1">Recipient Email List <span class="text-danger">*</span></label>
                         <textarea name="customRecipients" id="resendRecipients" rows="3" class="form-control form-control-sm" placeholder="user1@domain.com, user2@domain.com" style="border-radius: 4px;" required></textarea>
-                        <small class="text-muted" style="font-size: 11px;">Pisahkan antar email dengan koma atau baris baru.</small>
+                        <small class="text-muted" style="font-size: 11px;">Separate email addresses with commas or newlines.</small>
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2 px-4 border-top" style="border-radius: 0 0 6px 6px;">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Kirim Sekarang</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" style="border-radius: 4px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white btn-sm px-4" style="border-radius: 4px; background: #032954; border: 1px solid #032954;">Send Now</button>
                 </div>
             </form>
         </div>
@@ -700,7 +713,7 @@
         badge.textContent = type;
 
         // Format description with bullets
-        const lines = description.split('\n');
+        const lines = (description || '').split('\n');
         let html = '';
         lines.forEach(line => {
             const trimmed = line.trim();
@@ -710,7 +723,7 @@
                 html += '<p class="mb-2">' + escapeHtml(trimmed) + '</p>';
             }
         });
-        document.getElementById('viewChangelogBody').innerHTML = html || '<span class="text-muted">Tidak ada rincian tambahan.</span>';
+        document.getElementById('viewChangelogBody').innerHTML = html || '<span class="text-muted">No additional details provided.</span>';
 
         const actionContainer = document.getElementById('viewActionContainer');
         const actionText = document.getElementById('viewActionText');
@@ -758,7 +771,7 @@
         const desc = document.getElementById('createDescription').value;
         const action = document.getElementById('createActionRequired').value;
 
-        const testEmail = prompt('Masukkan email tujuan untuk menerima TEST PREVIEW:', '@defaultReceiver');
+        const testEmail = prompt('Enter destination email address to receive TEST PREVIEW:', '@defaultReceiver');
         if (!testEmail || !testEmail.trim()) return;
 
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -784,7 +797,7 @@
         })
         .catch(err => {
             console.error(err);
-            alert('Gagal mengirim test email.');
+            alert('Failed to send test email.');
         });
     }
 

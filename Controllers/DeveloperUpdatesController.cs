@@ -42,7 +42,7 @@ namespace UPMS.Web.Controllers
         {
             if (!await IsAdminOrDeveloperAsync())
             {
-                TempData["Error"] = "Akses Ditolak: Menu Developer Updates hanya dapat diakses oleh Administrator & Developer.";
+                TempData["Error"] = "Access Denied: Developer Updates is restricted to Administrators & Developers.";
                 return RedirectToAction("Index", "Dashboard");
             }
 
@@ -100,7 +100,7 @@ namespace UPMS.Web.Controllers
 
             if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Description))
             {
-                TempData["Error"] = "Judul dan rincian update tidak boleh kosong.";
+                TempData["Error"] = "Title and changelog description are required.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -146,18 +146,18 @@ namespace UPMS.Web.Controllers
                     model.EmailSentCount = count;
                     model.EmailSentAt = DateTime.Now;
                     await _db.SaveChangesAsync();
-                    TempData["Success"] = $"Update '{model.Title}' ({model.Version}) berhasil dipublish & email broadcast berhasil dikirim ke {count} penerima.";
+                    TempData["Success"] = $"Update '{model.Title}' ({model.Version}) successfully published & email broadcast sent to {count} recipient(s).";
                 }
                 else
                 {
-                    TempData["Warning"] = $"Update '{model.Title}' berhasil disimpan, namun broadcast email gagal: {error}";
+                    TempData["Warning"] = $"Update '{model.Title}' saved successfully, but email broadcast failed: {error}";
                 }
             }
             else
             {
                 TempData["Success"] = model.ReleaseStatus == "Draft" 
-                    ? $"Draft pembaruan '{model.Title}' ({model.Version}) berhasil disimpan."
-                    : $"Update '{model.Title}' ({model.Version}) berhasil dipublikasikan ke sistem.";
+                    ? $"Draft update '{model.Title}' ({model.Version}) saved successfully."
+                    : $"Update '{model.Title}' ({model.Version}) published to the system successfully.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -173,7 +173,7 @@ namespace UPMS.Web.Controllers
             var item = await _db.SystemUpdates.FindAsync(id);
             if (item == null)
             {
-                TempData["Error"] = "Catatan update tidak ditemukan.";
+                TempData["Error"] = "Update record not found.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -204,7 +204,7 @@ namespace UPMS.Web.Controllers
             item.UpdatedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
-            TempData["Success"] = $"Update '{item.Title}' berhasil diperbarui.";
+            TempData["Success"] = $"Update '{item.Title}' updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -218,7 +218,7 @@ namespace UPMS.Web.Controllers
             var item = await _db.SystemUpdates.FindAsync(id);
             if (item == null)
             {
-                TempData["Error"] = "Catatan update tidak ditemukan.";
+                TempData["Error"] = "Update record not found.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -227,7 +227,7 @@ namespace UPMS.Web.Controllers
             item.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
-            TempData["Success"] = $"Draft '{item.Title}' ({item.Version}) resmi dipublikasikan ke sistem & aktif di ikon lonceng.";
+            TempData["Success"] = $"Draft '{item.Title}' ({item.Version}) published to system and active in notification bell.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -241,13 +241,13 @@ namespace UPMS.Web.Controllers
             var item = await _db.SystemUpdates.FindAsync(id);
             if (item == null)
             {
-                TempData["Error"] = "Catatan update tidak ditemukan.";
+                TempData["Error"] = "Update record not found.";
                 return RedirectToAction(nameof(Index));
             }
 
             _db.SystemUpdates.Remove(item);
             await _db.SaveChangesAsync();
-            TempData["Success"] = $"Update '{item.Title}' ({item.Version}) berhasil dihapus.";
+            TempData["Success"] = $"Update '{item.Title}' ({item.Version}) deleted successfully.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -256,16 +256,16 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleActive(int id)
         {
-            if (!await IsAdminOrDeveloperAsync()) return Json(new { success = false, message = "Akses ditolak." });
+            if (!await IsAdminOrDeveloperAsync()) return Json(new { success = false, message = "Access denied." });
 
             var item = await _db.SystemUpdates.FindAsync(id);
-            if (item == null) return Json(new { success = false, message = "Update tidak ditemukan." });
+            if (item == null) return Json(new { success = false, message = "Update record not found." });
 
             item.IsActive = !item.IsActive;
             item.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
-            return Json(new { success = true, isActive = item.IsActive, message = $"Status update berhasil diubah ke {(item.IsActive ? "Aktif" : "Non-aktif")}." });
+            return Json(new { success = true, isActive = item.IsActive, message = $"Update status changed to {(item.IsActive ? "Active" : "Inactive")}." });
         }
 
         // POST: /DeveloperUpdates/ResendEmail
@@ -278,7 +278,7 @@ namespace UPMS.Web.Controllers
             var item = await _db.SystemUpdates.FindAsync(id);
             if (item == null)
             {
-                TempData["Error"] = "Update tidak ditemukan.";
+                TempData["Error"] = "Update record not found.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -288,7 +288,7 @@ namespace UPMS.Web.Controllers
 
             if (string.IsNullOrWhiteSpace(recipients))
             {
-                TempData["Error"] = "Daftar email penerima tidak boleh kosong.";
+                TempData["Error"] = "Recipient email list cannot be empty.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -300,11 +300,11 @@ namespace UPMS.Web.Controllers
                 item.SendEmail = true;
                 item.RecipientEmails = recipients;
                 await _db.SaveChangesAsync();
-                TempData["Success"] = $"Email broadcast untuk '{item.Title}' berhasil dikirim ulang ke {count} penerima.";
+                TempData["Success"] = $"Email broadcast for '{item.Title}' resent to {count} recipient(s).";
             }
             else
             {
-                TempData["Error"] = $"Gagal mengirim ulang email broadcast: {error}";
+                TempData["Error"] = $"Failed to resend email broadcast: {error}";
             }
 
             return RedirectToAction(nameof(Index));
@@ -315,19 +315,19 @@ namespace UPMS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendTestEmail(string title, string version, string updateType, string description, string? actionRequired, string testEmail)
         {
-            if (!await IsAdminOrDeveloperAsync()) return Json(new { success = false, message = "Akses ditolak." });
+            if (!await IsAdminOrDeveloperAsync()) return Json(new { success = false, message = "Access denied." });
 
             if (string.IsNullOrWhiteSpace(testEmail))
             {
-                return Json(new { success = false, message = "Email tujuan test tidak boleh kosong." });
+                return Json(new { success = false, message = "Test destination email cannot be empty." });
             }
 
             var mockUpdate = new SystemUpdate
             {
-                Title = string.IsNullOrWhiteSpace(title) ? "Preview Pembaruan Sistem SMS" : title.Trim(),
+                Title = string.IsNullOrWhiteSpace(title) ? "SMS System Update Preview" : title.Trim(),
                 Version = string.IsNullOrWhiteSpace(version) ? "v2.5.0" : version.Trim(),
                 UpdateType = string.IsNullOrWhiteSpace(updateType) ? "Improvement" : updateType.Trim(),
-                Description = string.IsNullOrWhiteSpace(description) ? "Contoh deskripsi pembaruan dan rincian changelog." : description.Trim(),
+                Description = string.IsNullOrWhiteSpace(description) ? "Sample changelog description and release notes." : description.Trim(),
                 ActionRequired = actionRequired,
                 CreatedBy = User.Identity?.Name ?? "Developer",
                 CreatedAt = DateTime.Now
@@ -336,9 +336,9 @@ namespace UPMS.Web.Controllers
             var (success, count, error) = await SendBroadcastEmailAsync(mockUpdate, testEmail.Trim(), isTest: true);
             if (success)
             {
-                return Json(new { success = true, message = $"Email preview/test berhasil dikirim ke '{testEmail}'." });
+                return Json(new { success = true, message = $"Preview/test email successfully sent to '{testEmail}'." });
             }
-            return Json(new { success = false, message = $"Gagal mengirim email test: {error}" });
+            return Json(new { success = false, message = $"Failed to send test email: {error}" });
         }
 
         // GET: /DeveloperUpdates/GetLatestNotifications (Accessible by all logged-in users for Notification Bell)
@@ -391,7 +391,7 @@ namespace UPMS.Web.Controllers
 
                 if (string.IsNullOrWhiteSpace(server) || string.IsNullOrWhiteSpace(senderEmail))
                 {
-                    return (false, 0, "Konfigurasi SMTP server atau email pengirim belum diatur di menu Email Settings.");
+                    return (false, 0, "SMTP server or sender email is not configured in Email Settings.");
                 }
 
                 var recipientList = recipientsString
@@ -402,7 +402,7 @@ namespace UPMS.Web.Controllers
 
                 if (!recipientList.Any())
                 {
-                    return (false, 0, "Tidak ada alamat email penerima yang valid.");
+                    return (false, 0, "No valid recipient email address found.");
                 }
 
                 string testPrefix = isTest ? "[TEST PREVIEW] " : "";
@@ -468,7 +468,7 @@ namespace UPMS.Web.Controllers
 
             string actionRequiredSection = !string.IsNullOrWhiteSpace(update.ActionRequired) ? $@"
                 <div style=""margin-top:20px; padding:12px 16px; background:#f8fafc; border-left:4px solid #000000; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;"">
-                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#000000; letter-spacing:0.05em; margin-bottom:4px;"">TINDAKAN YANG DIPERLUKAN (ACTION REQUIRED):</div>
+                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#000000; letter-spacing:0.05em; margin-bottom:4px;"">ACTION REQUIRED:</div>
                     <div style=""font-size:13px; color:#0f172a; line-height:1.5;"">{System.Net.WebUtility.HtmlEncode(update.ActionRequired)}</div>
                 </div>" : "";
 
@@ -501,7 +501,7 @@ namespace UPMS.Web.Controllers
         <!-- Content Area -->
         <tr>
             <td style=""padding:30px 28px;"">
-                {(isTest ? @"<div style=""margin-bottom:18px; padding:8px 12px; background:#f8fafc; border:1px dashed #000000; font-size:11.5px; font-weight:bold; text-align:center;"">[PREVIEW TEST EMAIL DARI DEVELOPER PORTAL]</div>" : "")}
+                {(isTest ? @"<div style=""margin-bottom:18px; padding:8px 12px; background:#f8fafc; border:1px dashed #000000; font-size:11.5px; font-weight:bold; text-align:center;"">[DEVELOPER PORTAL TEST PREVIEW]</div>" : "")}
 
                 <!-- Category Badge & Date -->
                 <div style=""margin-bottom:12px;"">
@@ -509,7 +509,7 @@ namespace UPMS.Web.Controllers
                         {System.Net.WebUtility.HtmlEncode(update.UpdateType)}
                     </span>
                     <span style=""font-size:12px; color:#64748b; margin-left:10px;"">
-                        {update.CreatedAt:dd MMMM yyyy, HH:mm} WIB
+                        {update.CreatedAt:dd MMMM yyyy, HH:mm}
                     </span>
                 </div>
 
@@ -522,7 +522,7 @@ namespace UPMS.Web.Controllers
 
                 <!-- Release Notes / Description -->
                 <div style=""margin-bottom:20px;"">
-                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#475569; letter-spacing:0.05em; margin-bottom:8px;"">RINCIAN PERUBAHAN &amp; FITUR:</div>
+                    <div style=""font-size:11px; font-weight:bold; text-transform:uppercase; color:#475569; letter-spacing:0.05em; margin-bottom:8px;"">CHANGELOG &amp; IMPROVEMENTS:</div>
                     <ul style=""margin:0; padding-left:18px;"">
                         {descHtml}
                     </ul>
@@ -533,7 +533,7 @@ namespace UPMS.Web.Controllers
                 <!-- CTA Button -->
                 <div style=""margin-top:28px; padding-top:20px; border-top:1px solid #e2e8f0; text-align:center;"">
                     <a href=""http://localhost:5005"" target=""_blank"" style=""display:inline-block; background:#000000; color:#ffffff; text-decoration:none; font-size:13px; font-weight:600; padding:11px 26px; border:1px solid #000000; letter-spacing:0.02em;"">
-                        BUKA SISTEM SMS &rarr;
+                        OPEN SMS SYSTEM &rarr;
                     </a>
                 </div>
             </td>
@@ -545,8 +545,8 @@ namespace UPMS.Web.Controllers
                 <table border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"">
                     <tr>
                         <td>
-                            <strong>SMS Yasulor Automation</strong> &bull; Dipublikasikan oleh <em>{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</em><br />
-                            Notifikasi resmi pembaruan fitur &amp; perbaikan sistem aplikasi.
+                            <strong>SMS Yasulor Automation</strong> &bull; Published by <em>{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</em><br />
+                            Official system notification &amp; release notes.
                         </td>
                         <td align=""right"" style=""font-size:10px; color:#94a3b8;"">
                             Enterprise TLS 1.3 Active<br />
@@ -564,10 +564,10 @@ namespace UPMS.Web.Controllers
         private static string GetRelativeTime(DateTime date)
         {
             var span = DateTime.Now - date;
-            if (span.TotalMinutes < 1) return "Baru saja";
-            if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} menit yang lalu";
-            if (span.TotalHours < 24) return $"{(int)span.TotalHours} jam yang lalu";
-            if (span.TotalDays < 7) return $"{(int)span.TotalDays} hari yang lalu";
+            if (span.TotalMinutes < 1) return "Just now";
+            if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+            if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+            if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
             return date.ToString("dd MMM yyyy");
         }
     }

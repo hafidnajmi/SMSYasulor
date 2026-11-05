@@ -620,7 +620,7 @@ body:not(.modal-open) {
             {
                 <!-- Notification Bell (Icon & Number Only - Simple & Lightweight) -->
                 <div class="dropdown me-2 position-relative">
-                    <button class="btn btn-link text-dark position-relative p-0 text-decoration-none d-flex align-items-center justify-content-center" type="button" id="topNotifBellBtn" onclick="toggleSystemNotifDropdown(event)" aria-expanded="false" title="Pemberitahuan & Update Sistem" style="background: none; border: none; font-size: 19px; line-height: 1; cursor: pointer; width: 28px; height: 28px;">
+                    <button class="btn btn-link text-dark position-relative p-0 text-decoration-none d-flex align-items-center justify-content-center" type="button" id="topNotifBellBtn" onclick="toggleSystemNotifDropdown(event)" aria-expanded="false" title="System Notifications & Updates" style="background: none; border: none; font-size: 19px; line-height: 1; cursor: pointer; width: 28px; height: 28px;">
                         <i class="bi bi-bell" style="pointer-events: none;"></i>
                         <span id="topNotifBadge" class="position-absolute badge bg-danger text-white border border-white" style="display:none; font-size: 9.5px; top: -4px; right: -7px; padding: 2px 5px; font-weight: 600; pointer-events: none; border-radius: 999px !important;">0</span>
                     </button>
@@ -628,27 +628,27 @@ body:not(.modal-open) {
                         <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white" style="border-radius: 6px 6px 0 0;">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-bell text-dark fs-6"></i>
-                                <span class="fw-semibold text-dark" style="font-size: 13.5px;">Pemberitahuan Sistem</span>
-                                <span id="topNotifCountText" class="badge bg-light text-dark border fw-normal" style="font-size: 10px; border-radius: 10px !important; padding: 2px 7px;">0 Baru</span>
+                                <span class="fw-semibold text-dark" style="font-size: 13.5px;">System Notifications</span>
+                                <span id="topNotifCountText" class="badge bg-light text-dark border fw-normal" style="font-size: 10px; border-radius: 10px !important; padding: 2px 7px;">0 New</span>
                             </div>
-                            <button type="button" class="btn btn-link btn-xs text-secondary p-0 text-decoration-none" style="font-size: 11.5px;" onclick="markAllNotificationsAsRead()" title="Tandai semua telah dibaca">
-                                Tandai Dibaca
+                            <button type="button" class="btn btn-link btn-xs text-secondary p-0 text-decoration-none" style="font-size: 11.5px;" onclick="markAllNotificationsAsRead()" title="Mark all as read">
+                                Mark All Read
                             </button>
                         </div>
                         <div id="topNotifList" class="overflow-auto" style="max-height: 400px;">
-                            <div class="p-3 text-center text-muted small">Memuat notifikasi...</div>
+                            <div class="p-3 text-center text-muted small">Loading notifications...</div>
                         </div>
                         <div class="p-2 border-top bg-light text-center" style="border-radius: 0 0 6px 6px;">
                             @if (isUserAdmin)
                             {
                                 <a asp-controller="DeveloperUpdates" asp-action="Index" class="text-dark small text-decoration-none fw-medium d-inline-flex align-items-center gap-1" style="font-size: 12px;">
-                                    <span>Kelola Catatan Rilis (Developer Portal)</span>
+                                    <span>Developer Updates Portal</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             }
                             else
                             {
-                                <span class="text-muted" style="font-size: 11px;">Sparepart Management System &bull; Versi Terbaru</span>
+                                <span class="text-muted" style="font-size: 11px;">Sparepart Management System &bull; Latest Version</span>
                             }
                         </div>
                     </div>
@@ -1140,7 +1140,7 @@ body:not(.modal-open) {
             localStorage.setItem('sms_read_updates', JSON.stringify(readIds));
             updateNotifBadge();
             renderNotifList();
-            showEmsToast('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
+            showEmsToast('success', 'All notifications marked as read.');
         }
 
         function updateNotifBadge() {
@@ -1163,7 +1163,7 @@ body:not(.modal-open) {
                 }
             }
             if (countText) {
-                countText.textContent = unreadCount + ' Baru';
+                countText.textContent = unreadCount + ' New';
             }
         }
 
@@ -1181,7 +1181,7 @@ body:not(.modal-open) {
             if (!listEl) return;
 
             if (!_globalCachedUpdates || _globalCachedUpdates.length === 0) {
-                listEl.innerHTML = '<div class="p-4 text-center text-muted small"><i class="bi bi-bell-slash fs-4 d-block mb-1 text-secondary opacity-50"></i>Belum ada pemberitahuan atau rilis terbaru.</div>';
+                listEl.innerHTML = '<div class="p-4 text-center text-muted small"><i class="bi bi-bell-slash fs-4 d-block mb-1 text-secondary opacity-50"></i>No recent notifications or updates.</div>';
                 return;
             }
 
@@ -1202,7 +1202,7 @@ body:not(.modal-open) {
                 html += '      <span class="text-muted">&bull;</span>';
                 html += '      <span class="text-secondary">' + escapeHtmlNotif(u.type) + '</span>';
                 if (!isRead) {
-                    html += '  <span class="text-dark fw-bold" style="font-size:10.5px;">(Baru)</span>';
+                    html += '  <span class="text-dark fw-bold" style="font-size:10.5px;">(New)</span>';
                 }
                 html += '    </div>';
                 html += '    <span class="text-muted" style="font-size:11px;">' + escapeHtmlNotif(u.timeAgo) + '</span>';
@@ -1218,12 +1218,12 @@ body:not(.modal-open) {
                     html += '    <div class="small text-secondary" style="font-size:12px; white-space:pre-wrap; line-height:1.5;">' + escapeHtmlNotif(u.description) + '</div>';
                     if (u.actionRequired && u.actionRequired.trim().length > 0) {
                         html += '    <div class="mt-2 p-2 bg-light border rounded-1 small" style="font-size:11.5px;">';
-                        html += '      <strong class="text-dark"><i class="bi bi-info-circle me-1"></i> Instruksi:</strong> ' + escapeHtmlNotif(u.actionRequired);
+                        html += '      <strong class="text-dark"><i class="bi bi-info-circle me-1"></i> Instructions:</strong> ' + escapeHtmlNotif(u.actionRequired);
                         html += '    </div>';
                     }
                     html += '    <div class="mt-2 d-flex justify-content-between align-items-center text-muted" style="font-size:10.5px;">';
-                    html += '      <span>Rilis: ' + escapeHtmlNotif(u.createdAt) + ' &bull; ' + escapeHtmlNotif(u.createdBy) + '</span>';
-                    html += '      <span class="text-secondary fw-semibold" style="cursor:pointer;" onclick="event.stopPropagation(); toggleNotifDetail(' + u.id + ');">Tutup &uarr;</span>';
+                    html += '      <span>Released: ' + escapeHtmlNotif(u.createdAt) + ' &bull; ' + escapeHtmlNotif(u.createdBy) + '</span>';
+                    html += '      <span class="text-secondary fw-semibold" style="cursor:pointer;" onclick="event.stopPropagation(); toggleNotifDetail(' + u.id + ');">Close &uarr;</span>';
                     html += '    </div>';
                     html += '  </div>';
                 }
