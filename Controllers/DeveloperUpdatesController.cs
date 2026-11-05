@@ -460,7 +460,7 @@ namespace UPMS.Web.Controllers
 
                 using var message = new MailMessage
                 {
-                    From = new MailAddress(senderEmail.Trim(), "SMS Developer & System Alert"),
+                    From = new MailAddress(senderEmail.Trim(), "SMS Sparepart Management System"),
                     Subject = subject,
                     Body = htmlBody,
                     IsBodyHtml = true,
@@ -531,7 +531,7 @@ namespace UPMS.Web.Controllers
                     <tr>
                         <td>
                             <div style=""color:#ffffff; font-size:15px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase;"">SPAREPART MANAGEMENT SYSTEM</div>
-                            <div style=""color:#93c5fd; font-size:11px; margin-top:3px; letter-spacing:0.08em; text-transform:uppercase;"">ENTERPRISE MANAGEMENT SUITE &bull; DEVELOPER NOTICE</div>
+                            <div style=""color:#93c5fd; font-size:11px; margin-top:3px; letter-spacing:0.08em; text-transform:uppercase;"">SPAREPART INVENTORY &amp; MAINTENANCE SUITE &bull; SYSTEM UPDATE NOTICE</div>
                         </td>
                         <td align=""right"">
                             <span style=""font-family:'Segoe UI', sans-serif; background:#ffffff; color:#032954; font-size:11.5px; font-weight:bold; padding:4px 9px; border-radius:0px;"">{System.Net.WebUtility.HtmlEncode(update.Version)}</span>
@@ -588,8 +588,8 @@ namespace UPMS.Web.Controllers
                 <table border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"">
                     <tr>
                         <td>
-                            <strong style=""color:#0f172a;"">SMS Yasulor Automation</strong> &bull; Published by <span style=""color:#032954; font-weight:600;"">{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</span><br />
-                            Official system notification &amp; release notes.
+                            <strong style=""color:#0f172a;"">SMS Yasulor Sparepart Operations</strong> &bull; Published by <span style=""color:#032954; font-weight:600;"">{System.Net.WebUtility.HtmlEncode(update.CreatedBy)}</span><br />
+                            Official sparepart inventory &amp; system release notes.
                         </td>
                         <td align=""right"" style=""font-size:10px; color:#94a3b8;"">
                             Enterprise TLS 1.3 Active<br />
