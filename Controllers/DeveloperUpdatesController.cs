@@ -522,13 +522,6 @@ namespace UPMS.Web.Controllers
                 }
             }
 
-            // No nested card inside card: clean border-top with strong contrast
-            string actionRequiredSection = !string.IsNullOrWhiteSpace(update.ActionRequired) ? $@"
-                <div style=""margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;"">
-                    <div style=""font-size:11.5px; font-weight:bold; text-transform:uppercase; color:#032954; letter-spacing:0.04em; margin-bottom:6px;"">ACTION REQUIRED:</div>
-                    <div style=""font-size:13.5px; color:#0f172a; line-height:1.6;"">{System.Net.WebUtility.HtmlEncode(update.ActionRequired)}</div>
-                </div>" : "";
-
             return $@"
 <!DOCTYPE html>
 <html>
@@ -584,8 +577,6 @@ namespace UPMS.Web.Controllers
                         {descHtml}
                     </ul>
                 </div>
-
-                {actionRequiredSection}
 
                 <!-- CTA Button in Microsoft / SAS Blue -->
                 <div style=""margin-top:28px; padding-top:20px; border-top:1px solid #e2e8f0; text-align:center;"">

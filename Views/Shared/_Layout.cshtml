@@ -763,11 +763,6 @@ body:not(.modal-open) {
                     Description
                 </div>
 
-                <!-- Action Required Box (if any) -->
-                <div id="loginPopupActionBox" class="p-2 mb-3 mx-auto text-start" style="display: none; max-width: 420px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; color: #032954;">
-                    <i class="bi bi-info-circle me-1"></i><strong>Action:</strong> <span id="loginPopupActionText"></span>
-                </div>
-
                 <!-- Primary Action Button (Solid Blue, Centered) -->
                 <div class="mt-3">
                     <button type="button" class="btn text-white fw-semibold px-4 py-2" style="background: #032954; border: 1px solid #032954; border-radius: 0px !important; font-size: 13.5px; min-width: 220px; letter-spacing: 0.02em;" onclick="dismissLoginPopup(false)">
@@ -1604,11 +1599,6 @@ body:not(.modal-open) {
                 if (isExpanded) {
                     html += '  <div class="mt-2 pt-2 border-top">';
                     html += '    <div class="small text-secondary" style="font-size:12px; white-space:pre-wrap; line-height:1.5;">' + escapeHtmlNotif(u.description) + '</div>';
-                    if (u.actionRequired && u.actionRequired.trim().length > 0) {
-                        html += '    <div class="mt-2 pt-1 border-top small" style="font-size:12px;">';
-                        html += '      <strong style="color:#032954;"><i class="bi bi-info-circle me-1"></i> Instructions:</strong> <span class="text-dark">' + escapeHtmlNotif(u.actionRequired) + '</span>';
-                        html += '    </div>';
-                    }
                     html += '    <div class="mt-2 d-flex justify-content-between align-items-center text-muted" style="font-size:10.5px;">';
                     html += '      <span>Released: ' + escapeHtmlNotif(u.createdAt) + ' &bull; ' + escapeHtmlNotif(u.createdBy) + '</span>';
                     html += '      <span class="text-secondary fw-semibold" style="cursor:pointer;" onclick="toggleNotifDetail(' + u.id + ', event);">Close &uarr;</span>';
@@ -1737,8 +1727,6 @@ body:not(.modal-open) {
             var dateEl = document.getElementById('loginPopupDate');
             var descEl = document.getElementById('loginPopupDescription');
             var daysEl = document.getElementById('loginPopupReminderDays');
-            var actionBox = document.getElementById('loginPopupActionBox');
-            var actionText = document.getElementById('loginPopupActionText');
 
             if (titleEl) titleEl.textContent = activePopupUpdate.title;
             if (verEl) verEl.textContent = activePopupUpdate.version;
@@ -1761,15 +1749,6 @@ body:not(.modal-open) {
             if (daysEl) {
                 var dLeft = activePopupUpdate.daysRemaining || activePopupUpdate.popupDurationDays || 7;
                 daysEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Reminder: ' + dLeft + ' day' + (dLeft > 1 ? 's' : '') + ' left';
-            }
-
-            if (actionBox && actionText) {
-                if (activePopupUpdate.actionRequired && activePopupUpdate.actionRequired.trim().length > 0) {
-                    actionText.textContent = activePopupUpdate.actionRequired;
-                    actionBox.style.display = 'block';
-                } else {
-                    actionBox.style.display = 'none';
-                }
             }
 
             // Show Bootstrap Modal
@@ -1795,8 +1774,6 @@ body:not(.modal-open) {
                 var typeEl = document.getElementById('loginPopupTypeBadge');
                 var descEl = document.getElementById('loginPopupDescription');
                 var daysEl = document.getElementById('loginPopupReminderDays');
-                var actionBox = document.getElementById('loginPopupActionBox');
-                var actionText = document.getElementById('loginPopupActionText');
 
                 if (titleEl) titleEl.textContent = target.title;
                 if (verEl) verEl.textContent = target.version;
@@ -1818,15 +1795,6 @@ body:not(.modal-open) {
                 if (daysEl) {
                     var dLeft = target.daysRemaining || target.popupDurationDays || 7;
                     daysEl.innerHTML = '<i class="bi bi-clock-history me-1"></i>Reminder: ' + dLeft + ' day' + (dLeft > 1 ? 's' : '') + ' left';
-                }
-
-                if (actionBox && actionText) {
-                    if (target.actionRequired && target.actionRequired.trim().length > 0) {
-                        actionText.textContent = target.actionRequired;
-                        actionBox.style.display = 'block';
-                    } else {
-                        actionBox.style.display = 'none';
-                    }
                 }
 
                 var modalEl = document.getElementById('loginNotificationModal');

@@ -401,12 +401,6 @@
                                 <div class="text-muted text-truncate mt-1" style="max-width: 520px; font-size: 12.5px; line-height: 1.4;">
                                     @item.Description
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(item.ActionRequired))
-                                {
-                                    <div class="mt-1" style="font-size: 11.5px; color: #64748b;">
-                                        <i class="bi bi-info-circle me-1"></i><span class="text-dark fw-medium">Action:</span> @item.ActionRequired
-                                    </div>
-                                }
                             </td>
                             <td>
                                 <div style="font-size: 12px; color: #032954;">
@@ -521,11 +515,6 @@
                         <textarea name="Description" id="createDescription" rows="5" class="form-control form-control-sm" placeholder="Use dash (-) to format changelog bullet points:&#10;- Optimized component A for faster load times&#10;- Resolved form validation issue on menu B&#10;- Added release status indicator and timestamp" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">User Instructions (Action Required) <span class="text-muted fw-normal">(Optional)</span></label>
-                        <input type="text" name="ActionRequired" id="createActionRequired" class="form-control form-control-sm" placeholder="e.g. Click the notification bell in the top right corner to view release highlights." style="border-radius: 4px;" />
-                    </div>
-
                     <!-- Email Broadcast Options -->
                     <div class="pt-3 border-top mb-2">
                         <div class="form-check form-switch mb-1">
@@ -636,11 +625,6 @@
                     <div id="viewChangelogBody" style="font-size: 13px; line-height: 1.6; color: #0f172a;"></div>
                 </div>
 
-                <div id="viewActionContainer" style="display: none;" class="mt-3 pt-3 border-top">
-                    <div class="fw-bold small text-uppercase mb-1" style="font-size: 11.5px; color: #032954;">Action Required:</div>
-                    <div id="viewActionText" class="text-dark small" style="line-height: 1.6; font-size: 13px;"></div>
-                </div>
-
                 <div class="text-muted small mt-3" style="font-size: 11.5px;">
                     Published by: <strong id="viewAuthor" class="text-dark">Developer</strong>
                 </div>
@@ -711,11 +695,6 @@
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark mb-1">Changelog Details</label>
                         <textarea name="description" id="editDescription" rows="5" class="form-control form-control-sm" style="border-radius: 4px; font-size: 12.5px; line-height: 1.5;" required></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark mb-1">User Instructions (Action Required)</label>
-                        <input type="text" name="actionRequired" id="editActionRequired" class="form-control form-control-sm" style="border-radius: 4px;" />
                     </div>
 
                     <!-- Pop-up Reminder upon Login Options -->
@@ -837,15 +816,6 @@
         });
         document.getElementById('viewChangelogBody').innerHTML = html || '<span class="text-muted">No additional details provided.</span>';
 
-        const actionContainer = document.getElementById('viewActionContainer');
-        const actionText = document.getElementById('viewActionText');
-        if (actionRequired && actionRequired.trim()) {
-            actionText.textContent = actionRequired;
-            actionContainer.style.display = 'block';
-        } else {
-            actionContainer.style.display = 'none';
-        }
-
         const modal = new bootstrap.Modal(document.getElementById('viewDetailModal'));
         modal.show();
     }
@@ -884,7 +854,6 @@
         document.getElementById('editReleaseStatus').value = status || 'Published';
         document.getElementById('editReleaseDate').value = releaseDate || '';
         document.getElementById('editDescription').value = description;
-        document.getElementById('editActionRequired').value = actionRequired || '';
         document.getElementById('editTargetAudience').value = audience || 'All Users';
         
         document.getElementById('editShowPopupAlert').checked = showPopup;
@@ -926,7 +895,6 @@
         const version = document.getElementById('createVersion').value;
         const type = document.getElementById('createUpdateType').value;
         const desc = document.getElementById('createDescription').value;
-        const action = document.getElementById('createActionRequired').value;
 
         const testEmail = prompt('Enter destination email address to receive TEST PREVIEW:', '@defaultReceiver');
         if (!testEmail || !testEmail.trim()) return;
@@ -937,7 +905,6 @@
         params.append('version', version);
         params.append('updateType', type);
         params.append('description', desc);
-        params.append('actionRequired', action);
         params.append('testEmail', testEmail.trim());
 
         fetch('/DeveloperUpdates/SendTestEmail', {

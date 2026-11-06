@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_status = 'Published' WHERE release_status IS NULL OR release_status = '';");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET release_date = created_at WHERE release_date IS NULL;");
                     await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET popup_duration_days = 7 WHERE popup_duration_days IS NULL;");
+                    await db.Database.ExecuteSqlRawAsync(@"UPDATE ""System_Updates"" SET action_required = NULL;");
                     await db.Database.ExecuteSqlRawAsync(@"
                         UPDATE ""System_Updates"" 
                         SET show_popup_alert = TRUE, 
@@ -647,7 +648,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Published",
                         ReleaseDate = DateTime.Now,
                         Description = "- Mengubah antarmuka Developer Updates menjadi format modern, bersih, dan ringan bergaya Microsoft 365 / Azure Portal.\n- Menghapus modal pop-up otomatis pada halaman sistem sehingga tidak mengganggu aktivitas pengguna.\n- Menempatkan ikon lonceng bersih di pojok kanan atas dengan badge counter angka murni tanpa kartu pembungkus lain.\n- Rincian rilis dapat dibaca dan dibuka langsung di dalam panel flyout lonceng secara interaktif (inline accordion).",
-                        ActionRequired = "Klik ikon lonceng di pojok kanan atas untuk melihat informasi rilis terbaru kapan saja.",
+                        ActionRequired = null,
                         TargetAudience = "All Users",
                         SendEmail = false,
                         ShowPopupAlert = true,
@@ -665,7 +666,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Published",
                         ReleaseDate = DateTime.Now.AddHours(-3),
                         Description = "- Memperbarui 3 kartu mini KPI biaya pada menu Dashboard (Highest Cost Line, Highest Cost Asset, Top Cost Sparepart) menjadi teks hitam natural (#000000) dan bobot normal (regular weight / no bold).\n- Menghilangkan warna biru, hijau, dan oranye terang agar konsisten dengan tema korporat.",
-                        ActionRequired = "Perubahan tampilan langsung aktif pada menu Dashboard.",
+                        ActionRequired = null,
                         TargetAudience = "All Users",
                         SendEmail = false,
                         ShowPopupAlert = true,
@@ -683,7 +684,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Published",
                         ReleaseDate = DateTime.Now.AddDays(-1),
                         Description = "- Mesin pencari sekarang mendukung pencarian multi-kata berbasis token lintas kolom Item, Detail, Brand, dan Part #.\n- Kata kunci sederhana seperti 'sensor festo' atau 'bearing 6205 skf' langsung menemukan hasil akurat tanpa perlu spesifikasi yang terlalu rinci.\n- Hasil pencarian diurutkan rapi berdasarkan Item dan Brand.",
-                        ActionRequired = "Pengguna dapat langsung menggunakan kolom pencarian dengan mengetik kata kunci kombinasi.",
+                        ActionRequired = null,
                         TargetAudience = "All Users",
                         SendEmail = false,
                         ShowPopupAlert = true,
@@ -700,7 +701,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Published",
                         ReleaseDate = DateTime.Now.AddDays(-2),
                         Description = "- Memperbaiki flow kalkulasi di mana jadwal PM yang dieksekusi (Plan / Execute) tidak lagi menghapus nilai Planning dari grafik Compliance dan kartu KPI.\n- Sinkronisasi filter status Planning (P) agar konsisten menampilkan riwayat seluruh jadwal asal Plan.\n- Filter Export Excel disinkronkan dengan visualisasi kalender.",
-                        ActionRequired = "Tidak ada tindakan khusus yang diperlukan dari pengguna.",
+                        ActionRequired = null,
                         TargetAudience = "All Users",
                         SendEmail = false,
                         ShowPopupAlert = true,
@@ -717,7 +718,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Published",
                         ReleaseDate = DateTime.Now.AddDays(-3),
                         Description = "- Pembaruan label navigasi menu dan header dari 'Barang Masuk' menjadi 'Stock In', serta 'Barang Keluar' menjadi 'Stock Out'.\n- Tab pada menu Transaction Logs disesuaikan menjadi Stock In History dan Stock Out History.",
-                        ActionRequired = "Refresh halaman browser jika label belum ter-update.",
+                        ActionRequired = null,
                         TargetAudience = "All Users",
                         SendEmail = false,
                         ShowPopupAlert = true,
@@ -734,7 +735,7 @@ CREATE TABLE IF NOT EXISTS ""System_Updates"" (
                         ReleaseStatus = "Draft",
                         ReleaseDate = null,
                         Description = "- Rencana penambahan export laporan otomatis via cron scheduler mingguan ke email manajemen.\n- Notifikasi ringkasan mutasi sparepart slow-moving dan fast-moving.",
-                        ActionRequired = "Masih dalam tahap perancangan teknis oleh tim developer.",
+                        ActionRequired = null,
                         TargetAudience = "Admin Only",
                         SendEmail = false,
                         ShowPopupAlert = true,
