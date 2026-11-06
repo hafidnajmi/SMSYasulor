@@ -746,13 +746,6 @@ body:not(.modal-open) {
                 <!-- Close 'X' Button at Top-Right -->
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" onclick="dismissLoginPopup(false)" aria-label="Close" style="font-size: 13px; opacity: 0.6; cursor: pointer;"></button>
 
-                <!-- Version & Category Meta -->
-                <div class="mb-2 text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 11px; color: #64748b;">
-                    <span id="loginPopupVersionBadge" style="color: #032954; font-weight: 700;">v...</span>
-                    <span>&bull;</span>
-                    <span id="loginPopupTypeBadge" style="color: #475569;">IMPROVEMENT</span>
-                </div>
-
                 <!-- Big Bold Centered Blue Headline -->
                 <h2 id="loginPopupTitle" class="fw-bold mb-3" style="color: #032954; font-size: 23px; line-height: 1.25; font-family: 'Avenir', 'Segoe UI', Arial, sans-serif;">
                     Update Title
@@ -1722,15 +1715,11 @@ body:not(.modal-open) {
 
             // Populate modal fields
             var titleEl = document.getElementById('loginPopupTitle');
-            var verEl = document.getElementById('loginPopupVersionBadge');
-            var typeEl = document.getElementById('loginPopupTypeBadge');
             var dateEl = document.getElementById('loginPopupDate');
             var descEl = document.getElementById('loginPopupDescription');
             var daysEl = document.getElementById('loginPopupReminderDays');
 
             if (titleEl) titleEl.textContent = activePopupUpdate.title;
-            if (verEl) verEl.textContent = activePopupUpdate.version;
-            if (typeEl) typeEl.textContent = (activePopupUpdate.type || 'IMPROVEMENT').toUpperCase();
             if (dateEl) dateEl.textContent = activePopupUpdate.releaseDate || activePopupUpdate.createdAt;
             if (descEl) {
                 var lines = (activePopupUpdate.description || '').split('\n');
@@ -1770,14 +1759,10 @@ body:not(.modal-open) {
             if (target) {
                 _activeLoginPopupUpdate = target;
                 var titleEl = document.getElementById('loginPopupTitle');
-                var verEl = document.getElementById('loginPopupVersionBadge');
-                var typeEl = document.getElementById('loginPopupTypeBadge');
                 var descEl = document.getElementById('loginPopupDescription');
                 var daysEl = document.getElementById('loginPopupReminderDays');
 
                 if (titleEl) titleEl.textContent = target.title;
-                if (verEl) verEl.textContent = target.version;
-                if (typeEl) typeEl.textContent = (target.type || 'IMPROVEMENT').toUpperCase();
                 if (descEl) {
                     var lines = (target.description || '').split('\n');
                     var descHtml = '';
