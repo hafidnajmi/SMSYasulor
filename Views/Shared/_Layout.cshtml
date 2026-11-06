@@ -26,6 +26,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="view-transition" content="same-origin" />
     <title>@ViewData["Title"] - Sparepart Management System (SMS)</title>
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" />
     <!-- Immediate Sidebar Collapsed State Check to prevent layout flicker -->
@@ -120,6 +121,7 @@ body:not(.modal-open) {
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 1030;
+    view-transition-name: ems-header;
 }
 .ems-logo-container {
     display: flex;
@@ -168,6 +170,63 @@ body:not(.modal-open) {
     flex-direction: column;
     justify-content: space-between;
     transition: width 0.2s cubic-bezier(0.2, 0, 0, 1);
+    view-transition-name: ems-sidebar;
+}
+
+/* ==========================================
+   Smooth View Transition Rules: Keep Sidebar & Header Standby
+   ========================================== */
+@@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(ems-sidebar),
+::view-transition-new(ems-sidebar),
+::view-transition-old(ems-header),
+::view-transition-new(ems-header) {
+    animation: none !important;
+    mix-blend-mode: normal !important;
+}
+
+::view-transition-old(root) {
+    animation: emsContentFadeOut 0.12s ease-out both;
+}
+
+::view-transition-new(root) {
+    animation: emsContentFadeIn 0.15s ease-in both;
+}
+
+@@keyframes emsContentFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0.95; }
+}
+
+@@keyframes emsContentFadeIn {
+    from { opacity: 0.95; }
+    to { opacity: 1; }
+}
+
+/* Micro Top Loading Progress Bar for Smooth Navigation */
+#ems-top-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, #0F4C81, #0284C7, #38BDF8);
+    z-index: 99999;
+    transition: width 0.3s cubic-bezier(0.1, 0.7, 0.1, 1), opacity 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+#ems-top-progress-bar.loading {
+    opacity: 1;
+    width: 75%;
+}
+#ems-top-progress-bar.complete {
+    width: 100%;
+    opacity: 0;
+    transition: width 0.15s ease, opacity 0.25s ease 0.1s;
 }
 .ems-sidebar::-webkit-scrollbar {
     width: 4px;
@@ -595,6 +654,9 @@ body:not(.modal-open) {
     </style>
 </head>
 <body>
+    <!-- Top Progress Bar for Seamless Smooth Navigation -->
+    <div id="ems-top-progress-bar"></div>
+
     <!-- Top Header Navigation -->
     <header class="ems-header">
         <div class="d-flex align-items-center">
@@ -730,8 +792,20 @@ body:not(.modal-open) {
 
     <div class="ems-sidebar-overlay" onclick="toggleMobileSidebar()"></div>
     <div class="app-wrapper">
-        <!-- Sidebar Navigation -->
-        <aside class="ems-sidebar">
+        <!-- Sidebar Navigation (Standby & Persistent Scroll) -->
+        <aside class="ems-sidebar" id="emsSidebarNav">
+            <script>
+                // Instant synchronous scroll restoration before first render to eliminate jumping to the top (ke awal)
+                (function() {
+                    try {
+                        var pos = sessionStorage.getItem('ems_sidebar_scroll_pos');
+                        if (pos !== null) {
+                            var el = document.getElementById('emsSidebarNav') || document.currentScript.parentElement;
+                            if (el) el.scrollTop = parseInt(pos, 10) || 0;
+                        }
+                    } catch(e) {}
+                })();
+            </script>
             <div class="ems-mobile-sidebar-header">
                 <div class="d-flex align-items-center me-1" style="flex:1; min-width:0;">
                     <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 32px; width: auto; object-fit: contain;" class="me-2 flex-shrink-0" />
@@ -859,7 +933,7 @@ body:not(.modal-open) {
             </div>
 
             <div class="ems-sidebar-footer">
-                <form asp-controller="Account" asp-action="Logout" method="post">
+                <form asp-controller="Account" asp-action="Logout" method="post" onsubmit="sessionStorage.removeItem('ems_sidebar_scroll_pos')">
                     <button type="submit" title="Logout">
                         <i class="bi bi-box-arrow-right fs-6" style="color: #64748B;"></i>
                         <span>Logout</span>
@@ -971,6 +1045,108 @@ body:not(.modal-open) {
             if (localStorage.getItem('ems_sidebar_collapsed') === 'true') {
                 document.body.classList.add('sidebar-collapsed');
                 document.documentElement.classList.add('sidebar-collapsed');
+            }
+            initSidebarStandby();
+        });
+
+        // ==========================================
+        // Sidebar Standby & Seamless Smooth Navigation Engine
+        // ==========================================
+        function initSidebarStandby() {
+            var sidebar = document.getElementById('emsSidebarNav');
+            if (!sidebar) return;
+
+            // 1. Double check restoration on DOMContentLoaded
+            var savedPos = sessionStorage.getItem('ems_sidebar_scroll_pos');
+            if (savedPos !== null) {
+                sidebar.scrollTop = parseInt(savedPos, 10) || 0;
+            }
+
+            // 2. Ensure active item is kept in view without resetting scroll to top
+            var activeLink = sidebar.querySelector('.ems-nav-link.active');
+            if (activeLink) {
+                var sbRect = sidebar.getBoundingClientRect();
+                var linkRect = activeLink.getBoundingClientRect();
+                if (linkRect.top < sbRect.top || linkRect.bottom > sbRect.bottom) {
+                    activeLink.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+                }
+            }
+
+            // 3. Track scroll position continuously
+            var scrollTimer = null;
+            sidebar.addEventListener('scroll', function() {
+                clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(function() {
+                    sessionStorage.setItem('ems_sidebar_scroll_pos', sidebar.scrollTop);
+                }, 40);
+            }, { passive: true });
+
+            // 4. Click & hover handling for smooth standby navigation
+            var links = sidebar.querySelectorAll('.ems-nav-link');
+            links.forEach(function(link) {
+                // Prefetch link on hover for near-instant response
+                link.addEventListener('mouseenter', function() {
+                    var href = link.getAttribute('href');
+                    if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
+                        var existing = document.querySelector('link[rel="prefetch"][href="' + href + '"]');
+                        if (!existing) {
+                            var p = document.createElement('link');
+                            p.rel = 'prefetch';
+                            p.href = href;
+                            document.head.appendChild(p);
+                        }
+                    }
+                }, { passive: true });
+
+                link.addEventListener('click', function(e) {
+                    var href = link.getAttribute('href');
+                    if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+                    // If user clicks the link of the page they are already on, don't re-trigger full page reload
+                    var currentPath = window.location.pathname.toLowerCase().replace(/\/$/, '');
+                    var targetPath = new URL(link.href, window.location.origin).pathname.toLowerCase().replace(/\/$/, '');
+                    var currentSearch = window.location.search;
+                    var targetSearch = new URL(link.href, window.location.origin).search;
+
+                    if (currentPath === targetPath && currentSearch === targetSearch) {
+                        e.preventDefault();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return;
+                    }
+
+                    // Store exact scroll position immediately
+                    sessionStorage.setItem('ems_sidebar_scroll_pos', sidebar.scrollTop);
+
+                    // Immediate active switch visual feedback
+                    links.forEach(function(l) { l.classList.remove('active'); });
+                    link.classList.add('active');
+
+                    // Show micro progress bar
+                    var progressBar = document.getElementById('ems-top-progress-bar');
+                    if (progressBar) {
+                        progressBar.className = '';
+                        void progressBar.offsetWidth;
+                        progressBar.className = 'loading';
+                    }
+                });
+            });
+
+            // 5. Store scroll position before page unloads
+            window.addEventListener('beforeunload', function() {
+                if (sidebar) {
+                    sessionStorage.setItem('ems_sidebar_scroll_pos', sidebar.scrollTop);
+                }
+            });
+        }
+
+        // Hide progress bar once page is fully loaded
+        window.addEventListener('load', function() {
+            var progressBar = document.getElementById('ems-top-progress-bar');
+            if (progressBar) {
+                progressBar.className = 'complete';
+                setTimeout(function() {
+                    progressBar.className = '';
+                }, 400);
             }
         });
 
