@@ -21,12 +21,14 @@
     DateTime nextMonthDate = firstDayOfMonth.AddMonths(1);
 
     bool canEditPm = ViewBag.CanEditPm != null ? (bool)ViewBag.CanEditPm : true;
+    string selectedUpArea = ViewBag.SelectedUpArea as string ?? "";
+    var allUpAreas = ViewBag.AllUpAreas as List<string> ?? new List<string> { "UP1", "UP2" };
 }
 
 <!-- Status Summary KPI Cards -->
 <div class="row g-3 mb-3">
     <div class="col-6 col-md">
-        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="P" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-upArea="@selectedUpArea" asp-route-status="P" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-p shadow-sm @(ViewBag.SelectedStatus == "P" ? "border-dark border-2" : "")"
            title="Klik untuk filter status Planning">
             <span class="pm-kpi-title">Planning</span>
@@ -34,7 +36,7 @@
         </a>
     </div>
     <div class="col-6 col-md">
-        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="E" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-upArea="@selectedUpArea" asp-route-status="E" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-e shadow-sm @(ViewBag.SelectedStatus == "E" ? "border-success border-2" : "")"
            title="Klik untuk filter status Execute">
             <span class="pm-kpi-title">Execute</span>
@@ -42,7 +44,7 @@
         </a>
     </div>
     <div class="col-6 col-md">
-        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="R" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-upArea="@selectedUpArea" asp-route-status="R" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-r shadow-sm @(ViewBag.SelectedStatus == "R" ? "border-info border-2" : "")"
            title="Klik untuk filter status Revision">
             <span class="pm-kpi-title">Revision</span>
@@ -50,7 +52,7 @@
         </a>
     </div>
     <div class="col-6 col-md">
-        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="M" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-upArea="@selectedUpArea" asp-route-status="M" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-m shadow-sm @(ViewBag.SelectedStatus == "M" ? "border-warning border-2" : "")"
            title="Klik untuk filter status Missed">
             <span class="pm-kpi-title">Missed</span>
@@ -58,7 +60,7 @@
         </a>
     </div>
     <div class="col-6 col-md">
-        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-status="O" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
+        <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-upArea="@selectedUpArea" asp-route-status="O" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView"
            class="card pm-kpi-card pm-kpi-card-o shadow-sm @(ViewBag.SelectedStatus == "O" ? "border-dark border-2" : "")"
            title="Klik untuk filter status Overhoul">
             <span class="pm-kpi-title">Overhoul</span>
@@ -72,11 +74,23 @@
     <form method="get" asp-action="Index" id="pmFilterForm">
         <input type="hidden" name="view" id="activeViewInput" value="@(ViewBag.CurrentView ?? "calendar")" />
         
-        <!-- Row 1: Bulan, Tahun, Line PM, Teknisi / PIC -->
+        <!-- Row 1: UP Area, Bulan, Tahun, Line PM, Teknisi / PIC -->
         <div class="row g-2 mb-2">
+            <!-- UP Area Filter -->
+            <div class="col-md-2 col-6">
+                <label class="form-label small text-muted mb-1">UP Area</label>
+                <select name="upArea" id="filterUpArea" class="form-select form-select-sm" onchange="onFilterUpAreaChanged()" style="border-radius: 0px !important;">
+                    <option value="">Semua UP Area</option>
+                    @foreach (var area in allUpAreas)
+                    {
+                        <option value="@area" selected="@(string.Equals(selectedUpArea, area, StringComparison.OrdinalIgnoreCase))">@area</option>
+                    }
+                </select>
+            </div>
+
             <div class="col-md-2 col-6">
                 <label class="form-label small text-muted mb-1">Bulan</label>
-                <select name="month" class="form-select form-select-sm" onchange="submitPmFilterForm()">
+                <select name="month" class="form-select form-select-sm" onchange="submitPmFilterForm()" style="border-radius: 0px !important;">
                     @for (int m = 1; m <= 12; m++)
                     {
                         var mDate = new DateTime(2026, m, 1);
@@ -87,7 +101,7 @@
 
             <div class="col-md-2 col-6">
                 <label class="form-label small text-muted mb-1">Tahun</label>
-                <select name="year" class="form-select form-select-sm" onchange="submitPmFilterForm()">
+                <select name="year" class="form-select form-select-sm" onchange="submitPmFilterForm()" style="border-radius: 0px !important;">
                     @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 3; y++)
                     {
                         <option value="@y" selected="@(y == selectedYear)">@y</option>
@@ -96,7 +110,7 @@
             </div>
 
             <!-- Line Multi-Select Filter -->
-            <div class="col-md-4 col-6">
+            <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-1">Line PM</label>
                 <div class="dropdown multiselect-dropdown">
                     <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="filterLineBtn">
@@ -113,10 +127,14 @@
                         <div class="options-list">
                             @foreach (var l in allLines)
                             {
+                                var lArea = UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(l);
                                 bool isChecked = selectedLines.Contains(l, StringComparer.OrdinalIgnoreCase);
-                                <div class="multiselect-option option-item">
+                                <div class="multiselect-option option-item line-filter-item" data-up-area="@lArea">
                                     <input class="form-check-input line-filter-check" type="checkbox" name="line" value="@l" id="filter_line_@l" @(isChecked ? "checked" : "") onchange="onFilterLineChanged()" />
-                                    <label class="form-check-label" for="filter_line_@l">@l</label>
+                                    <label class="form-check-label d-flex justify-content-between align-items-center w-100" for="filter_line_@l">
+                                        <span>@l</span>
+                                        <span class="badge bg-light text-secondary border px-1" style="font-size: 9px;">@lArea</span>
+                                    </label>
                                 </div>
                             }
                         </div>
@@ -125,7 +143,7 @@
             </div>
 
             <!-- Teknisi / PIC Multi-Select Filter -->
-            <div class="col-md-4 col-6">
+            <div class="col-md-3 col-6">
                 <label class="form-label small text-muted mb-1">Teknisi / PIC</label>
                 <div class="dropdown multiselect-dropdown">
                     <button class="multiselect-button dropdown-toggle" type="button" onclick="toggleMultiselectMenu(this, event)" id="filterTechBtn">
@@ -179,7 +197,7 @@
                 <button type="submit" class="btn btn-ems-primary btn-sm flex-fill fw-semibold" title="Cari / Apply Filter" style="border-radius: 0px !important;">
                     <i class="bi bi-search me-1"></i>Cari
                 </button>
-                @if (selectedLines.Any() || selectedMachineNames.Any() || selectedTechnicians.Any() || !string.IsNullOrEmpty(ViewBag.SelectedStatus) || !string.IsNullOrEmpty(ViewBag.SearchQuery))
+                @if (selectedLines.Any() || selectedMachineNames.Any() || selectedTechnicians.Any() || !string.IsNullOrEmpty(ViewBag.SelectedStatus) || !string.IsNullOrEmpty(selectedUpArea) || !string.IsNullOrEmpty(ViewBag.SearchQuery))
                 {
                     <a asp-action="Index" asp-route-year="@selectedYear" asp-route-month="@selectedMonth" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-danger btn-sm" title="Reset Filter" style="border-radius: 0px !important;">
                         <i class="bi bi-x-lg"></i>
@@ -211,16 +229,16 @@
             <!-- Navigation Month Bar -->
             <div class="pm-calendar-header">
                 <div class="d-flex align-items-center gap-2">
-                    <a asp-action="Index" asp-route-year="@prevMonthDate.Year" asp-route-month="@prevMonthDate.Month" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                    <a asp-action="Index" asp-route-year="@prevMonthDate.Year" asp-route-month="@prevMonthDate.Month" asp-route-upArea="@selectedUpArea" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-secondary btn-sm px-2 py-1">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                     <h5 class="mb-0 fw-bold text-dark me-2">@monthName</h5>
-                    <a asp-action="Index" asp-route-year="@nextMonthDate.Year" asp-route-month="@nextMonthDate.Month" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                    <a asp-action="Index" asp-route-year="@nextMonthDate.Year" asp-route-month="@nextMonthDate.Month" asp-route-upArea="@selectedUpArea" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-secondary btn-sm px-2 py-1">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </div>
                 <div class="d-flex align-items-center gap-3">
-                    <a asp-action="Index" asp-route-year="@DateTime.Now.Year" asp-route-month="@DateTime.Now.Month" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-primary btn-sm px-3">
+                    <a asp-action="Index" asp-route-year="@DateTime.Now.Year" asp-route-month="@DateTime.Now.Month" asp-route-upArea="@selectedUpArea" asp-route-status="@ViewBag.SelectedStatus" asp-route-technician="@(selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : "")" asp-route-search="@ViewBag.SearchQuery" asp-route-view="@ViewBag.CurrentView" class="btn btn-outline-primary btn-sm px-3">
                         <i class="bi bi-clock me-1"></i>Bulan Ini
                     </a>
                 </div>
@@ -341,6 +359,7 @@
                         <tr>
                             <th width="40">No</th>
                             <th width="110">Tanggal</th>
+                            <th width="85">Area</th>
                             <th>Line PM</th>
                             <th>Mesin PM</th>
                             <th width="120" class="text-center">Status</th>
@@ -353,7 +372,7 @@
                         @if (!Model.Any())
                         {
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
+                                <td colspan="9" class="text-center py-4 text-muted">
                                     <i class="bi bi-info-circle fs-4 d-block mb-1"></i>
                                     Tidak ada jadwal PM ditemukan untuk filter ini.
                                 </td>
@@ -367,6 +386,11 @@
                                 <tr>
                                     <td>@(no++)</td>
                                     <td class="fw-bold">@item.ScheduledDate.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border fw-semibold" style="font-size:10.5px;">
+                                            @(item.UpArea ?? UPMS.Web.Controllers.MaintenanceController.GetAreaFromLine(item.Title))
+                                        </span>
+                                    </td>
                                     <td class="fw-bold text-primary">@item.Title</td>
                                     <td>@(item.MachineName ?? "-")</td>
                                     <td class="text-center">

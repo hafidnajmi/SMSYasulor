@@ -29,6 +29,7 @@ namespace UPMS.Web.Controllers
             string[]? machine, 
             string? status, 
             string[]? technician,
+            string? upArea,
             string? search, 
             string? view)
         {
@@ -48,6 +49,8 @@ namespace UPMS.Web.Controllers
             ViewBag.SelectedYear = selectedYear;
             ViewBag.SelectedMonth = selectedMonth;
             ViewBag.SelectedStatus = status ?? "";
+            ViewBag.SelectedUpArea = upArea ?? "";
+            ViewBag.AllUpAreas = new List<string> { "UP1", "UP2" };
             ViewBag.SearchQuery = search ?? "";
             ViewBag.CurrentView = string.Equals(view, "list", StringComparison.OrdinalIgnoreCase) ? "list" : "calendar";
 
@@ -169,6 +172,12 @@ namespace UPMS.Web.Controllers
 
             var yearFiltered = rawYearEvents.AsEnumerable();
 
+            if (!string.IsNullOrWhiteSpace(upArea))
+            {
+                var targetUp = upArea.Trim().Replace(" ", "").ToUpper();
+                yearFiltered = yearFiltered.Where(p => ResolveUpArea(p, machines).Replace(" ", "").ToUpper() == targetUp);
+            }
+
             if (selectedLines.Any())
             {
                 yearFiltered = yearFiltered.Where(p => selectedLines.Any(l =>
@@ -209,7 +218,7 @@ namespace UPMS.Web.Controllers
                 var s = status.Trim().ToUpper();
                 monthFiltered = monthFiltered.Where(p =>
                     s == "O" ? (p.DisplayStatusCategory == "Overhaul") :
-                    s == "P" ? (p.DisplayStatusCategory == "Planning" || p.DisplayStatusCategory == "ExecutePlan" || p.DisplayStatusCategory == "MissedPlan") :
+                    s == "P" ? (p.DisplayStatusCategory == "Planning") :
                     s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Execute")) :
                     s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision" || p.DisplayStatusCategory == "MissedRevision") :
                     s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Missed")) :
@@ -261,13 +270,16 @@ namespace UPMS.Web.Controllers
                 .ToListAsync();
             ViewBag.MasterSparepartList = masterSparepartOptions;
 
+            // Base events for the month (matching year, upArea, line, machine, technician) BEFORE status & search filter
+            var baseMonthEvents = yearEventList.Where(p => p.ScheduledDate.Month == selectedMonth).ToList();
+
             // Summary stats for KPI cards
-            ViewBag.TotalCount = monthEvents.Count;
-            ViewBag.PlanningCount = monthEvents.Count(e => e.DisplayStatusCategory == "Planning" || e.DisplayStatusCategory == "ExecutePlan" || e.DisplayStatusCategory == "MissedPlan");
-            ViewBag.ExecuteCount = monthEvents.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_P", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Execute", StringComparison.OrdinalIgnoreCase));
-            ViewBag.RevisionCount = monthEvents.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || (e.SourceStatus != null && e.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || e.ParentId != null || e.DisplayStatusCategory == "Revision" || e.DisplayStatusCategory == "ExecuteRevision" || e.DisplayStatusCategory == "MissedRevision");
-            ViewBag.MissedCount = monthEvents.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_P", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
-            ViewBag.OverhaulCount = monthEvents.Count(e => e.DisplayStatusCategory == "Overhaul");
+            ViewBag.TotalCount = baseMonthEvents.Count;
+            ViewBag.PlanningCount = baseMonthEvents.Count(e => e.DisplayStatusCategory == "Planning");
+            ViewBag.ExecuteCount = baseMonthEvents.Count(e => e.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_P", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Execute", StringComparison.OrdinalIgnoreCase));
+            ViewBag.RevisionCount = baseMonthEvents.Count(e => e.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("E_R", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || (e.SourceStatus != null && e.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || e.ParentId != null || e.DisplayStatusCategory == "Revision" || e.DisplayStatusCategory == "ExecuteRevision" || e.DisplayStatusCategory == "MissedRevision");
+            ViewBag.MissedCount = baseMonthEvents.Count(e => e.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_P", StringComparison.OrdinalIgnoreCase) || e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
+            ViewBag.OverhaulCount = baseMonthEvents.Count(e => e.DisplayStatusCategory == "Overhaul");
             ViewBag.CanEditPm = await CanUserEditPmAsync();
 
             if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase) ||
@@ -1509,7 +1521,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportExcel(int? year, int? month, string[]? line, string[]? machine, string? status, string[]? technician, string? search)
+        public async Task<IActionResult> ExportExcel(int? year, int? month, string[]? line, string[]? machine, string? status, string[]? technician, string? upArea, string? search)
         {
             int selYear = year ?? DateTime.Now.Year;
             int selMonth = month ?? DateTime.Now.Month;
@@ -1532,6 +1544,8 @@ namespace UPMS.Web.Controllers
                                                  .Distinct(StringComparer.OrdinalIgnoreCase)
                                                  .ToList() ?? new List<string>();
 
+            var masterMachines = await _db.MachineMasters.AsNoTracking().ToListAsync();
+
             var rawData = await _db.PmSchedules
                 .AsNoTracking()
                 .Where(p => p.ScheduledDate.Year == selYear && p.ScheduledDate.Month == selMonth)
@@ -1539,6 +1553,12 @@ namespace UPMS.Web.Controllers
                 .ToListAsync();
 
             var filtered = rawData.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(upArea))
+            {
+                var targetUp = upArea.Trim().Replace(" ", "").ToUpper();
+                filtered = filtered.Where(p => ResolveUpArea(p, masterMachines).Replace(" ", "").ToUpper() == targetUp);
+            }
 
             if (selectedLines.Any())
             {
@@ -1565,7 +1585,7 @@ namespace UPMS.Web.Controllers
                 var s = status.Trim().ToUpper();
                 filtered = filtered.Where(p =>
                     s == "O" ? (p.DisplayStatusCategory == "Overhaul") :
-                    s == "P" ? (p.DisplayStatusCategory == "Planning" || p.DisplayStatusCategory == "ExecutePlan" || p.DisplayStatusCategory == "MissedPlan") :
+                    s == "P" ? (p.DisplayStatusCategory == "Planning") :
                     s == "E" ? (p.Status.Equals("E", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("execute", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Execute")) :
                     s == "R" ? (p.Status.Equals("R", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("revision", StringComparison.OrdinalIgnoreCase) || (p.SourceStatus != null && p.SourceStatus.Equals("R", StringComparison.OrdinalIgnoreCase)) || p.DisplayStatusCategory == "Revision" || p.DisplayStatusCategory == "ExecuteRevision" || p.DisplayStatusCategory == "MissedRevision") :
                     s == "M" ? (p.Status.Equals("M", StringComparison.OrdinalIgnoreCase) || p.Status.Equals("missed", StringComparison.OrdinalIgnoreCase) || p.DisplayStatusCategory.StartsWith("Missed")) :
@@ -1596,12 +1616,13 @@ namespace UPMS.Web.Controllers
             // Header styling
             worksheet.Cell(1, 1).Value = "No";
             worksheet.Cell(1, 2).Value = "Tanggal PM";
-            worksheet.Cell(1, 3).Value = "Line PM";
-            worksheet.Cell(1, 4).Value = "Mesin PM";
-            worksheet.Cell(1, 5).Value = "Kode Status";
-            worksheet.Cell(1, 6).Value = "Keterangan Status";
-            worksheet.Cell(1, 7).Value = "Teknisi / PIC";
-            worksheet.Cell(1, 8).Value = "Catatan";
+            worksheet.Cell(1, 3).Value = "UP Area";
+            worksheet.Cell(1, 4).Value = "Line PM";
+            worksheet.Cell(1, 5).Value = "Mesin PM";
+            worksheet.Cell(1, 6).Value = "Kode Status";
+            worksheet.Cell(1, 7).Value = "Keterangan Status";
+            worksheet.Cell(1, 8).Value = "Teknisi / PIC";
+            worksheet.Cell(1, 9).Value = "Catatan";
 
             var headerRow = worksheet.Row(1);
             headerRow.Style.Font.Bold = true;
@@ -1613,15 +1634,16 @@ namespace UPMS.Web.Controllers
             {
                 worksheet.Cell(row, 1).Value = row - 1;
                 worksheet.Cell(row, 2).Value = item.ScheduledDate.ToString("yyyy-MM-dd");
-                worksheet.Cell(row, 3).Value = item.Title;
-                worksheet.Cell(row, 4).Value = item.MachineName ?? "-";
-                worksheet.Cell(row, 5).Value = item.Status;
-                worksheet.Cell(row, 6).Value = item.StatusDisplayLabel;
-                worksheet.Cell(row, 7).Value = item.Technician ?? "-";
-                worksheet.Cell(row, 8).Value = item.Notes ?? "-";
+                worksheet.Cell(row, 3).Value = item.UpArea ?? ResolveUpArea(item, masterMachines);
+                worksheet.Cell(row, 4).Value = item.Title;
+                worksheet.Cell(row, 5).Value = item.MachineName ?? "-";
+                worksheet.Cell(row, 6).Value = item.Status;
+                worksheet.Cell(row, 7).Value = item.StatusDisplayLabel;
+                worksheet.Cell(row, 8).Value = item.Technician ?? "-";
+                worksheet.Cell(row, 9).Value = item.Notes ?? "-";
 
                 // Cell status highlight styling with user's exact palette
-                var statusCell = worksheet.Cell(row, 5);
+                var statusCell = worksheet.Cell(row, 6);
                 statusCell.Style.Font.Bold = true;
                 if (item.Status == "P") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#e5e2de"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#1a1a1a"); }
                 else if (item.Status == "E") { statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#00e436"); statusCell.Style.Font.FontColor = XLColor.FromHtml("#000000"); }
@@ -1664,6 +1686,17 @@ namespace UPMS.Web.Controllers
                 if (trimmed.StartsWith("J") || trimmed.StartsWith("T")) return "UP1";
             }
             return "UP2";
+        }
+
+        public static string ResolveUpArea(PmSchedule p, List<MachineMaster> masterMachines)
+        {
+            if (!string.IsNullOrWhiteSpace(p.UpArea))
+            {
+                var clean = p.UpArea.Trim().Replace(" ", "").ToUpper();
+                if (clean == "UP1" || clean == "UP2") return clean;
+                return clean;
+            }
+            return IsUp1Event(p, masterMachines) ? "UP1" : "UP2";
         }
 
         private static bool IsUp1Event(PmSchedule p, List<MachineMaster> masterMachines)

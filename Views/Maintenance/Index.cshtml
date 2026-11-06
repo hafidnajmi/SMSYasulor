@@ -592,7 +592,7 @@
                 <i class="bi bi-plus-circle me-1"></i>Tambah PM
             </button>
         }
-        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportExcel", new { year = selectedYear, month = selectedMonth, status = ViewBag.SelectedStatus, technician = (selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : ""), search = ViewBag.SearchQuery })', 'Preventive Maintenance');" class="btn btn-outline-success btn-sm px-3 fw-semibold">
+        <a href="#" onclick="return executeSecureExport('@Url.Action("ExportExcel", new { year = selectedYear, month = selectedMonth, upArea = ViewBag.SelectedUpArea, status = ViewBag.SelectedStatus, technician = (selectedTechnicians.Any() ? string.Join(",", selectedTechnicians) : ""), search = ViewBag.SearchQuery })', 'Preventive Maintenance');" class="btn btn-outline-success btn-sm px-3 fw-semibold">
             <i class="bi bi-file-earmark-excel me-1"></i>Export
         </a>
     </div>
@@ -1369,6 +1369,7 @@
                     pushUrl.searchParams.set('view', isListActive ? 'list' : 'calendar');
                     window.history.pushState({ url: pushUrl.toString() }, '', pushUrl.toString());
                 }
+                if (typeof filterLineOptionsByUpArea === 'function') filterLineOptionsByUpArea();
                 if (typeof onFilterLineChanged === 'function') onFilterLineChanged();
                 if (typeof updateFilterMachineLabel === 'function') updateFilterMachineLabel();
                 if (typeof updateFilterTechLabel === 'function') updateFilterTechLabel();
@@ -1572,6 +1573,36 @@
                     }
                 }
             });
+        }
+
+        // Filter Bar UP Area -> Line Dynamic Filtering
+        function onFilterUpAreaChanged() {
+            filterLineOptionsByUpArea();
+            submitPmFilterForm();
+        }
+
+        function filterLineOptionsByUpArea() {
+            var upAreaSelect = document.getElementById('filterUpArea');
+            if (!upAreaSelect) return;
+            var selArea = (upAreaSelect.value || '').trim().toUpperCase();
+            var lineItems = document.querySelectorAll('.line-filter-item');
+            lineItems.forEach(function(item) {
+                var itemArea = (item.getAttribute('data-up-area') || '').trim().toUpperCase();
+                if (!selArea || !itemArea || itemArea === selArea) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                    var chk = item.querySelector('.line-filter-check');
+                    if (chk && chk.checked) {
+                        chk.checked = false;
+                    }
+                }
+            });
+            var checkedLines = Array.from(document.querySelectorAll('.line-filter-check:checked')).map(c => c.value);
+            var labelSpan = document.getElementById('filterLineLabel');
+            if (labelSpan) {
+                labelSpan.textContent = checkedLines.length > 0 ? checkedLines.join(', ') : 'Semua Line';
+            }
         }
 
         // Filter Bar Line -> Machine Dynamic Filtering
@@ -2734,6 +2765,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            if (typeof filterLineOptionsByUpArea === 'function') {
+                filterLineOptionsByUpArea();
+            }
             if (typeof window.initPmPerformanceCharts === 'function') {
                 window.initPmPerformanceCharts();
             }
