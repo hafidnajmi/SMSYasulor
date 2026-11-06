@@ -944,7 +944,7 @@ body:not(.modal-open) {
 
         <!-- Main Content View -->
         <main class="ems-wrapper">
-            <div class="ems-content">
+            <div class="ems-content" id="ems-main-content">
                 @if (TempData["Success"] != null)
                 {
                     <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius: 0px;">
@@ -1050,8 +1050,164 @@ body:not(.modal-open) {
         });
 
         // ==========================================
-        // Sidebar Standby & Seamless Smooth Navigation Engine
+        // Sidebar Standby & Seamless Smooth Navigation Engine (SPA)
         // ==========================================
+        var _isNavigating = false;
+
+        function navigateContentViaAjax(targetUrl, pushState) {
+            if (typeof pushState === 'undefined') pushState = true;
+            if (_isNavigating) return;
+
+            var mainContent = document.getElementById('ems-main-content');
+            if (!mainContent) {
+                window.location.href = targetUrl;
+                return;
+            }
+
+            _isNavigating = true;
+
+            var progressBar = document.getElementById('ems-top-progress-bar');
+            if (progressBar) {
+                progressBar.className = '';
+                void progressBar.offsetWidth;
+                progressBar.className = 'loading';
+            }
+
+            mainContent.style.transition = 'opacity 0.12s ease';
+            mainContent.style.opacity = '0.35';
+
+            fetch(targetUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(res) {
+                if (res.redirected && res.url.toLowerCase().includes('/account/login')) {
+                    window.location.href = res.url;
+                    return null;
+                }
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
+            .then(function(html) {
+                if (!html) return;
+
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+
+                var newContent = doc.getElementById('ems-main-content') || doc.querySelector('.ems-content') || doc.querySelector('main');
+                if (!newContent) {
+                    window.location.href = targetUrl;
+                    return;
+                }
+
+                if (doc.title) {
+                    document.title = doc.title;
+                }
+
+                // Clean up any lingering backdrops from previous modals
+                document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+
+                // Extract scripts that were rendered in page scripts section (after layout script)
+                var pageScripts = [];
+                var allDocScripts = doc.querySelectorAll('body script');
+                var isAfterLayout = false;
+                allDocScripts.forEach(function(s) {
+                    if (s.textContent && s.textContent.includes('loadDeveloperNotifications')) {
+                        isAfterLayout = true;
+                        return;
+                    }
+                    if (isAfterLayout) {
+                        pageScripts.push(s);
+                    }
+                });
+
+                // Swap content HTML
+                mainContent.innerHTML = newContent.innerHTML;
+
+                // Re-evaluate inner scripts
+                var inlineScripts = mainContent.querySelectorAll('script');
+                inlineScripts.forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.text = oldScript.text || oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+
+                // Execute page scripts
+                pageScripts.forEach(function(oldScript) {
+                    var newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.text = oldScript.text || oldScript.textContent;
+                    document.body.appendChild(newScript);
+                    setTimeout(function() { newScript.remove(); }, 150);
+                });
+
+                // Smoothly fade back in
+                mainContent.style.opacity = '1';
+                window.scrollTo({ top: 0, behavior: 'instant' });
+
+                if (pushState) {
+                    window.history.pushState({ url: targetUrl }, doc.title, targetUrl);
+                }
+
+                updateActiveSidebarNav(targetUrl);
+
+                if (progressBar) {
+                    progressBar.className = 'complete';
+                    setTimeout(function() { progressBar.className = ''; }, 350);
+                }
+            })
+            .catch(function(err) {
+                console.warn('Navigation error, fallback to full load:', err);
+                window.location.href = targetUrl;
+            })
+            .finally(function() {
+                _isNavigating = false;
+                if (mainContent) mainContent.style.opacity = '1';
+            });
+        }
+
+        function updateActiveSidebarNav(url) {
+            var sidebar = document.getElementById('emsSidebarNav');
+            if (!sidebar) return;
+            var targetUrlObj = new URL(url, window.location.origin);
+            var targetPath = targetUrlObj.pathname.toLowerCase().replace(/\/$/, '') || '/';
+
+            var links = sidebar.querySelectorAll('.ems-nav-link');
+            var matchedLink = null;
+
+            links.forEach(function(link) {
+                link.classList.remove('active');
+                var linkUrlObj = new URL(link.href, window.location.origin);
+                var linkPath = linkUrlObj.pathname.toLowerCase().replace(/\/$/, '') || '/';
+                if (linkPath === targetPath) {
+                    matchedLink = link;
+                }
+            });
+
+            if (!matchedLink && targetPath !== '/') {
+                links.forEach(function(link) {
+                    var linkUrlObj = new URL(link.href, window.location.origin);
+                    var linkPath = linkUrlObj.pathname.toLowerCase().replace(/\/$/, '');
+                    if (linkPath && linkPath !== '/' && targetPath.startsWith(linkPath)) {
+                        matchedLink = link;
+                    }
+                });
+            }
+
+            if (matchedLink) {
+                matchedLink.classList.add('active');
+            }
+        }
+
         function initSidebarStandby() {
             var sidebar = document.getElementById('emsSidebarNav');
             if (!sidebar) return;
@@ -1102,12 +1258,12 @@ body:not(.modal-open) {
                     var href = link.getAttribute('href');
                     if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
 
-                    // If user clicks the link of the page they are already on, don't re-trigger full page reload
                     var currentPath = window.location.pathname.toLowerCase().replace(/\/$/, '');
                     var targetPath = new URL(link.href, window.location.origin).pathname.toLowerCase().replace(/\/$/, '');
                     var currentSearch = window.location.search;
                     var targetSearch = new URL(link.href, window.location.origin).search;
 
+                    // If user clicks the link of the page they are already on, don't re-trigger full page reload
                     if (currentPath === targetPath && currentSearch === targetSearch) {
                         e.preventDefault();
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1117,17 +1273,9 @@ body:not(.modal-open) {
                     // Store exact scroll position immediately
                     sessionStorage.setItem('ems_sidebar_scroll_pos', sidebar.scrollTop);
 
-                    // Immediate active switch visual feedback
-                    links.forEach(function(l) { l.classList.remove('active'); });
-                    link.classList.add('active');
-
-                    // Show micro progress bar
-                    var progressBar = document.getElementById('ems-top-progress-bar');
-                    if (progressBar) {
-                        progressBar.className = '';
-                        void progressBar.offsetWidth;
-                        progressBar.className = 'loading';
-                    }
+                    // Perform seamless dynamic content navigation (No page refresh! Sidebar remains completely standby!)
+                    e.preventDefault();
+                    navigateContentViaAjax(link.href, true);
                 });
             });
 
@@ -1138,6 +1286,15 @@ body:not(.modal-open) {
                 }
             });
         }
+
+        // Handle Browser Back / Forward buttons without full refresh
+        window.addEventListener('popstate', function(e) {
+            if (e.state && e.state.url) {
+                navigateContentViaAjax(e.state.url, false);
+            } else {
+                navigateContentViaAjax(window.location.href, false);
+            }
+        });
 
         // Hide progress bar once page is fully loaded
         window.addEventListener('load', function() {
