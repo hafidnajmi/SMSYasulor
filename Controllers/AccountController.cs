@@ -144,7 +144,7 @@ namespace UPMS.Web.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             Response.Cookies.Delete("SMS_ACTIVE_DEPT");
-            return RedirectToAction("Index", "Portal");
+            return RedirectToAction("Login", "Account");
         }
 
         [HttpGet]

@@ -238,7 +238,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Portal}/{action=Index}/{id?}");
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 // Seed default admin user and ensure required tables asynchronously on background startup
 _ = Task.Run(async () =>

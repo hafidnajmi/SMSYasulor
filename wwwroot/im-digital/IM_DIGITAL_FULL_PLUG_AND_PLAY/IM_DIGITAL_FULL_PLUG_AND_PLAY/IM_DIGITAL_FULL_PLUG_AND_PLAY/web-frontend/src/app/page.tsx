@@ -35,7 +35,7 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const [portalUrl, setPortalUrl] = useState("http://localhost:5005");
+  const [portalUrl, setPortalUrl] = useState("/");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -43,7 +43,12 @@ export default function Home() {
       if (envPortal) {
         setPortalUrl(envPortal);
       } else {
-        setPortalUrl(`${window.location.protocol}//${window.location.hostname}:5005`);
+        const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+        if (isLocal) {
+          setPortalUrl(`${window.location.protocol}//${window.location.hostname}:5005`);
+        } else {
+          setPortalUrl(`${window.location.protocol}//${window.location.hostname}`);
+        }
       }
     }
   }, []);
