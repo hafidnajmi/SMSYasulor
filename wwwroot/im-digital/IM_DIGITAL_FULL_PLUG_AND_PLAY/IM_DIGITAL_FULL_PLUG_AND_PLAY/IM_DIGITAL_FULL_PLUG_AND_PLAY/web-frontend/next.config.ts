@@ -1,14 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:5268";
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
+  output: "export",
+  basePath: "/im-digital",
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
   },
 };
 

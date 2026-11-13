@@ -7,9 +7,9 @@ namespace UPMS.Web.Controllers
     public class ImDigitalController : Controller
     {
         [HttpGet]
-        public IActionResult Index(string? dept = "Filling")
+        public IActionResult Index()
         {
-            return Redirect("http://localhost:3001");
+            return Redirect("/im-digital/");
         }
     }
 }

@@ -11,11 +11,21 @@
     <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="wwwroot\im-digital\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\dotnet\PPI.IM.Domain\**\*.cs" Exclude="wwwroot\im-digital\**\obj\**;wwwroot\im-digital\**\bin\**" LinkBase="ImDomain" />
+    <Compile Include="wwwroot\im-digital\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\dotnet\PPI.IM.Infrastructure\**\*.cs" Exclude="wwwroot\im-digital\**\obj\**;wwwroot\im-digital\**\bin\**" LinkBase="ImInfrastructure" />
+    <Compile Include="wwwroot\im-digital\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\dotnet\PPI.IM.Application\**\*.cs" Exclude="wwwroot\im-digital\**\obj\**;wwwroot\im-digital\**\bin\**" LinkBase="ImApplication" />
+    <Compile Include="wwwroot\im-digital\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\dotnet\PPI.IM.WebApi\Controllers\*.cs" LinkBase="ImControllers" />
+    <Compile Include="wwwroot\im-digital\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\dotnet\PPI.IM.WebApi\Models\*.cs" LinkBase="ImModels" />
   </ItemGroup>
 
   <Target Name="CopyAsUPMSWeb" AfterTargets="Build;Publish">
@@ -27,7 +37,7 @@
   <!-- Copy wwwroot to output directory so static files work when Dewacloud runs from bin/Debug/net10.0/ or publish directory -->
   <Target Name="CopyWwwrootToOutput" AfterTargets="Build;Publish">
     <ItemGroup>
-      <WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*.*" />
+      <WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*.*" Exclude="$(MSBuildProjectDirectory)\wwwroot\**\node_modules\**;$(MSBuildProjectDirectory)\wwwroot\**\.next\**" />
     </ItemGroup>
     <Copy SourceFiles="@(WwwrootFiles)"
           DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)"

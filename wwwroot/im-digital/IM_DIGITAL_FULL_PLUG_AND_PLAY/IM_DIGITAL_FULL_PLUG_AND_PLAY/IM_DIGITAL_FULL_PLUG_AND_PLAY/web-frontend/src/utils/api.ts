@@ -11,9 +11,16 @@ export const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
   }
   if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:5268`;
+    // If running in dev on port 3001, connect to unified UPMS backend on port 5005
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      if (window.location.port === "3001") {
+        return "http://localhost:5005";
+      }
+    }
+    // In production / Dewa Cloud or same origin, use relative paths
+    return "";
   }
-  return "http://localhost:5268";
+  return "http://localhost:5005";
 };
 
 export const API_BASE = getApiBaseUrl();

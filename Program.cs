@@ -172,6 +172,86 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
+// Configure CORS for Next.js frontend / SPA
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        policy => policy
+            .SetIsOriginAllowed(_ => true)
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
+});
+
+// Configure IM Digital DI Services
+var imDbConfig = new PPI.IM.Infrastructure.Config.DatabaseConfig();
+builder.Configuration.GetSection("Database").Bind(imDbConfig);
+
+// Dewa Cloud environment variables support
+var rawCloudConn = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING")
+    ?? Environment.GetEnvironmentVariable("Database__ConnectionString");
+
+if (!string.IsNullOrWhiteSpace(rawCloudConn))
+{
+    if (rawCloudConn.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) || 
+        rawCloudConn.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        var uri = new Uri(rawCloudConn);
+        var userInfo = uri.UserInfo.Split(':');
+        imDbConfig.Server = uri.Host;
+        imDbConfig.Port = uri.Port > 0 ? uri.Port : 5432;
+        imDbConfig.Database = "IM-Digital";
+        if (userInfo.Length > 0 && !string.IsNullOrEmpty(userInfo[0])) imDbConfig.Username = Uri.UnescapeDataString(userInfo[0]);
+        if (userInfo.Length > 1 && !string.IsNullOrEmpty(userInfo[1])) imDbConfig.Password = Uri.UnescapeDataString(userInfo[1]);
+        imDbConfig.SslMode = "Prefer";
+    }
+}
+
+// Fallback to Dewa Cloud host if not running locally
+if (string.IsNullOrWhiteSpace(imDbConfig.Server) || imDbConfig.Server == "YOUR_DB_HOST")
+{
+    imDbConfig.Server = "node79737-sms-yasulor.user.cloudjkt01.com";
+    imDbConfig.Port = 5432;
+    imDbConfig.Database = "IM-Digital";
+    imDbConfig.Username = "webadmin";
+    imDbConfig.SslMode = "Prefer";
+}
+
+// Inherit credentials from main connection string if not explicitly set
+if (string.IsNullOrWhiteSpace(imDbConfig.Password) && !string.IsNullOrWhiteSpace(connectionString))
+{
+    try
+    {
+        var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+        if (!string.IsNullOrWhiteSpace(npgsqlBuilder.Password))
+        {
+            imDbConfig.Password = npgsqlBuilder.Password;
+        }
+        if (!string.IsNullOrWhiteSpace(npgsqlBuilder.Host) && (imDbConfig.Server == "node79737-sms-yasulor.user.cloudjkt01.com" || imDbConfig.Server == "YOUR_DB_HOST"))
+        {
+            imDbConfig.Server = npgsqlBuilder.Host;
+            imDbConfig.Port = npgsqlBuilder.Port > 0 ? npgsqlBuilder.Port : 5432;
+        }
+        if (!string.IsNullOrWhiteSpace(npgsqlBuilder.Username) && (imDbConfig.Username == "webadmin" || imDbConfig.Username == "YOUR_DB_USER"))
+        {
+            imDbConfig.Username = npgsqlBuilder.Username;
+        }
+    }
+    catch { }
+}
+
+builder.Services.AddSingleton(imDbConfig);
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Data.DbConnectionFactory>();
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Data.DbInitializer>();
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Repositories.UserRepository>();
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Repositories.ImRepository>();
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Repositories.LockRepository>();
+builder.Services.AddSingleton<PPI.IM.Infrastructure.Repositories.AssigneeRepository>();
+builder.Services.AddSingleton<PPI.IM.Application.Services.AuthService>();
+builder.Services.AddSingleton<PPI.IM.Application.Services.QcCalculationService>();
+builder.Services.AddSingleton<PPI.IM.Application.Services.IUpLockService, PPI.IM.Application.Services.UpLockService>();
+
 // Scheduled Auto-Alert background service
 // FAST-frequency parts: alert every 14 days (2 weeks)
 // SLOW-frequency parts: alert every 30 days (1 month)
@@ -190,6 +270,8 @@ app.UseForwardedHeaders(forwardedOptions);
 // Configure the HTTP request pipeline.
 app.UseDeveloperExceptionPage();
 
+app.UseDefaultFiles();
+
 var staticFileProvider = new FileExtensionContentTypeProvider();
 staticFileProvider.Mappings[".webp"] = "image/webp";
 
@@ -199,6 +281,7 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseRouting();
+app.UseCors("AllowAllOrigins");
 
 // AUTH-006: IP Rate Limiting middleware (must be before auth)
 app.UseIpRateLimiting();
@@ -239,6 +322,26 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+
+app.MapControllers();
+
+app.MapFallbackToFile("/im-digital/{*path:nonfile}", "/im-digital/index.html");
+
+// Run IM Digital DB initialization asynchronously on background startup
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await Task.Delay(3000);
+        using var scope = app.Services.CreateScope();
+        var imDbInit = scope.ServiceProvider.GetRequiredService<PPI.IM.Infrastructure.Data.DbInitializer>();
+        await imDbInit.InitializeAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[IM DB Init Error] {ex.Message}");
+    }
+});
 
 // Seed default admin user and ensure required tables asynchronously on background startup
 _ = Task.Run(async () =>
