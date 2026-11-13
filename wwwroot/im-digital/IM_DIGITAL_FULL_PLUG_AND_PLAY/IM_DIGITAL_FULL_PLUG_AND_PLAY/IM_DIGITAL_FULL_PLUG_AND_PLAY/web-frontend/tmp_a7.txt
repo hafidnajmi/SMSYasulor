@@ -1,0 +1,5 @@
+                {/* A.7 Green Body */}
+                <div className="bg-[#EAEFE3] border-b border-black" style={{ height: appearanceHeight }}></div>
+
+                {/* BATCH NUMBER FORMAT = fixed 95px according to spec */}
+                  <div className="border-b border-black flex bg-white h-[95px]">

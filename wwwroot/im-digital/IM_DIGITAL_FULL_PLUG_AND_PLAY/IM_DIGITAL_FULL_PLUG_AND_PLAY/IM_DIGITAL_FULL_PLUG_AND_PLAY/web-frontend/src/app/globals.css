@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Montserrat', sans-serif;
+}
+
+html, body {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+*, *::before, *::after {
+  font-family: inherit;
+}
+
+button, input, select, textarea, table, th, td, span, p, h1, h2, h3, h4, h5, h6, div {
+  font-family: inherit;
+}

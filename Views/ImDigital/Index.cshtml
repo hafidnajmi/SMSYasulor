@@ -1,0 +1,490 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "IM Digital - UPMS";
+    string activeDept = (ViewData["ActiveDept"] as string) ?? "Filling";
+}
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IM Digital - UP Management System (UPMS)</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        *, *::before, *::after {
+            border-radius: 0px !important;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar */
+        .im-topbar {
+            background-color: #032954;
+            color: #FFFFFF;
+            border-bottom: 2px solid #0047AB;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .im-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .im-portal-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #93C5FD;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 6px 12px;
+            border: 1px solid rgba(147, 197, 253, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.15s ease;
+        }
+
+        .im-portal-back-btn:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #FFFFFF;
+        }
+
+        .im-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #FFFFFF;
+            text-decoration: none;
+        }
+
+        .im-brand-title {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .im-brand-badge {
+            background: #0284C7;
+            color: #FFFFFF;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        /* Subheader */
+        .im-subheader {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #CBD5E1;
+            padding: 20px 24px;
+        }
+
+        .im-subheader-inner {
+            max-width: 1360px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .im-page-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #032954;
+            margin: 0 0 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.2px;
+        }
+
+        .im-page-subtitle {
+            font-size: 13px;
+            color: #475569;
+            margin: 0;
+        }
+
+        .im-dept-selector {
+            display: flex;
+            align-items: center;
+            border: 1px solid #CBD5E1;
+            background: #FFFFFF;
+        }
+
+        .im-dept-label {
+            background: #F1F5F9;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #475569;
+            border-right: 1px solid #CBD5E1;
+        }
+
+        .im-dept-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #334155;
+            border-right: 1px solid #CBD5E1;
+            background: #FFFFFF;
+            transition: all 0.15s ease;
+        }
+
+        .im-dept-btn:last-child {
+            border-right: none;
+        }
+
+        .im-dept-btn.active {
+            background: #0047AB;
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+
+        .im-dept-btn:hover:not(.active) {
+            background: #F8FAFC;
+            color: #0047AB;
+        }
+
+        /* Main Workspace */
+        .im-main {
+            max-width: 1360px;
+            margin: 28px auto;
+            padding: 0 24px;
+            width: 100%;
+            flex: 1;
+        }
+
+        /* Flat Structural Sections (NO CARDS) */
+        .im-section {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            margin-bottom: 24px;
+        }
+
+        .im-section-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #CBD5E1;
+            background: #F8FAFC;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .im-section-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #032954;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .im-section-body {
+            padding: 24px 20px;
+        }
+
+        /* Flat Module Grid */
+        .im-module-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .im-module-box {
+            border: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-top: 3px solid #0047AB;
+        }
+
+        .im-module-code {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #64748B;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .im-module-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #032954;
+            margin: 0 0 8px;
+        }
+
+        .im-module-desc {
+            font-size: 12.5px;
+            color: #475569;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            flex: 1;
+        }
+
+        .im-module-status {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            display: inline-block;
+            border: 1px solid;
+            width: fit-content;
+        }
+
+        .im-status-ready {
+            background: #F0FDF4;
+            color: #166534;
+            border-color: #BBF7D0;
+        }
+
+        .im-status-prep {
+            background: #EFF6FF;
+            color: #1E40AF;
+            border-color: #BFDBFE;
+        }
+
+        /* Flat Specs Table */
+        .im-spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            border: 1px solid #CBD5E1;
+        }
+
+        .im-spec-table th {
+            background: #F8FAFC;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.6px;
+            padding: 10px 14px;
+            border: 1px solid #CBD5E1;
+            text-align: left;
+        }
+
+        .im-spec-table td {
+            padding: 11px 14px;
+            border: 1px solid #CBD5E1;
+            color: #0F172A;
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .im-footer {
+            background-color: #0F172A;
+            color: #94A3B8;
+            border-top: 1px solid #1E293B;
+            padding: 14px 24px;
+            font-size: 11.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        @@media (max-width: 992px) {
+            .im-module-grid {
+                grid-template-columns: 1fr;
+            }
+            .im-subheader-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .im-dept-selector {
+                width: 100%;
+            }
+            .im-dept-btn {
+                flex: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="im-topbar">
+        <div class="im-topbar-left">
+            <a href="/" class="im-portal-back-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span>UPMS PORTAL</span>
+            </a>
+            <div class="im-brand">
+                <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" onerror="this.onerror=null; this.src='/lib/app_icon.png';" alt="UPMS Logo" style="height: 32px; width: auto;" />
+                <span class="im-brand-title">UPMS &bull; IM DIGITAL</span>
+                <span class="im-brand-badge">SYSTEM 02</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white-50" style="font-size: 12px; font-family: monospace;">STATUS: STAGING WORKSPACE</span>
+            <a href="/" class="btn btn-sm text-white px-3 py-1" style="background:#0047AB; font-size:11.5px; font-weight:700; letter-spacing:0.5px;">
+                GANTI SISTEM
+            </a>
+        </div>
+    </header>
+
+    <!-- Subheader & Department Context -->
+    <div class="im-subheader">
+        <div class="im-subheader-inner">
+            <div>
+                <h1 class="im-page-title">IM DIGITAL &mdash; INTEGRATED MANUFACTURING DIGITALIZATION</h1>
+                <p class="im-page-subtitle">Sistem digitalisasi lini operasional dan manajemen shopfloor Unit Production (UP).</p>
+            </div>
+
+            <div class="im-dept-selector">
+                <span class="im-dept-label"><i class="bi bi-geo-alt me-1"></i>AREA:</span>
+                <a href="/ImDigital?dept=Filling" class="im-dept-btn @(activeDept.Equals("Filling", StringComparison.OrdinalIgnoreCase) ? "active" : "")">Filling</a>
+                <a href="/ImDigital?dept=Process" class="im-dept-btn @(activeDept.Equals("Process", StringComparison.OrdinalIgnoreCase) ? "active" : "")">Process</a>
+                <a href="/ImDigital?dept=Utility" class="im-dept-btn @(activeDept.Equals("Utility", StringComparison.OrdinalIgnoreCase) ? "active" : "")">Utility</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="im-main">
+
+        <!-- System Readiness & Configuration Status (Flat Section, No Cards) -->
+        <section class="im-section">
+            <div class="im-section-header">
+                <h2 class="im-section-title">
+                    <i class="bi bi-cpu text-primary"></i>
+                    STATUS PERSIAPAN SISTEM IM DIGITAL &bull; UP @activeDept.ToUpper()
+                </h2>
+                <span class="im-module-status im-status-ready">
+                    <i class="bi bi-check2-circle me-1"></i> WORKSPACE READY FOR FEATURE DEVELOPMENT
+                </span>
+            </div>
+            <div class="im-section-body">
+                <table class="im-spec-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Komponen Infrastruktur</th>
+                            <th style="width: 45%;">Deskripsi / Rincian Teknis</th>
+                            <th style="width: 30%;">Status Kesiapan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Gateway &amp; Routing</strong></td>
+                            <td>Terdaftar pada router UPMS sebagai System 02 (`/ImDigital`)</td>
+                            <td><span class="text-success fw-bold"><i class="bi bi-check-lg me-1"></i>Aktif &amp; Terintegrasi</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Departemen Operasional</strong></td>
+                            <td>Mendukung isolasi data operasional Filling, Process, dan Utility</td>
+                            <td><span class="text-success fw-bold"><i class="bi bi-check-lg me-1"></i>Siap Dipakai (Aktif: UP @activeDept)</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database Engine</strong></td>
+                            <td>PostgreSQL Database terintegrasi dengan arsitektur UPMS</td>
+                            <td><span class="text-success fw-bold"><i class="bi bi-check-lg me-1"></i>Koneksi Bersama Terhubung</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Styling &amp; UX Protocol</strong></td>
+                            <td>Strict Segoe UI enterprise theme, border-radius 0px, no floating cards</td>
+                            <td><span class="text-success fw-bold"><i class="bi bi-check-lg me-1"></i>Standar Korporat Aktif</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Prepared Modules Grid (Flat Grid, No Cards) -->
+        <section class="im-section">
+            <div class="im-section-header">
+                <h2 class="im-section-title">
+                    <i class="bi bi-grid-3x3-gap text-primary"></i>
+                    MODUL OPERASIONAL IM DIGITAL (PREVIEW &amp; SLOTS)
+                </h2>
+                <span class="text-muted" style="font-size: 11px;">MODUL SIAP DILENGKAPI FITUR</span>
+            </div>
+            <div class="im-section-body">
+                <div class="im-module-grid">
+
+                    <!-- Module 1 -->
+                    <div class="im-module-box">
+                        <div class="im-module-code">MODUL IM-01</div>
+                        <h3 class="im-module-title">Shopfloor Line Monitoring</h3>
+                        <p class="im-module-desc">
+                            Dashboard pemantauan status aktivitas lini produksi @activeDept secara langsung, kecepatan operasional, dan durasi berjalan mesin.
+                        </p>
+                        <span class="im-module-status im-status-prep">
+                            <i class="bi bi-terminal me-1"></i> Slot Siap Dikembangkan
+                        </span>
+                    </div>
+
+                    <!-- Module 2 -->
+                    <div class="im-module-box">
+                        <div class="im-module-code">MODUL IM-02</div>
+                        <h3 class="im-module-title">Digital Work Instructions (SOP)</h3>
+                        <p class="im-module-desc">
+                            Instruksi kerja digital dan checklist operasional harian operator lini tanpa lembaran kertas, tercatat langsung ke sistem.
+                        </p>
+                        <span class="im-module-status im-status-prep">
+                            <i class="bi bi-terminal me-1"></i> Slot Siap Dikembangkan
+                        </span>
+                    </div>
+
+                    <!-- Module 3 -->
+                    <div class="im-module-box">
+                        <div class="im-module-code">MODUL IM-03</div>
+                        <h3 class="im-module-title">Shift Handover Digital Log</h3>
+                        <p class="im-module-desc">
+                            Pencatatan serah terima pergantian shift kerja antar teknisi/operator lini untuk kendala mesin, temuan, dan catatan operasional.
+                        </p>
+                        <span class="im-module-status im-status-prep">
+                            <i class="bi bi-terminal me-1"></i> Slot Siap Dikembangkan
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="im-footer">
+        <div>
+            &copy; 2026 <strong>UPMS &bull; IM Digital</strong> &mdash; Integrated Manufacturing Digitalization Platform.
+        </div>
+        <div>
+            <a href="/" class="text-white text-decoration-none fw-semibold">
+                <i class="bi bi-arrow-left-circle me-1"></i> Kembali ke UPMS Portal
+            </a>
+        </div>
+    </footer>
+
+</body>
+</html>
+

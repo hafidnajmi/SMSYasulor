@@ -1,0 +1,57 @@
+========================================================================
+         PANDUAN PENGGUNAAN CEPAT IM DIGITAL (PLUG & PLAY)
+========================================================================
+
+Aplikasi ini sudah dikonfigurasi secara PLUG & PLAY.
+Anda tidak perlu melakukan setting manual yang rumit.
+
+------------------------------------------------------------------------
+1. CARA MENJALANKAN APLIKASI (1-KLIK)
+------------------------------------------------------------------------
+Cukup dobel-klik file:
+👉 JALANKAN_APLIKASI.bat
+
+Sistem akan otomatis:
+✓ Menyalakan service database SQL Server jika belum menyala.
+✓ Membersihkan port 3000 dan 5268 dari sisa proses sebelumnya.
+✓ Membuat database "IM_Database" dan tabelnya secara otomatis (jika baru pertama kali).
+✓ Menyalakan backend API di Port 5268.
+✓ Menyalakan frontend web di Port 3000.
+✓ Membuka browser langsung ke http://localhost:3000.
+
+
+------------------------------------------------------------------------
+2. CARA AKSES DARI KOMPUTER / LAPTOP / HP LAIN (SATU WI-FI / LAN)
+------------------------------------------------------------------------
+Pengguna lain di kantor/jaringan yang sama cukup membuka browser dan mengetik:
+👉 http://[IP-KOMPUTER-INI]:3000
+
+(IP komputer ini akan otomatis ditampilkan di jendela layar hitam saat aplikasi dijalankan).
+
+
+------------------------------------------------------------------------
+3. CONTOH AKUN UNTUK LOGIN
+------------------------------------------------------------------------
+- Administrator:
+  Username : admin
+  Password : (sesuai akun Anda / default: admin)
+
+- Operator:
+  Username : operator
+  Password : Yasulor1
+
+- Pengguna Lainnya:
+  Username : ayu / ari / nia / hanan / raihan / ganesh
+  Password : 123
+
+
+------------------------------------------------------------------------
+4. CARA MEMATIKAN APLIKASI
+------------------------------------------------------------------------
+Cukup dobel-klik file:
+👉 HENTIKAN_APLIKASI.bat
+
+
+========================================================================
+             SIAP PAKAI & BEBAS REPOT (PLUG & PLAY)
+========================================================================

@@ -668,7 +668,7 @@ body:not(.modal-open) {
             <button class="btn btn-sm btn-outline-secondary d-md-none me-2 p-1 px-2" type="button" onclick="toggleMobileSidebar()" title="Toggle Menu" style="min-width:38px; min-height:38px;">
                 <i class="bi bi-list fs-5"></i>
             </button>
-            <a href="/" class="ems-logo-container">
+            <a href="/Dashboard" class="ems-logo-container">
                 <img src="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" alt="SMS Logo" style="height: 42px; width: auto; object-fit: contain;" class="me-2" />
                 <div>
                     <div class="fw-normal text-dark ems-header-title" style="font-size: 15px; line-height: 1.1; font-weight: 400;">Sparepart Management System</div>
@@ -724,6 +724,19 @@ body:not(.modal-open) {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-1">
                         <li><span class="dropdown-item-text text-muted small">Role: <strong>@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</strong></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a href="/" class="dropdown-item small d-flex align-items-center gap-2">
+                                <i class="bi bi-grid-fill text-primary"></i>
+                                <span>Portal UPMS (Pilih Sistem)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="http://localhost:3001" target="_blank" class="dropdown-item small d-flex align-items-center gap-2">
+                                <i class="bi bi-cpu-fill text-primary"></i>
+                                <span>Buka IM Digital</span>
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form asp-controller="Account" asp-action="Logout" method="post">
@@ -918,6 +931,16 @@ body:not(.modal-open) {
                         </a>
                     }
                 }
+
+                <div class="ems-nav-header">Portal Gateway</div>
+                <a class="ems-nav-link" href="/" title="Portal UPMS (Pilih Sistem)">
+                    <span class="nav-icon-box"><i class="bi bi-grid-fill" style="color:#0047AB;"></i></span>
+                    <span>Portal UPMS</span>
+                </a>
+                <a class="ems-nav-link" href="http://localhost:3001" target="_blank" title="Buka Sistem IM Digital">
+                    <span class="nav-icon-box"><i class="bi bi-cpu-fill" style="color:#0284C7;"></i></span>
+                    <span>IM Digital</span>
+                </a>
             </div>
 
             <div class="ems-sidebar-footer">

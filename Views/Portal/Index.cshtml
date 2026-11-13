@@ -1,0 +1,237 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "UPMS (UP Management System)";
+    bool isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+}
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UPMS - UP Management System</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    <style>
+        *, *::before, *::after {
+            border-radius: 0px !important;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navbar: Logo and Simple Description */
+        .upms-navbar {
+            background-color: #FFFFFF;
+            color: #0F172A;
+            border-bottom: 2px solid #0047AB;
+            padding: 10px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .upms-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-decoration: none;
+            color: #0F172A;
+        }
+
+        .upms-nav-brand:hover {
+            color: #0F172A;
+        }
+
+        .upms-nav-logo {
+            height: 46px;
+            width: auto;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        .upms-nav-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 1px solid #CBD5E1;
+            padding-left: 14px;
+        }
+
+        .upms-nav-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #032954;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+        }
+
+        .upms-nav-desc {
+            font-size: 11px;
+            font-weight: 400 !important;
+            color: #64748B;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+
+        /* Main Content: Centered system selector boxes only */
+        .upms-main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .upms-menu-grid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 36px;
+            flex-wrap: wrap;
+        }
+
+        /* Square Kotak Card (Radius 0, Logo Only & Clean Title) */
+        .upms-box {
+            width: 250px;
+            height: 250px;
+            background-color: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 24px;
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .upms-box:hover {
+            border-color: #0047AB;
+            box-shadow: 0 6px 18px rgba(3, 41, 84, 0.08);
+            transform: translateY(-3px);
+        }
+
+        .upms-box-logo-wrap {
+            height: 130px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .upms-box-logo {
+            max-height: 105px;
+            max-width: 190px;
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.15s ease;
+        }
+
+        .upms-box:hover .upms-box-logo {
+            transform: scale(1.03);
+        }
+
+        .upms-box-desc {
+            font-family: 'Montserrat', sans-serif !important;
+            font-size: 13px;
+            font-weight: 400 !important;
+            color: #475569;
+            letter-spacing: 0.2px;
+            text-align: center;
+            margin: 0;
+            line-height: 1.4;
+            transition: color 0.15s ease;
+        }
+
+        .upms-box:hover .upms-box-desc {
+            color: #0047AB;
+        }
+
+        @@media (max-width: 576px) {
+            .upms-navbar {
+                padding: 10px 16px;
+            }
+            .upms-nav-logo {
+                height: 36px;
+            }
+            .upms-nav-text {
+                padding-left: 10px;
+            }
+            .upms-nav-desc {
+                font-size: 11px;
+            }
+            .upms-menu-grid {
+                gap: 20px;
+            }
+            .upms-box {
+                width: 200px;
+                height: 200px;
+                padding: 16px;
+            }
+            .upms-box-logo-wrap {
+                height: 100px;
+            }
+            .upms-box-logo {
+                max-height: 85px;
+            }
+            .upms-box-desc {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar: Logo, Title, and Description Below Title -->
+    <nav class="upms-navbar">
+        <a href="/" class="upms-nav-brand">
+            <img src="/images/UPMS-LOGO.png" alt="UPMS Logo" class="upms-nav-logo" />
+            <div class="upms-nav-text">
+                <span class="upms-nav-title">UP Management System</span>
+                <span class="upms-nav-desc">Unified Production Platform</span>
+            </div>
+        </a>
+    </nav>
+
+    <!-- Main Menu: Only Logo inside square border boxes with radius 0 -->
+    <main class="upms-main-content">
+        <div class="upms-menu-grid">
+
+            <!-- System 1: SMS -->
+            <a href="@(isAuthenticated ? "/Dashboard" : "/Account/Login")" class="upms-box" title="Sparepart Management System (SMS)">
+                <div class="upms-box-logo-wrap">
+                    <img src="/lib/app_icon.png" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/hafidnajmi/SMSYasulor/main/wwwroot/lib/app_icon.png';" alt="SMS Logo" class="upms-box-logo" />
+                </div>
+                <p class="upms-box-desc">Sparepart Management System</p>
+            </a>
+
+            <!-- System 2: IM Digital -->
+            <a href="/ImDigital" class="upms-box" title="IM Digital (Instruksi Mutu)">
+                <div class="upms-box-logo-wrap">
+                    <img src="/images/IM Digital Logo.png" alt="IM Digital Logo" class="upms-box-logo" />
+                </div>
+                <p class="upms-box-desc">Instruksi Mutu Digital</p>
+            </a>
+
+        </div>
+    </main>
+
+</body>
+</html>

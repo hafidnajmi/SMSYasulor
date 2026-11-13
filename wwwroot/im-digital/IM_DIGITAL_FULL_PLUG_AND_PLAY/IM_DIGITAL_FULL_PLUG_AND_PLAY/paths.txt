@@ -1,0 +1,7 @@
+﻿C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\admin\users\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\divisions\[division]\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\filling-history\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\spec-code\page.tsx
+C:\Users\plstk\Downloads\IM_DIGITAL_FULL_PLUG_AND_PLAY\IM_DIGITAL_FULL_PLUG_AND_PLAY\web-frontend\src\app\dashboard\spec-code-pdf\page.tsx
