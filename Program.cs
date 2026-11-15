@@ -336,8 +336,6 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-app.MapFallbackToFile("/im-digital/{*path:nonfile}", "/im-digital/index.html");
-
 // Run IM Digital DB initialization asynchronously on background startup
 _ = Task.Run(async () =>
 {

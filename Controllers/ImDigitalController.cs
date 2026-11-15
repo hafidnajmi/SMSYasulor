@@ -113,8 +113,7 @@ namespace UPMS.Web.Controllers
         }
 
         [HttpGet("/im-digital")]
-        [HttpGet("/im-digital/")]
-        [HttpGet("/im-digital/{**subpath}")]
+        [HttpGet("/im-digital/{*subpath}")]
         public IActionResult Serve(string? subpath = null)
         {
             var root = FindImDigitalRoot();
