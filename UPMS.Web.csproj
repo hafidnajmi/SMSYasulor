@@ -42,6 +42,10 @@
     <Copy SourceFiles="@(WwwrootFiles)"
           DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)"
           SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(WwwrootFiles)"
+          DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)"
+          Condition="'$(PublishDir)' != ''"
+          SkipUnchangedFiles="true" />
   </Target>
 
 </Project>
