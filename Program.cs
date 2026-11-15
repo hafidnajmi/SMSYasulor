@@ -37,8 +37,6 @@ foreach (var candidate in candidateRoots)
     {
         discoveredWwwroot = candidateWwwroot;
         Console.WriteLine($"[Startup] Found wwwroot at: {discoveredWwwroot}");
-        builder.WebHost.UseContentRoot(candidate);
-        builder.WebHost.UseWebRoot(candidateWwwroot);
         break;
     }
 }
@@ -277,10 +275,21 @@ app.UseDefaultFiles();
 var staticFileProvider = new FileExtensionContentTypeProvider();
 staticFileProvider.Mappings[".webp"] = "image/webp";
 
-app.UseStaticFiles(new StaticFileOptions
+if (!string.IsNullOrEmpty(discoveredWwwroot) && Directory.Exists(discoveredWwwroot))
 {
-    ContentTypeProvider = staticFileProvider
-});
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(discoveredWwwroot),
+        ContentTypeProvider = staticFileProvider
+    });
+}
+else
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        ContentTypeProvider = staticFileProvider
+    });
+}
 
 app.UseRouting();
 app.UseCors("AllowAllOrigins");
