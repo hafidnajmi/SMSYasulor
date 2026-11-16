@@ -79,8 +79,9 @@ export default function Home() {
         setLoginSuccess(true);
         // Determine landing route based on user permissions
         const targetRoute = getDefaultDashboardRoute(data.user);
-        // Use window.location for instant redirect (avoids Next.js prefetch delay)
-        window.location.href = targetRoute;
+        const fullRoute = targetRoute.startsWith("/im-digital") ? targetRoute : `/im-digital${targetRoute}`;
+        router.push(targetRoute);
+        window.location.href = fullRoute;
       }
     } catch (err) {
       setErrorMsg("Tidak dapat terhubung ke server backend.");
