@@ -64,7 +64,7 @@ export default function DashboardLayout({
         setUser(JSON.parse(userStr));
       } catch (e) { }
     } else {
-      router.push("/");
+      window.location.href = "/im-digital/";
     }
 
     fetchPendingCounts();
@@ -301,7 +301,7 @@ export default function DashboardLayout({
           {/* Bottom Back to Login */}
           <div className="px-3.5 py-2 border-t border-[#1A6EB4]/50 shrink-0">
             <button
-              onClick={() => { localStorage.removeItem("im_user"); router.push("/"); }}
+              onClick={() => { localStorage.removeItem("im_user"); window.location.href = "/im-digital/"; }}
               className="flex items-center space-x-2 text-[#E1DFDD] hover:text-white transition-colors"
             >
               <LogOut className="w-3.5 h-3.5 text-[#E1DFDD] shrink-0" />

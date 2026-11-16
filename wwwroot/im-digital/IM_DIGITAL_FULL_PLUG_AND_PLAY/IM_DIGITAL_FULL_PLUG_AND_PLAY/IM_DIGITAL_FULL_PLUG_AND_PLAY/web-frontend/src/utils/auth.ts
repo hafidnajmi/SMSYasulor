@@ -53,71 +53,71 @@ export function userHasPermission(user: any, permission: string): boolean {
 
 /**
  * Determines the appropriate landing / default route for a user based on their permissions.
- * Admins and Launch CO staff land on "/dashboard".
- * Operators with only "LIHAT IM" land on "/dashboard/divisions/DATA%20IM".
+ * Admins and Launch CO staff land on "/im-digital/dashboard/".
+ * Operators with only "LIHAT IM" land on "/im-digital/dashboard/divisions/DATA%20IM/".
  */
 export function getDefaultDashboardRoute(user: any): string {
-  if (!user) return "/";
+  if (!user) return "/im-digital/";
 
   // Admins and users with LAUNCH CO access land on Launch CO dashboard
   if (isUserAdmin(user) || userHasPermission(user, "LAUNCH CO")) {
-    return "/dashboard";
+    return "/im-digital/dashboard/";
   }
 
   // Operators / users with LIHAT IM permission go directly to Data IM
   if (userHasPermission(user, "LIHAT IM") || userHasPermission(user, "DATA IM")) {
-    return "/dashboard/divisions/DATA%20IM";
+    return "/im-digital/dashboard/divisions/DATA%20IM/";
   }
 
   // Other divisions in order
   if (userHasPermission(user, "HISTORI PENGISIAN")) {
-    return "/dashboard/filling-history";
+    return "/im-digital/dashboard/filling-history/";
   }
   if (userHasPermission(user, "UP")) {
-    return "/dashboard/divisions/UP";
+    return "/im-digital/dashboard/divisions/UP/";
   }
   if (userHasPermission(user, "POLE")) {
-    return "/dashboard/divisions/POLE";
+    return "/im-digital/dashboard/divisions/POLE/";
   }
   if (userHasPermission(user, "MSC ADM")) {
-    return "/dashboard/divisions/MSC%20ADM";
+    return "/im-digital/dashboard/divisions/MSC%20ADM/";
   }
   if (userHasPermission(user, "IQ")) {
-    return "/dashboard/divisions/IQ";
+    return "/im-digital/dashboard/divisions/IQ/";
   }
   if (userHasPermission(user, "INPUT SPEC CODE")) {
-    return "/dashboard/spec-code";
+    return "/im-digital/dashboard/spec-code/";
   }
   if (userHasPermission(user, "SPEC CODE & PDF")) {
-    return "/dashboard/spec-code-pdf";
+    return "/im-digital/dashboard/spec-code-pdf/";
   }
   if (userHasPermission(user, "UP FILLING SPV")) {
-    return "/dashboard/divisions/UP%20FILLING%20SPV";
+    return "/im-digital/dashboard/divisions/UP%20FILLING%20SPV/";
   }
   if (userHasPermission(user, "UP FILLING MANAGER")) {
-    return "/dashboard/divisions/UP%20FILLING%20MANAGER";
+    return "/im-digital/dashboard/divisions/UP%20FILLING%20MANAGER/";
   }
   if (userHasPermission(user, "PACKAGING & POLE")) {
-    return "/dashboard/divisions/PACKAGING%20%26%20POLE";
+    return "/im-digital/dashboard/divisions/PACKAGING%20%26%20POLE/";
   }
   if (userHasPermission(user, "HEAD LAB")) {
-    return "/dashboard/divisions/HEAD%20LAB";
+    return "/im-digital/dashboard/divisions/HEAD%20LAB/";
   }
   if (userHasPermission(user, "SETTINGS")) {
-    return "/dashboard/admin/users";
+    return "/im-digital/dashboard/admin/users/";
   }
 
   // Fallback to first available allowed division if any exists
   const rawAllowed: any[] = user.allowedDivisions || user.AllowedDivisions || [];
   if (Array.isArray(rawAllowed) && rawAllowed.length > 0) {
     const first = (rawAllowed[0] || "").toString().trim().toUpperCase();
-    if (first === "LIHAT IM" || first === "DATA IM") return "/dashboard/divisions/DATA%20IM";
-    if (first === "HISTORI PENGISIAN") return "/dashboard/filling-history";
-    if (first === "LAUNCH CO") return "/dashboard";
-    if (first === "INPUT SPEC CODE") return "/dashboard/spec-code";
-    if (first === "SPEC CODE & PDF") return "/dashboard/spec-code-pdf";
-    return `/dashboard/divisions/${encodeURIComponent(rawAllowed[0])}`;
+    if (first === "LIHAT IM" || first === "DATA IM") return "/im-digital/dashboard/divisions/DATA%20IM/";
+    if (first === "HISTORI PENGISIAN") return "/im-digital/dashboard/filling-history/";
+    if (first === "LAUNCH CO") return "/im-digital/dashboard/";
+    if (first === "INPUT SPEC CODE") return "/im-digital/dashboard/spec-code/";
+    if (first === "SPEC CODE & PDF") return "/im-digital/dashboard/spec-code-pdf/";
+    return `/im-digital/dashboard/divisions/${encodeURIComponent(rawAllowed[0])}/`;
   }
 
-  return "/dashboard/divisions/DATA%20IM";
+  return "/im-digital/dashboard/divisions/DATA%20IM/";
 }

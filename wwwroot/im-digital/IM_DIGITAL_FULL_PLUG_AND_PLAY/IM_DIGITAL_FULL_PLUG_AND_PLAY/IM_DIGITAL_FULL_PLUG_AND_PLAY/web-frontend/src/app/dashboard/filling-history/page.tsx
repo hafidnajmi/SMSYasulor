@@ -71,7 +71,7 @@ export default function FillingHistoryPage() {
     } catch (e) {}
 
     if (!u) {
-      router.replace("/");
+      window.location.href = "/im-digital/";
       return;
     }
 
@@ -79,7 +79,7 @@ export default function FillingHistoryPage() {
     if (!hasAccess) {
       setIsAuthorized(false);
       const targetRoute = getDefaultDashboardRoute(u);
-      router.replace(targetRoute);
+      window.location.href = targetRoute;
       return;
     }
 

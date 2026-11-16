@@ -152,6 +152,10 @@ namespace UPMS.Web.Controllers
             var dirIndex = Path.Combine(filePath, "index.html");
             if (System.IO.File.Exists(dirIndex))
             {
+                if (!Request.Path.Value?.EndsWith("/") == true)
+                {
+                    return RedirectPermanent($"{Request.Path}/{Request.QueryString}");
+                }
                 return PhysicalFile(dirIndex, "text/html; charset=utf-8");
             }
 

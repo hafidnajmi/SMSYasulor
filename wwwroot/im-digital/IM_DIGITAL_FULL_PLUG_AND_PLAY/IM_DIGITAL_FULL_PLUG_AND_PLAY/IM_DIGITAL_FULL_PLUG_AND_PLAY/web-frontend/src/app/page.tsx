@@ -35,7 +35,7 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
-  const [portalUrl, setPortalUrl] = useState("/");
+  const [portalUrl, setPortalUrl] = useState("/Portal");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -45,9 +45,9 @@ export default function Home() {
       } else {
         const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
         if (isLocal) {
-          setPortalUrl(`${window.location.protocol}//${window.location.hostname}:5005`);
+          setPortalUrl(`${window.location.protocol}//${window.location.hostname}:5005/Portal`);
         } else {
-          setPortalUrl(`${window.location.protocol}//${window.location.hostname}`);
+          setPortalUrl(`${window.location.protocol}//${window.location.hostname}/Portal`);
         }
       }
     }
@@ -79,9 +79,7 @@ export default function Home() {
         setLoginSuccess(true);
         // Determine landing route based on user permissions
         const targetRoute = getDefaultDashboardRoute(data.user);
-        const fullRoute = targetRoute.startsWith("/im-digital") ? targetRoute : `/im-digital${targetRoute}`;
-        router.push(targetRoute);
-        window.location.href = fullRoute;
+        window.location.href = targetRoute;
       }
     } catch (err) {
       setErrorMsg("Tidak dapat terhubung ke server backend.");
@@ -111,7 +109,7 @@ export default function Home() {
           {/* Logo */}
           <div className="flex justify-center mb-4 mt-1">
             <img 
-              src="/LOGO-IM.png" 
+              src="/im-digital/LOGO-IM.png" 
               alt="Instruksi Mutu Digital Logo" 
               className="max-w-[360px] max-h-[70px] object-contain"
             />

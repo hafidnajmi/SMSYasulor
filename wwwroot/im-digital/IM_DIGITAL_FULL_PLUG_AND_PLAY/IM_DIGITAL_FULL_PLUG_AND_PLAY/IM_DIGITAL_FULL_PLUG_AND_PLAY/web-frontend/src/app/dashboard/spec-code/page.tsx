@@ -392,7 +392,7 @@ export default function InputSpecCodePage() {
         } catch (e) { }
 
         if (!u) {
-            router.replace("/");
+            window.location.href = "/im-digital/";
             return;
         }
 
@@ -400,7 +400,7 @@ export default function InputSpecCodePage() {
         if (!hasAccess) {
             setIsAuthorized(false);
             const targetRoute = getDefaultDashboardRoute(u);
-            router.replace(targetRoute);
+            window.location.href = targetRoute;
             return;
         }
 

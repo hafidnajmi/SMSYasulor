@@ -263,7 +263,7 @@ export default function DivisionPage() {
     } catch (e) { }
 
     if (!loggedUser) {
-      router.replace("/");
+      window.location.href = "/im-digital/";
       return;
     }
 
@@ -271,7 +271,7 @@ export default function DivisionPage() {
     if (!hasDivAccess) {
       setIsAuthorized(false);
       const targetRoute = getDefaultDashboardRoute(loggedUser);
-      router.replace(targetRoute);
+      window.location.href = targetRoute;
       return;
     }
 
