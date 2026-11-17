@@ -2589,6 +2589,8 @@
                         editStatusEl.value = (stVal === 'E_R' || srcSt === 'R') ? 'E_R' : 'E_P';
                     } else if (stVal === 'M' || stVal === 'M_R' || stVal === 'M_P') {
                         editStatusEl.value = 'M';
+                    } else if (stVal === 'O' || stVal === 'OVERHOUL' || stVal === 'OVERHAUL') {
+                        editStatusEl.value = 'O';
                     } else {
                         editStatusEl.value = stVal;
                     }

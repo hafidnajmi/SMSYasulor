@@ -95,8 +95,7 @@ namespace UPMS.Web.Models.Entities
                 var st = (Status ?? "P").Trim().ToUpper();
                 var src = (SourceStatus ?? "P").Trim().ToUpper();
 
-                if (st == "O" || st == "OVERHOUL" || st == "OVERHAUL" ||
-                    (!string.IsNullOrWhiteSpace(Notes) && (Notes.ToUpper().Contains("OVERHAUL") || Notes.ToUpper().Contains("OVERHOUL"))))
+                if (st == "O" || st == "OVERHOUL" || st == "OVERHAUL")
                     return "Overhaul"; // Kuning #FFD300
                 if (st == "E_R" || (st == "E" && src == "R"))
                     return "ExecuteRevision"; // Biru - Hijau
