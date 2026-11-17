@@ -1017,7 +1017,44 @@ body:not(.modal-open) {
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/site.js"></script>
-    <script>
+    <script id="ems-layout-main-script">
+        // ==========================================
+        // Universal DOM Ready Wrapper for Seamless SPA / AJAX Content Swapping
+        // Ensures any dynamic page scripts using document.addEventListener('DOMContentLoaded', fn)
+        // or window.addEventListener('DOMContentLoaded', fn) execute immediately if DOM is already ready!
+        // ==========================================
+        (function() {
+            var origDocAddEventListener = document.addEventListener;
+            document.addEventListener = function(type, listener, options) {
+                if (type === 'DOMContentLoaded' && (document.readyState === 'interactive' || document.readyState === 'complete')) {
+                    setTimeout(function() {
+                        try {
+                            listener.call(document, new Event('DOMContentLoaded'));
+                        } catch (e) {
+                            console.error('Error executing DOMContentLoaded callback:', e);
+                        }
+                    }, 0);
+                    return;
+                }
+                return origDocAddEventListener.call(document, type, listener, options);
+            };
+
+            var origWinAddEventListener = window.addEventListener;
+            window.addEventListener = function(type, listener, options) {
+                if (type === 'DOMContentLoaded' && (document.readyState === 'interactive' || document.readyState === 'complete')) {
+                    setTimeout(function() {
+                        try {
+                            listener.call(window, new Event('DOMContentLoaded'));
+                        } catch (e) {
+                            console.error('Error executing window DOMContentLoaded callback:', e);
+                        }
+                    }, 0);
+                    return;
+                }
+                return origWinAddEventListener.call(window, type, listener, options);
+            };
+        })();
+
         let pendingDeleteCallback = null;
         let pendingExportCallback = null;
 
@@ -1101,17 +1138,31 @@ body:not(.modal-open) {
 
                 // Extract scripts that were rendered in page scripts section (after layout script)
                 var pageScripts = [];
-                var allDocScripts = doc.querySelectorAll('body script');
-                var isAfterLayout = false;
-                allDocScripts.forEach(function(s) {
-                    if (s.textContent && s.textContent.includes('loadDeveloperNotifications')) {
-                        isAfterLayout = true;
-                        return;
+                var layoutScript = doc.getElementById('ems-layout-main-script');
+                if (layoutScript) {
+                    var el = layoutScript.nextElementSibling;
+                    while (el) {
+                        if (el.tagName === 'SCRIPT') {
+                            pageScripts.push(el);
+                        } else {
+                            el.querySelectorAll('script').forEach(function(s) { pageScripts.push(s); });
+                        }
+                        el = el.nextElementSibling;
                     }
-                    if (isAfterLayout) {
-                        pageScripts.push(s);
-                    }
-                });
+                }
+                if (pageScripts.length === 0) {
+                    var allDocScripts = doc.querySelectorAll('body script');
+                    var isAfterLayout = false;
+                    allDocScripts.forEach(function(s) {
+                        if (s.textContent && (s.textContent.includes('loadDeveloperNotifications') || s.id === 'ems-layout-main-script')) {
+                            isAfterLayout = true;
+                            return;
+                        }
+                        if (isAfterLayout) {
+                            pageScripts.push(s);
+                        }
+                    });
+                }
 
                 // Swap content HTML
                 mainContent.innerHTML = newContent.innerHTML;
@@ -1135,8 +1186,19 @@ body:not(.modal-open) {
                     });
                     newScript.text = oldScript.text || oldScript.textContent;
                     document.body.appendChild(newScript);
-                    setTimeout(function() { newScript.remove(); }, 150);
+                    setTimeout(function() { 
+                        try { newScript.remove(); } catch(e){} 
+                    }, 2000);
                 });
+
+                // Dispatch synthetic ready events so any listeners execute
+                try {
+                    document.dispatchEvent(new Event('DOMContentLoaded'));
+                    window.dispatchEvent(new Event('DOMContentLoaded'));
+                    document.dispatchEvent(new CustomEvent('ems:contentLoaded', { detail: { url: targetUrl } }));
+                } catch (e) {
+                    console.warn('Dispatch DOMContentLoaded error:', e);
+                }
 
                 // Smoothly fade back in
                 mainContent.style.opacity = '1';

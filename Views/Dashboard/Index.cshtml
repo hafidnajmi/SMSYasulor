@@ -520,11 +520,20 @@
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        function initDashboardPage() {
+            // Destroy existing charts if previously initialized
+            if (typeof Chart !== 'undefined' && Chart.getChart) {
+                var oldDonut = Chart.getChart('stockStatusChart');
+                if (oldDonut) oldDonut.destroy();
+                var oldLine = Chart.getChart('costPerLineChart');
+                if (oldLine) oldLine.destroy();
+            }
+
             // Stock Overview Donut Chart
             var stockDistData = @Html.Raw(Json.Serialize(ViewBag.StockDist));
-            if (stockDistData) {
-                var ctxDonut = document.getElementById('stockStatusChart').getContext('2d');
+            var donutElem = document.getElementById('stockStatusChart');
+            if (stockDistData && donutElem) {
+                var ctxDonut = donutElem.getContext('2d');
                 new Chart(ctxDonut, {
                     type: 'doughnut',
                     data: {
@@ -549,7 +558,8 @@
 
             // Cost per Production Line Line Chart (Continuous Connected Line with Peak Indicator)
             var costLineData = @Html.Raw(Json.Serialize(ViewBag.CostPerLine));
-            if (costLineData && costLineData.length > 0) {
+            var lineElem = document.getElementById('costPerLineChart');
+            if (costLineData && costLineData.length > 0 && lineElem) {
                 var labels = costLineData.map(d => d.label || d.Label);
                 var values = costLineData.map(d => Number(d.value || d.Value || 0));
 
@@ -560,7 +570,7 @@
                 var pointRadii = values.map((v, i) => (i === maxIndex && maxVal > 0) ? 6 : 4);
                 var pointStyles = values.map((v, i) => (i === maxIndex && maxVal > 0) ? 'triangle' : 'circle');
 
-                var ctxLine = document.getElementById('costPerLineChart').getContext('2d');
+                var ctxLine = lineElem.getContext('2d');
                 new Chart(ctxLine, {
                     type: 'line',
                     data: {
@@ -617,13 +627,16 @@
             }
 
             // Auto Refresh Functionality (Every 5 minutes = 300,000 ms)
-            var autoRefreshTimer = null;
+            if (window._emsDashboardAutoRefreshTimer) {
+                clearInterval(window._emsDashboardAutoRefreshTimer);
+                window._emsDashboardAutoRefreshTimer = null;
+            }
             var autoRefreshIntervalMs = 5 * 60 * 1000; // 5 minutes
             var autoRefreshCheckbox = document.getElementById('autoRefreshCheckbox');
 
             function startAutoRefreshTimer() {
-                if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-                autoRefreshTimer = setInterval(function () {
+                if (window._emsDashboardAutoRefreshTimer) clearInterval(window._emsDashboardAutoRefreshTimer);
+                window._emsDashboardAutoRefreshTimer = setInterval(function () {
                     if (typeof showEmsToast === 'function') {
                         showEmsToast('info', 'Memperbarui data dashboard...');
                     }
@@ -634,9 +647,9 @@
             }
 
             function stopAutoRefreshTimer() {
-                if (autoRefreshTimer) {
-                    clearInterval(autoRefreshTimer);
-                    autoRefreshTimer = null;
+                if (window._emsDashboardAutoRefreshTimer) {
+                    clearInterval(window._emsDashboardAutoRefreshTimer);
+                    window._emsDashboardAutoRefreshTimer = null;
                 }
             }
 
@@ -649,7 +662,7 @@
                     stopAutoRefreshTimer();
                 }
 
-                autoRefreshCheckbox.addEventListener('change', function () {
+                autoRefreshCheckbox.onchange = function () {
                     if (this.checked) {
                         localStorage.setItem('ems_dashboard_auto_refresh', 'true');
                         startAutoRefreshTimer();
@@ -663,13 +676,18 @@
                             showEmsToast('info', 'Auto refresh dinonaktifkan');
                         }
                     }
-                });
+                };
             }
 
             // Live Ticking Clock in Configured System Timezone
             (function () {
                 var clockElem = document.getElementById('dashboardClockText');
                 if (!clockElem) return;
+
+                if (window._emsDashboardClockInterval) {
+                    clearInterval(window._emsDashboardClockInterval);
+                    window._emsDashboardClockInterval = null;
+                }
 
                 var serverTimeAttr = clockElem.getAttribute('data-server-time');
                 if (!serverTimeAttr) return;
@@ -698,8 +716,14 @@
                 }
 
                 updateLiveClock();
-                setInterval(updateLiveClock, 1000);
+                window._emsDashboardClockInterval = setInterval(updateLiveClock, 1000);
             })();
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener("DOMContentLoaded", initDashboardPage);
+        } else {
+            initDashboardPage();
+        }
     </script>
 }
