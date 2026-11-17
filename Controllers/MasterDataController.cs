@@ -134,6 +134,15 @@ namespace UPMS.Web.Controllers
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(model.UpArea))
+            {
+                model.UpArea = model.UpArea.Trim().ToUpper().Contains("UP2") ? "UP2" : "UP1";
+            }
+            else
+            {
+                model.UpArea = "UP1";
+            }
+
             if (imageFile != null && imageFile.Length > 0)
             {
                 model.Image = await SaveUploadedImageAsync(imageFile);
@@ -170,16 +179,25 @@ namespace UPMS.Web.Controllers
                 model.Image = await SaveUploadedImageAsync(imageFile);
             }
 
+            if (!string.IsNullOrWhiteSpace(model.UpArea))
+            {
+                model.UpArea = model.UpArea.Trim().ToUpper().Contains("UP2") ? "UP2" : "UP1";
+            }
+            else
+            {
+                model.UpArea = "UP1";
+            }
+
             try
             {
                 bool success = await _sparepartService.UpdateAsync(model, User.Identity?.Name ?? "system", originalId);
                 if (success)
                 {
-                    TempData["Success"] = $"Sparepart {model.Id} updated successfully.";
+                    TempData["Success"] = $"Sparepart {model.Id} ({model.Item}) berhasil diperbarui (Area: {model.UpArea}).";
                 }
                 else
                 {
-                    TempData["Error"] = $"Failed to update sparepart {model.Id}. Data tidak ditemukan.";
+                    TempData["Error"] = $"Gagal memperbarui sparepart {model.Id}. Data tidak ditemukan.";
                 }
             }
             catch (Exception ex)
@@ -187,7 +205,12 @@ namespace UPMS.Web.Controllers
                 TempData["Error"] = ex.Message;
             }
 
-            return RedirectToAction("Index", new { search, upArea = upAreaFilter, category = categoryFilter, frequency = frequencyFilter, line = lineFilter, stockStatus = stockStatusFilter, page });
+            // Target UP Area to display: if user changed UP Area, redirect to that area and search by ID so user sees the change immediately
+            string targetUpArea = (!string.IsNullOrWhiteSpace(upAreaFilter) && model.UpArea != null && !model.UpArea.Equals(upAreaFilter, StringComparison.OrdinalIgnoreCase))
+                ? model.UpArea
+                : (upAreaFilter ?? "");
+
+            return RedirectToAction("Index", new { search = model.Id, upArea = targetUpArea, category = categoryFilter, frequency = frequencyFilter, line = lineFilter, stockStatus = stockStatusFilter, page = 1 });
         }
 
         [HttpPost]

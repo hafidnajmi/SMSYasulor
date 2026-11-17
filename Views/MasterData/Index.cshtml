@@ -923,7 +923,7 @@
                 document.getElementById('detailBrand').innerText = item.brand || '-';
                 document.getElementById('detailId').innerText = item.id;
                 document.getElementById('detailCategory').innerText = item.category || '-';
-                document.getElementById('detailUpArea').innerText = item.upArea || '-';
+                document.getElementById('detailUpArea').innerText = item.upArea || item.UpArea || '-';
                 document.getElementById('detailCurrentStock').innerText = (item.currentStock || 0) + ' pcs';
                 document.getElementById('detailSafetyStock').innerText = (item.safetyStock || 0) + ' pcs';
                 document.getElementById('detailQtyNeedYear').innerText = item.qtyNeedYear ? item.qtyNeedYear.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' pcs' : '-';
@@ -1001,7 +1001,7 @@
                 renderLinePills('editLinePillContainer', 'editLine', 'editLinePreviewText', item.line || '');
                 document.getElementById('editCategory').value = item.category || '';
                 document.getElementById('editMachine').value = item.machine || '';
-                renderUpAreaPills('editUpAreaPillContainer', 'editUpAreaInput', 'editUpAreaPreviewText', item.upArea || 'UP1');
+                renderUpAreaPills('editUpAreaPillContainer', 'editUpAreaInput', 'editUpAreaPreviewText', item.upArea || item.UpArea || 'UP1');
                 document.getElementById('editCurrentStock').value = item.currentStock || 0;
                 document.getElementById('editSafetyStock').value = item.safetyStock || 0;
                 document.getElementById('editQtyNeedYear').value = item.qtyNeedYear || '';
@@ -1170,54 +1170,38 @@
             var previewText = document.getElementById(previewTextId);
             if (!container || !hiddenInput) return;
 
-            var activeSet = new Set();
-            if (currentAreaValue) {
-                currentAreaValue.split(',').forEach(function(item) {
-                    var trimmed = item.trim().toUpperCase();
-                    if (trimmed) activeSet.add(trimmed);
-                });
-            }
-            if (activeSet.size === 0) {
-                activeSet.add("UP1");
+            // Exclusive Single-Select (Radio) for UP Area: strictly 'UP1' or 'UP2'
+            var cleanVal = (currentAreaValue || 'UP1').toString().trim().toUpperCase();
+            if (cleanVal !== 'UP1' && cleanVal !== 'UP2') {
+                cleanVal = cleanVal.includes('UP2') ? 'UP2' : 'UP1';
             }
 
+            hiddenInput.value = cleanVal;
             container.innerHTML = '';
 
             ["UP1", "UP2"].forEach(function(area) {
-                var isSelected = activeSet.has(area);
+                var isSelected = (cleanVal === area);
                 
                 var pill = document.createElement('button');
                 pill.type = 'button';
-                pill.className = 'btn btn-sm text-nowrap py-1 px-3 ' + (isSelected ? 'btn-primary fw-bold' : 'btn-outline-secondary text-dark bg-white');
+                pill.className = 'btn btn-sm text-nowrap py-1 px-3 ' + (isSelected ? 'btn-primary fw-bold shadow-sm' : 'btn-outline-secondary text-dark bg-white');
                 pill.style.fontSize = '12px';
                 pill.style.borderRadius = '4px';
                 pill.style.minWidth = '75px';
                 pill.style.textAlign = 'center';
-                pill.style.transition = 'background-color 0.1s ease, border-color 0.1s ease';
+                pill.style.transition = 'background-color 0.15s ease, border-color 0.15s ease';
                 pill.textContent = area;
 
                 pill.addEventListener('click', function(e) {
                     e.preventDefault();
-                    if (activeSet.has(area)) {
-                        if (activeSet.size > 1) {
-                            activeSet.delete(area);
-                        }
-                    } else {
-                        activeSet.add(area);
-                    }
-                    
-                    var newCsv = Array.from(activeSet).join(', ');
-                    hiddenInput.value = newCsv;
-
-                    renderUpAreaPills(containerId, hiddenInputId, previewTextId, newCsv);
+                    renderUpAreaPills(containerId, hiddenInputId, previewTextId, area);
                 });
 
                 container.appendChild(pill);
             });
 
             if (previewText) {
-                var resultStr = Array.from(activeSet).join(', ');
-                previewText.textContent = '(' + resultStr + ')';
+                previewText.textContent = '(' + cleanVal + ')';
                 previewText.style.color = '#0F4C81';
             }
         }

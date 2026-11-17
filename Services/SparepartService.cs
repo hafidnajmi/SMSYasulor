@@ -57,7 +57,8 @@ namespace UPMS.Web.Services
 
             if (!string.IsNullOrWhiteSpace(upArea))
             {
-                query = query.Where(m => m.UpArea == upArea);
+                var targetUp = upArea.Trim().ToUpper();
+                query = query.Where(m => m.UpArea != null && m.UpArea.ToUpper() == targetUp);
             }
 
             if (!string.IsNullOrWhiteSpace(category))
@@ -216,6 +217,7 @@ namespace UPMS.Web.Services
                     }
                 }
 
+                item.UpArea = string.IsNullOrWhiteSpace(item.UpArea) ? "UP1" : (item.UpArea.Trim().ToUpper().Contains("UP2") ? "UP2" : "UP1");
                 item.IsDeleted = false;
                 item.LastUpdatedBy = string.IsNullOrWhiteSpace(username) ? "system" : username;
                 item.LastPriceUpdate = DateTime.UtcNow;
@@ -342,7 +344,7 @@ namespace UPMS.Web.Services
             existing.Detail = item.Detail;
             existing.Brand = item.Brand;
             existing.Machine = item.Machine;
-            existing.UpArea = item.UpArea;
+            existing.UpArea = string.IsNullOrWhiteSpace(item.UpArea) ? "UP1" : (item.UpArea.Trim().ToUpper().Contains("UP2") ? "UP2" : "UP1");
             existing.Bin = item.Bin;
             existing.Line = item.Line;
             existing.Category = item.Category;
