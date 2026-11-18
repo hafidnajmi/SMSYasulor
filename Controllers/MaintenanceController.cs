@@ -1795,10 +1795,11 @@ namespace UPMS.Web.Controllers
                                              e.Status.Equals("M_R", StringComparison.OrdinalIgnoreCase) || 
                                              e.DisplayStatusCategory.StartsWith("Missed", StringComparison.OrdinalIgnoreCase));
 
-                int totalPlanned = mItems.Count;
+                // Compliance is calculated strictly from Execute and Planning only (excluding Revision)
+                int totalPlanned = pCnt;
                 int realization = eCnt;
                 int denom = totalPlanned;
-                double? compliancePct = denom > 0 ? Math.Round((double)eCnt / denom * 100.0, 1) : null;
+                double? compliancePct = denom > 0 ? Math.Round((double)realization / denom * 100.0, 1) : null;
 
                 result.Add(new
                 {

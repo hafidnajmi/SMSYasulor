@@ -674,7 +674,7 @@
             const revisionData = rawData.map(d => d.Revision);
             const complianceData = rawData.map(d => {
                 if (d.CompliancePct !== null && d.CompliancePct !== undefined) return d.CompliancePct;
-                const denom = d.TotalPlanned > 0 ? d.TotalPlanned : (d.Planning + (d.Revision || 0));
+                const denom = (d.TotalPlanned !== undefined && d.TotalPlanned !== null && d.TotalPlanned > 0) ? d.TotalPlanned : d.Planning;
                 return denom > 0 ? Math.round((d.Execute / denom) * 100 * 10) / 10 : null;
             });
             const targetData = Array(12).fill(90);
